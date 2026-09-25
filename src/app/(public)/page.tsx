@@ -54,7 +54,7 @@ export default async function HomePage() {
       <HomeHero />
 
       <Section>
-        <div className="site-container grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4 max-lg:grid-cols-1">
+        <div className="site-container grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-3">
           {homeLinks.map((link) => (
             <LinkPanel key={link.href} {...link} />
           ))}

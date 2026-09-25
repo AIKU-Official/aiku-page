@@ -4,43 +4,162 @@
 @source not "../../legacy";
 
 /*
- * Design tokens ported 1:1 from the legacy styles.css :root.
- * Breakpoints are desktop-first like the legacy CSS: use `max-lg:` for the
- * legacy `@media (max-width: 980px)` and `max-sm:` for `(max-width: 560px)`.
- * Tailwind compiles `max-*` to `width < X`, hence 981px / 561px.
+ * AIKU design system.
+ *
+ * Color: one hue, the official brand green #21D081, in lighter steps (mixed
+ * with white, 50-400) and darker steps (mixed with the brand black #1D1D1D,
+ * 600-900), plus neutrals made from the brand black and white. Tailwind's
+ * default palette is removed so no other hue can creep in. Green 500 is too
+ * light for text on white (2:1), so text uses green 700/800 (5:1 / 6.2:1).
+ * Official image assets (logos, gradient artwork, favicons) are used as-is.
+ *
+ * Type: Wanted Sans Variable (src/app/fonts/wanted-sans.css), weights 400-1000:
+ *   Regular 400 body · Medium 500 lead, navigation · SemiBold 600 card titles,
+ *   buttons, labels · Bold 700 section headings, eyebrows · ExtraBold 800 page
+ *   titles · Black 900 display · ExtraBlack 1000 numeric accents.
+ *   Scale: text-display, text-title, text-heading, text-subheading, text-lead,
+ *   text-eyebrow, text-label, text-small.
+ *
+ * Breakpoints are desktop-first: `max-lg:` is below 981px (tablet/mobile) and
+ * `max-sm:` below 561px (phones).
  */
 @theme {
   --breakpoint-*: initial;
   --breakpoint-sm: 561px;
   --breakpoint-lg: 981px;
 
-  --color-aiku-mint: #40dac5;
-  --color-aiku-green: #21d081;
-  --color-ink: #181b1f;
-  --color-body: #2f3942;
-  --color-muted: #66717c;
-  --color-line: #dfe6e3;
-  --color-soft-line: #edf2f0;
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #1d1d1d;
+  --color-aiku-black: #1d1d1d;
+
+  /* Brand green scale */
+  --color-green-50: #f2fcf7; /* +94% white: hover backgrounds */
+  --color-green-100: #e4f9f0; /* +88% white: selected backgrounds, chips */
+  --color-green-200: #c1f2dc; /* +72% white: chip borders */
+  --color-green-300: #85e5ba; /* +45% white */
+  --color-green-400: #4dd99a; /* +20% white */
+  --color-green-500: #21d081; /* official Main #2 */
+  --color-green-600: #21be77; /* +10% black: button hover */
+  --color-green-700: #1f7f54; /* +45% black: eyebrows, labels (5.0:1 on white) */
+  --color-green-800: #1f6e4a; /* +55% black: links, emphasis (6.2:1) */
+  --color-green-900: #1e533b; /* +70% black */
+
+  /* Neutrals: brand black tinted with white */
+  --color-ink: #1d1d1d; /* headings */
+  --color-ink-hover: #383838; /* +12% white, dark button hover */
+  --color-body: #343434; /* +10% white, body text */
+  --color-muted: #6c6c6c; /* +35% white, secondary text (5.3:1 on white) */
+  --color-line-strong: #cbcbcb; /* +78% white, hovered borders */
+  --color-line: #e2e2e2; /* +87% white */
+  --color-soft-line: #efefef; /* +93% white */
   --color-surface: #ffffff;
-  --color-surface-soft: #f6faf8;
-  --color-surface-mint: #ebfbf7;
-  --color-brand: #0b8e74;
-  --color-brand-deep: #0b715f;
-  --color-on-mint: #10201d;
+  --color-surface-soft: #f6f6f6; /* +96% white */
+
+  /* Admin error/delete states only (not part of the brand palette). */
   --color-danger: #9d2a2a;
   --color-danger-soft: #fff6f4;
 
+  --font-weight-extrablack: 1000;
+
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Apple SD Gothic Neo",
+    "Wanted Sans Variable", "Wanted Sans", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Noto Sans KR", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
-  --radius-card: 8px;
-  --radius-control: 6px;
-  --container-site: 1080px;
+  /* Type scale */
+  --text-display: clamp(2.75rem, 1.9rem + 3.2vw, 4.25rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 900;
+  --text-title: clamp(1.875rem, 1.45rem + 1.7vw, 2.75rem);
+  --text-title--line-height: 1.22;
+  --text-title--letter-spacing: -0.03em;
+  --text-title--font-weight: 800;
+  --text-heading: clamp(1.5rem, 1.3rem + 0.8vw, 1.9rem);
+  --text-heading--line-height: 1.3;
+  --text-heading--letter-spacing: -0.025em;
+  --text-heading--font-weight: 700;
+  --text-subheading: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --text-subheading--line-height: 1.45;
+  --text-subheading--letter-spacing: -0.015em;
+  --text-subheading--font-weight: 600;
+  --text-lead: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+  --text-lead--line-height: 1.7;
+  --text-lead--letter-spacing: -0.01em;
+  --text-lead--font-weight: 500;
+  --text-eyebrow: 0.8125rem;
+  --text-eyebrow--line-height: 1.4;
+  --text-eyebrow--letter-spacing: 0.08em;
+  --text-eyebrow--font-weight: 700;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.01em;
+  --text-label--font-weight: 600;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.6;
 
-  --default-transition-duration: 160ms;
-  --default-transition-timing-function: ease;
+  /* Shape and depth */
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --shadow-card: 0 1px 2px rgb(29 29 29 / 0.04);
+  --shadow-raised: 0 1px 2px rgb(29 29 29 / 0.04), 0 16px 32px -12px rgb(29 29 29 / 0.14);
+  --container-site: 1120px;
+
+  /*
+   * Motion: short distances, long gentle deceleration. Entrance keyframes use
+   * `transform` so they compose with the `translate`/`scale` used on hover.
+   */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 240ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-rise: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-menu: menu 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes menu {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 :root {
@@ -49,42 +168,74 @@
 
 @media (width < 981px) {
   :root {
-    --header-height: 66px;
+    --header-height: 64px;
+  }
+}
+
+/*
+ * Phones: everything is set in rem, so a 15px root scales type, spacing and
+ * components down together and fits more content on a screen.
+ */
+@media (width < 561px) {
+  :root {
+    --header-height: 56px;
+    font-size: 93.75%;
   }
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     color: var(--color-body);
     background: var(--color-surface);
     font-family: var(--font-sans);
-    font-size: 16px;
-    line-height: 1.68;
+    font-size: 1rem;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
     word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink);
+    text-wrap: balance;
   }
 
   h2 {
-    color: var(--color-ink);
-    font-size: 1.9rem;
-    line-height: 1.3;
-    font-weight: 820;
+    font-size: var(--text-heading);
+    line-height: var(--text-heading--line-height);
+    letter-spacing: var(--text-heading--letter-spacing);
+    font-weight: var(--text-heading--font-weight);
   }
 
   h3 {
-    color: var(--color-ink);
-    font-size: 1.18rem;
-    line-height: 1.38;
-    font-weight: 780;
+    font-size: var(--text-subheading);
+    line-height: var(--text-subheading--line-height);
+    letter-spacing: var(--text-subheading--letter-spacing);
+    font-weight: var(--text-subheading--font-weight);
   }
 
-  @media (width < 561px) {
-    h2 {
-      font-size: 1.55rem;
-    }
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: rgb(33 208 129 / 0.22);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-green-500);
+    outline-offset: 2px;
   }
 
   button:not(:disabled),
@@ -93,34 +244,90 @@
   }
 }
 
-/* Page-width wrapper (legacy .container). */
+/* Page-width wrapper. */
 @utility site-container {
-  width: min(calc(100% - 40px), var(--container-site));
+  width: min(calc(100% - 48px), var(--container-site));
   margin-inline: auto;
 
   @media (width < 561px) {
-    width: min(calc(100% - 28px), var(--container-site));
+    width: min(calc(100% - 32px), var(--container-site));
   }
 }
 
 /* Header side padding that aligns the header content with .site-container. */
 @utility header-gutter {
-  padding-inline: max(20px, calc((100vw - var(--container-site)) / 2));
+  padding-inline: max(24px, calc((100vw - var(--container-site)) / 2));
 
-  @media (width < 981px) {
-    padding-inline: 18px;
+  @media (width < 561px) {
+    padding-inline: 16px;
   }
 }
 
+/* Standard surface for every card-like block. */
+@utility card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+/*
+ * Scroll reveal: the element rises into place as it enters the viewport.
+ * CSS scroll-driven animation, so there is no JavaScript and nothing stays
+ * hidden in browsers without support or with reduced motion enabled.
+ */
+@utility reveal {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: reveal both var(--ease-out-soft);
+      animation-timeline: view();
+      animation-range: entry 5% entry 55%;
+    }
+  }
+}
+
+/* Load-in entrance with a stagger step (0-4) for sequences like the hero. */
+@utility enter-* {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: var(--animate-rise);
+    animation-delay: calc(--value(integer) * 90ms + 60ms);
+  }
+}
+
+/* Card that is a link or button: lifts and picks up the brand green. */
+@utility card-interactive {
+  transition-property: border-color, box-shadow, translate;
+  transition-duration: 320ms;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgb(33 208 129 / 0.55);
+    box-shadow: var(--shadow-raised);
+    translate: 0 -2px;
+  }
+}
+
+/*
+ * Home hero: the official gradient artwork with a brand-black overlay that is
+ * dark behind the text on the left and fades out to show the artwork as-is.
+ */
 @utility bg-home-hero {
   background:
     linear-gradient(
       90deg,
-      rgba(16, 24, 27, 0.9),
-      rgba(16, 24, 27, 0.64) 58%,
-      rgba(16, 24, 27, 0.22)
+      rgb(29 29 29 / 0.92) 0%,
+      rgb(29 29 29 / 0.75) 35%,
+      rgb(29 29 29 / 0.25) 68%,
+      rgb(29 29 29 / 0) 100%
     ),
     url("/assets/aiku-gradient-bg.png") center / cover;
+
+  /* On narrow screens the text spans the full width, so shade it evenly. */
+  @media (width < 981px) {
+    background:
+      linear-gradient(180deg, rgb(29 29 29 / 0.55) 0%, rgb(29 29 29 / 0.88) 70%),
+      url("/assets/aiku-gradient-bg.png") center / cover;
+  }
 }
 
 /* Faded AIKU logo on the right side of every page hero. */
@@ -134,7 +341,7 @@
     height: 160px;
     transform: translateY(-50%);
     background: url("/assets/aiku-logo-green.png") center / contain no-repeat;
-    opacity: 0.16;
+    opacity: 0.1;
     pointer-events: none;
   }
 
@@ -146,19 +353,20 @@
 }
 
 /*
- * Rendered project markdown (legacy .markdown-body). Kept as plain CSS because
- * the content is generated and can only be styled through descendant selectors.
- * Tailwind's preflight removes user-agent margins and list styles that the
- * legacy site relied on, so those are restored explicitly here.
+ * Rendered project markdown. Kept as plain CSS because the content is
+ * generated and can only be styled through descendant selectors. Tailwind's
+ * preflight removes default margins and list styles, so they are set here.
  */
 @layer components {
   .markdown-body {
-    max-width: 860px;
-    padding-top: 28px;
+    max-width: 780px;
+    padding-top: 32px;
+    font-size: 1rem;
+    line-height: 1.8;
   }
 
   .markdown-body > * + * {
-    margin-top: 18px;
+    margin-top: 20px;
   }
 
   .markdown-body h2,
@@ -167,36 +375,30 @@
   .markdown-body h5,
   .markdown-body h6 {
     color: var(--color-ink);
-    line-height: 1.32;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .markdown-body > :is(h2, h3, h4, h5, h6):not(:first-child) {
+    margin-top: 40px;
   }
 
   .markdown-body h2 {
-    font-size: 1.55rem;
+    font-size: 1.5rem;
   }
 
   .markdown-body h3 {
-    font-size: 1.28rem;
-  }
-
-  .markdown-body h4,
-  .markdown-body h5,
-  .markdown-body h6 {
-    font-weight: bold;
+    font-size: 1.25rem;
   }
 
   .markdown-body h4 {
-    margin-bottom: 1.33em;
-    font-size: 1em;
+    font-size: 1.0625rem;
   }
 
-  .markdown-body h5 {
-    margin-bottom: 1.67em;
-    font-size: 0.83em;
-  }
-
+  .markdown-body h5,
   .markdown-body h6 {
-    margin-bottom: 2.33em;
-    font-size: 0.67em;
+    font-size: 1rem;
   }
 
   .markdown-body p,
@@ -205,19 +407,28 @@
     color: var(--color-body);
   }
 
+  .markdown-body strong {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
   .markdown-body a {
-    color: var(--color-brand-deep);
-    font-weight: 750;
+    color: var(--color-green-800);
+    font-weight: 600;
     text-decoration: underline;
-    text-decoration-thickness: 1px;
+    text-decoration-color: rgb(33 208 129 / 0.5);
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 4px;
+  }
+
+  .markdown-body a:hover {
+    text-decoration-color: currentColor;
   }
 
   .markdown-body ul,
   .markdown-body ol {
     display: grid;
     gap: 8px;
-    margin-bottom: 0;
     padding-left: 1.25rem;
   }
 
@@ -227,6 +438,10 @@
 
   .markdown-body ol {
     list-style: decimal;
+  }
+
+  .markdown-body li::marker {
+    color: var(--color-green-700);
   }
 
   .markdown-body li > ul,
@@ -239,10 +454,10 @@
   }
 
   .markdown-body blockquote {
-    margin-bottom: 1em;
-    padding: 14px 16px;
-    border-left: 3px solid var(--color-aiku-green);
-    background: var(--color-surface-soft);
+    padding: 16px 20px;
+    border-left: 3px solid var(--color-green-500);
+    border-radius: 0 var(--radius-control) var(--radius-control) 0;
+    background: var(--color-green-50);
   }
 
   .markdown-body blockquote > * + * {
@@ -250,49 +465,50 @@
   }
 
   .markdown-body code {
-    padding: 0.12em 0.34em;
-    border-radius: 4px;
+    padding: 0.15em 0.4em;
+    border-radius: 6px;
     background: var(--color-surface-soft);
     color: var(--color-ink);
     font-family: var(--font-mono);
-    font-size: 0.92em;
+    font-size: 0.88em;
   }
 
   .markdown-body pre {
-    margin-bottom: 1em;
     overflow-x: auto;
-    padding: 16px;
-    border-radius: var(--radius-card);
-    background: #111417;
+    padding: 18px 20px;
+    border-radius: var(--radius-control);
+    background: var(--color-aiku-black);
   }
 
   .markdown-body pre code {
     padding: 0;
     background: transparent;
-    color: #eef5f3;
-    font-size: 0.9rem;
+    color: var(--color-surface-soft);
+    font-size: 0.875rem;
   }
 
   .markdown-body hr {
     border: 0;
-    border-top: 1px solid var(--color-soft-line);
+    border-top: 1px solid var(--color-line);
   }
 
   .markdown-table {
     overflow-x: auto;
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-control);
   }
 
   .markdown-table table {
     width: 100%;
     min-width: 560px;
     border-collapse: collapse;
+    font-size: 0.9375rem;
+    line-height: 1.6;
   }
 
   .markdown-table th,
   .markdown-table td {
-    padding: 12px 14px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--color-soft-line);
     text-align: left;
     vertical-align: top;
@@ -301,8 +517,8 @@
   .markdown-table th {
     color: var(--color-ink);
     background: var(--color-surface-soft);
-    font-size: 0.92rem;
-    font-weight: 850;
+    font-size: 0.875rem;
+    font-weight: 700;
   }
 
   .markdown-table tr:last-child td {
@@ -310,25 +526,16 @@
   }
 
   .markdown-body figure {
-    margin-block: 1em;
     overflow: hidden;
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-control);
     background: var(--color-surface-soft);
-  }
-
-  .markdown-body > * + figure {
-    margin-top: 18px;
   }
 
   .markdown-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-    gap: 14px;
-  }
-
-  .markdown-body .markdown-gallery figure {
-    margin: 0;
+    gap: 16px;
   }
 
   .markdown-body figure img {
@@ -337,9 +544,11 @@
   }
 
   .markdown-body figcaption {
-    padding: 10px 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--color-line);
+    background: var(--color-surface);
     color: var(--color-muted);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 
   .markdown-body figure.is-missing-image {
@@ -352,6 +561,42 @@
   .markdown-body figure.is-missing-image::before {
     content: "이미지 파일 연결 필요";
     color: var(--color-muted);
-    font-weight: 750;
+    font-weight: 600;
+  }
+
+  @media (width < 561px) {
+    .markdown-body {
+      padding-top: 24px;
+      line-height: 1.75;
+    }
+
+    .markdown-body > * + * {
+      margin-top: 16px;
+    }
+
+    .markdown-body > :is(h2, h3, h4, h5, h6):not(:first-child) {
+      margin-top: 32px;
+    }
+
+    .markdown-body h2 {
+      font-size: 1.3125rem;
+    }
+
+    .markdown-body h3 {
+      font-size: 1.125rem;
+    }
+
+    .markdown-body blockquote {
+      padding: 12px 14px;
+    }
+
+    .markdown-table th,
+    .markdown-table td {
+      padding: 10px 12px;
+    }
+
+    .markdown-gallery {
+      gap: 12px;
+    }
   }
 }

@@ -158,7 +158,7 @@ function SortableRow({
       aria-label={`${label} 순서 옮기기`}
       {...attributes}
       {...(byRow ? { onKeyDown } : listeners)}
-      className="inline-flex h-9 w-7 cursor-grab touch-none items-center justify-center rounded-control border border-soft-line bg-surface-soft text-[0.82rem] leading-none font-[850] text-brand active:cursor-grabbing"
+      className="inline-flex h-9 w-7 cursor-grab touch-none items-center justify-center rounded-control border border-soft-line bg-surface-soft text-small leading-none font-bold text-green-700 active:cursor-grabbing"
     >
       <span aria-hidden="true">⋮⋮</span>
     </button>
@@ -172,7 +172,7 @@ function SortableRow({
       className={clsx(
         "relative",
         byRow && "cursor-grab active:cursor-grabbing",
-        isDragging ? "z-10 bg-surface-mint opacity-48" : "bg-surface",
+        isDragging ? "z-10 bg-green-50 opacity-48" : "bg-surface",
       )}
     >
       {render(handle)}

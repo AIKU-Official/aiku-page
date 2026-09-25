@@ -15,10 +15,10 @@ export function ItemButton({
     <button
       type="button"
       className={clsx(
-        "min-h-9 rounded-control border border-line bg-surface px-3 text-[0.88rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-42",
+        "min-h-9 rounded-control border border-line bg-surface px-3.5 text-small font-semibold transition-[border-color,background-color,color] disabled:cursor-not-allowed disabled:opacity-40",
         danger
           ? "text-danger enabled:hover:border-danger/32 enabled:hover:bg-danger-soft enabled:focus-visible:border-danger/32 enabled:focus-visible:bg-danger-soft"
-          : "text-ink enabled:hover:border-aiku-green enabled:hover:bg-surface-mint enabled:focus-visible:border-aiku-green enabled:focus-visible:bg-surface-mint",
+          : "text-ink enabled:hover:border-green-200 enabled:hover:bg-green-50 enabled:hover:text-green-800",
         className,
       )}
       {...props}
@@ -74,7 +74,7 @@ export function ItemText({
 }) {
   return (
     <div className="min-w-0">
-      <span className="text-[0.82rem] font-[850] text-brand">{label}</span>
+      <span className="text-label text-green-700 tabular-nums">{label}</span>
       <h3 className="mt-0.5">{title}</h3>
       {details.map((detail, index) => (
         <p key={index} className="mt-1.5 wrap-anywhere text-muted">
@@ -98,7 +98,7 @@ export function ListHead({
   return (
     <div className={clsx(!flush && "mt-2.5")}>
       <h3>{title}</h3>
-      <p className="mt-1.5 text-[0.94rem] text-muted">{description}</p>
+      <p className="mt-1.5 text-small text-muted">{description}</p>
     </div>
   );
 }
@@ -112,7 +112,7 @@ export function ItemGroupHead({ title, count }: { title: string; count: string }
   return (
     <div className="flex items-baseline justify-between gap-3">
       <h3 className="text-ink">{title}</h3>
-      <p className="text-[0.9rem] text-muted">{count}</p>
+      <p className="text-small text-muted">{count}</p>
     </div>
   );
 }

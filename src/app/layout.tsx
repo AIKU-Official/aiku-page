@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { publicEnv } from "@/lib/env.public";
 import { siteName, siteOgDescription, siteDescription, siteTitle, themeColor } from "@/lib/site";
 
+import "./fonts/wanted-sans.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

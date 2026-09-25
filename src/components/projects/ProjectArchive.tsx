@@ -76,10 +76,10 @@ export function ProjectArchive({
                   aria-pressed={filter === option}
                   onClick={() => selectFilter(option)}
                   className={clsx(
-                    "inline-flex min-h-[38px] items-center justify-center rounded-control border px-3 text-[0.92rem] font-extrabold text-ink transition-[border-color,background-color] hover:border-aiku-green hover:bg-surface-mint focus-visible:border-aiku-green focus-visible:bg-surface-mint",
+                    "inline-flex h-10 items-center justify-center rounded-full border px-4 text-small font-semibold transition-[border-color,background-color,color,scale] active:scale-[0.97]",
                     filter === option
-                      ? "border-aiku-green bg-surface-mint"
-                      : "border-line bg-surface",
+                      ? "border-green-200 bg-green-100 text-green-800"
+                      : "border-line bg-surface text-body hover:border-line-strong hover:text-ink",
                   )}
                 >
                   {option === ALL_PROJECTS ? "전체" : option}
@@ -87,19 +87,23 @@ export function ProjectArchive({
               ))}
             </div>
           ) : null}
-          <p className="mt-4 text-[0.94rem] text-muted" aria-live="polite">
+          <p className="mt-4 text-small text-muted" aria-live="polite">
             {filterStatusText(filter, visibleCount, entries.length)}
           </p>
         </div>
       </Section>
 
-      <Section className="pt-16">
+      <Section className="pt-14 max-lg:pt-10 max-sm:pt-6">
         <div
           ref={listRef}
-          className="site-container grid scroll-mt-[calc(var(--header-height)+18px)] gap-6"
+          className="site-container grid scroll-mt-[calc(var(--header-height)+24px)] gap-5 max-sm:gap-3"
         >
           {entries.map((entry) => (
-            <div key={entry.id} hidden={!isVisible(entry)} className="min-w-0">
+            <div
+              key={entry.id}
+              hidden={!isVisible(entry)}
+              className="min-w-0 motion-safe:animate-fade"
+            >
               {entry.node}
             </div>
           ))}

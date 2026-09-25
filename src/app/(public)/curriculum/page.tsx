@@ -46,34 +46,37 @@ export default function CurriculumPage() {
         }
         lead={
           <>
-            AIKU의 활동은 주니어 한 학기와 시니어 한 학기로 이어지는 트랙, <br />
+            AIKU의 활동은 주니어 한 학기와 시니어 한 학기로 이어지는 트랙,{" "}
+            <br className="max-sm:hidden" />
             또는 시니어 1년 트랙으로 구성됩니다.
           </>
         }
       />
 
       <Section>
-        <div className="site-container grid gap-6">
+        <div className="site-container">
           <SectionHead eyebrow="2-Track System" title="2-Track으로 AIKU 활동을 이어갑니다." />
-          <figure className="rounded-card border border-line bg-surface p-6">
-            <Image
-              src="/assets/2-Track.webp"
-              alt="Track 1은 Junior 0.5년 후 Senior 0.5년, Track 2는 Senior 1년으로 구성됩니다."
-              width={1280}
-              height={437}
-              sizes="(max-width: 1080px) 100vw, 1032px"
-              className="h-auto w-full"
-            />
-          </figure>
-          <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
-            <TrackCard label="Track 1" title="Junior 0.5년 + Senior 0.5년">
-              딥러닝 기초를 다지는 주니어 활동을 거친 뒤, 프로젝트와 논문 중심의 시니어 활동으로
-              이어지는 흐름입니다.
-            </TrackCard>
-            <TrackCard label="Track 2" title="Senior 1년">
-              이미 딥러닝 기초를 갖춘 학회원이 시니어 활동을 1년 동안 이어가며 프로젝트와 학술
-              활동에 집중하는 흐름입니다.
-            </TrackCard>
+          <div className="grid gap-5 max-sm:gap-3">
+            <figure className="reveal card p-8 max-sm:p-3">
+              <Image
+                src="/assets/2-Track.webp"
+                alt="Track 1은 Junior 0.5년 후 Senior 0.5년, Track 2는 Senior 1년으로 구성됩니다."
+                width={1280}
+                height={437}
+                sizes="(max-width: 1080px) 100vw, 1032px"
+                className="h-auto w-full"
+              />
+            </figure>
+            <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1 max-sm:gap-3">
+              <TrackCard label="Track 1" title="Junior 0.5년 + Senior 0.5년">
+                딥러닝 기초를 다지는 주니어 활동을 거친 뒤, 프로젝트와 논문 중심의 시니어 활동으로
+                이어지는 흐름입니다.
+              </TrackCard>
+              <TrackCard label="Track 2" title="Senior 1년">
+                이미 딥러닝 기초를 갖춘 학회원이 시니어 활동을 1년 동안 이어가며 프로젝트와 학술
+                활동에 집중하는 흐름입니다.
+              </TrackCard>
+            </div>
           </div>
         </div>
       </Section>
@@ -81,7 +84,7 @@ export default function CurriculumPage() {
       <Section soft>
         <div className="site-container">
           <SectionHead eyebrow="Tracks" title="트랙별 활동 구성" />
-          <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
+          <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1 max-sm:gap-3">
             <CurriculumCard
               eyebrow="Junior"
               title="딥러닝 기초와 학회 적응을 위한 한 학기"
@@ -101,7 +104,7 @@ export default function CurriculumPage() {
       <Section>
         <div className="site-container">
           <SectionHead eyebrow="Regular Activities" title="AIKU 정기활동" />
-          <div className="grid gap-[18px]" role="group" aria-label="AIKU 목요일 활동 흐름">
+          <div className="grid gap-5 max-sm:gap-3" role="group" aria-label="AIKU 목요일 활동 흐름">
             <CalendarRow label="방학 목요일" title="트랙별 세션 후 공통 세미나">
               <CalendarLane
                 audience="Junior"

@@ -25,20 +25,23 @@ export default async function MembersPage() {
       />
 
       <Section>
-        <div className="site-container grid gap-9">
+        <div className="site-container grid gap-16 max-lg:gap-12 max-sm:gap-9">
           {generations.length === 0 ? (
             <EmptyNotice>아직 공개된 멤버가 없습니다.</EmptyNotice>
           ) : null}
           {generations.map((generation) => (
             <section
               key={generation.id}
-              className="grid gap-[18px] border-b border-soft-line pb-9 last:border-b-0 last:pb-0"
+              aria-labelledby={`generation-${generation.id}`}
+              className="grid gap-6 max-sm:gap-4"
             >
-              <div className="flex items-end justify-between gap-4 max-lg:items-start max-sm:grid max-sm:gap-2">
-                <h2 className="text-[clamp(1.5rem,2vw,2.1rem)] text-ink">{generation.name}</h2>
-                <p className="font-extrabold text-muted">{generation.members.length}명</p>
+              <div className="flex reveal items-center gap-3 border-b border-line pb-4">
+                <h2 id={`generation-${generation.id}`}>{generation.name}</h2>
+                <span className="inline-flex h-7 items-center rounded-full bg-surface-soft px-3 text-label text-muted tabular-nums">
+                  {generation.members.length}명
+                </span>
               </div>
-              <div className="grid grid-cols-4 gap-3.5 max-lg:grid-cols-1">
+              <div className="grid grid-cols-4 gap-5 max-lg:grid-cols-2 max-sm:gap-3">
                 {generation.members.map((member) => (
                   <MemberCard key={member.id} member={member} />
                 ))}

@@ -271,7 +271,7 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
                   {handle}
                   <div>
                     <h3>{generation.name}</h3>
-                    <p className="text-[0.9rem] text-muted">멤버 {generation.members.length}명</p>
+                    <p className="text-small text-muted">멤버 {generation.members.length}명</p>
                   </div>
                 </div>
                 <ItemButton
@@ -352,7 +352,7 @@ function MemberSummary({ member, index }: { member: Member; index: number }) {
       ) : (
         <span
           aria-hidden="true"
-          className="block size-12 rounded-full border border-soft-line bg-[linear-gradient(135deg,rgba(64,218,197,0.16),rgba(47,98,215,0.08)),var(--color-surface-soft)]"
+          className="block size-12 rounded-full border border-soft-line bg-[linear-gradient(135deg,rgb(33_208_129/0.2),rgb(33_208_129/0.12)),var(--color-surface-soft)]"
         />
       )}
       <ItemText

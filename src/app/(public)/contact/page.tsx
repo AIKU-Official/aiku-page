@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/layout/PageHero";
 import { Section, SectionHead } from "@/components/layout/Section";
 import { ButtonLink } from "@/components/ui/Button";
+import { ArrowUpRightIcon } from "@/components/ui/icons";
 import { contactChannels, instagramUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -20,47 +21,52 @@ export default function ContactPage() {
       />
 
       <Section>
-        <div className="site-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-8 rounded-card border border-line bg-surface p-8 max-lg:grid-cols-1 max-sm:p-5">
-          <div>
-            <span className="inline-flex min-h-[30px] items-center rounded-full bg-surface-mint px-2.5 text-[0.86rem] font-extrabold text-on-mint">
-              Recruitment
-            </span>
-            <h2 className="mt-3">현재 정규 모집 기간은 아닙니다.</h2>
-            <p className="mt-3 max-w-[660px] text-muted">
-              다음 모집 공지가 확정되면 지원 기간, 대상, 지원 링크, 선발 절차를 이곳과 공식 채널에
-              업데이트합니다.
-            </p>
+        <div className="site-container">
+          <div className="grid reveal grid-cols-[minmax(0,1fr)_auto] items-center gap-8 overflow-hidden card bg-linear-to-br from-green-50 to-white p-10 max-lg:grid-cols-1 max-sm:gap-5 max-sm:p-5">
+            <div>
+              <span className="inline-flex h-8 items-center gap-2 rounded-full bg-white px-3 text-label text-green-800 ring-1 ring-green-500/30 ring-inset">
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-green-500" />
+                Recruitment
+              </span>
+              <h2 className="mt-4">현재 정규 모집 기간은 아닙니다.</h2>
+              <p className="mt-3 max-w-[640px] text-muted">
+                다음 모집 공지가 확정되면 지원 기간, 대상, 지원 링크, 선발 절차를 이곳과 공식 채널에
+                업데이트합니다.
+              </p>
+            </div>
+            <ButtonLink href={instagramUrl} variant="dark" fullWidthOnMobile={false}>
+              공지 채널 보기
+              <ArrowUpRightIcon className="size-4" />
+            </ButtonLink>
           </div>
-          <ButtonLink
-            href={instagramUrl}
-            variant="dark"
-            fullWidthOnMobile={false}
-            className="max-lg:w-fit"
-          >
-            공지 채널 보기
-          </ButtonLink>
         </div>
       </Section>
 
-      <Section>
+      <Section className="pt-0 max-lg:pt-0">
         <div className="site-container">
           <SectionHead eyebrow="Channels" title="공식 채널" />
-        </div>
-        <div className="site-container grid gap-3">
-          {contactChannels.map((channel) => (
-            <a
-              key={channel.label}
-              href={channel.href}
-              {...(channel.href.startsWith("mailto:")
-                ? {}
-                : { target: "_blank", rel: "noreferrer" })}
-              className="grid grid-cols-[140px_minmax(0,0.9fr)_minmax(0,1fr)] items-start gap-6 border-b border-soft-line py-6 text-body transition-colors first:border-t hover:text-brand-deep focus-visible:text-brand-deep max-sm:grid-cols-1 max-sm:gap-2 max-sm:py-5"
-            >
-              <span className="text-[0.86rem] font-[850] text-brand">{channel.label}</span>
-              <strong className="wrap-anywhere text-ink">{channel.name}</strong>
-              <p className="text-muted">{channel.description}</p>
-            </a>
-          ))}
+          <ul className="reveal divide-y divide-soft-line overflow-hidden card">
+            {contactChannels.map((channel) => (
+              <li key={channel.label}>
+                <a
+                  href={channel.href}
+                  {...(channel.href.startsWith("mailto:")
+                    ? {}
+                    : { target: "_blank", rel: "noreferrer" })}
+                  className="group grid grid-cols-[140px_minmax(0,0.9fr)_minmax(0,1fr)_20px] items-center gap-6 px-7 py-5 transition-colors hover:bg-surface-soft max-sm:grid-cols-[minmax(0,1fr)_20px] max-sm:gap-x-3 max-sm:gap-y-0.5 max-sm:px-4 max-sm:py-3.5"
+                >
+                  <span className="text-eyebrow text-green-700 uppercase max-sm:col-span-2">
+                    {channel.label}
+                  </span>
+                  <strong className="font-semibold wrap-anywhere text-ink">{channel.name}</strong>
+                  <span className="text-muted max-sm:order-last max-sm:col-span-2">
+                    {channel.description}
+                  </span>
+                  <ArrowUpRightIcon className="size-5 text-line-strong transition-[color,translate] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-green-700" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </Section>
     </>

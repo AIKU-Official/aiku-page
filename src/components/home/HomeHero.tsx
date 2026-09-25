@@ -2,37 +2,44 @@ import Image from "next/image";
 
 import { ButtonLink } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { ArrowRightIcon } from "@/components/ui/icons";
 
 export function HomeHero() {
   return (
     <section
       aria-labelledby="home-title"
-      className="flex min-h-[560px] items-end text-white bg-home-hero max-lg:min-h-[520px] max-sm:min-h-[500px]"
+      className="flex min-h-[620px] items-end text-white bg-home-hero max-lg:min-h-[560px] max-sm:min-h-0"
     >
-      <div className="site-container pt-28 pb-[68px] max-lg:pt-[88px] max-lg:pb-14">
-        <Image
-          src="/assets/aiku-logo-white.png"
-          alt=""
-          aria-hidden
-          width={128}
-          height={39}
-          preload
-          className="mb-11 h-auto w-32 max-lg:mb-8 max-lg:w-[108px]"
-        />
-        <Eyebrow>Korea University Deep Learning Society</Eyebrow>
-        <h1
-          id="home-title"
-          className="max-w-[720px] text-[3.35rem] leading-[1.12] font-black text-white max-lg:text-[2.6rem] max-sm:text-[2.25rem]"
-        >
-          AIKU
+      <div className="site-container pt-32 pb-20 max-lg:pt-24 max-lg:pb-14 max-sm:pt-16 max-sm:pb-10">
+        <div className="enter-0">
+          <Eyebrow tone="inverse" spacing="loose">
+            Korea University Deep Learning Society
+          </Eyebrow>
+        </div>
+        {/* The wordmark is the page title; its alt text names it for assistive tech. */}
+        <h1 id="home-title" className="enter-1">
+          <Image
+            src="/assets/aiku-logo-white.png"
+            alt="AIKU"
+            width={640}
+            height={197}
+            sizes="(max-width: 560px) 176px, (max-width: 980px) 208px, 248px"
+            preload
+            className="h-auto w-[248px] max-lg:w-[208px] max-sm:w-[148px]"
+          />
         </h1>
-        <p className="mt-5 max-w-[670px] text-[1.08rem] font-medium text-white/82">
-          고려대학교 딥러닝 학회 AIKU는 딥러닝을 공부하고자 하는 <br /> 고려대학교 학생들이 모여
-          지식을 공유하고, 소통하며 성장하는 곳입니다.
+        <p className="mt-8 max-w-[620px] enter-2 text-[1.3125rem] leading-[1.6] font-medium tracking-[-0.02em] text-white/85 max-sm:mt-5 max-sm:text-lead">
+          고려대학교 딥러닝 학회 AIKU는 딥러닝을 공부하고자 하는 <br className="max-sm:hidden" />
+          고려대학교 학생들이 모여 지식을 공유하고, 소통하며 성장하는 곳입니다.
         </p>
-        <div className="mt-7 flex flex-wrap gap-2.5 max-sm:grid" role="group" aria-label="바로가기">
+        <div
+          className="mt-10 flex enter-3 flex-wrap gap-3 max-sm:mt-7 max-sm:grid max-sm:grid-cols-2 max-sm:gap-2"
+          role="group"
+          aria-label="바로가기"
+        >
           <ButtonLink href="/about" variant="primary">
             AIKU 소개
+            <ArrowRightIcon className="size-4" />
           </ButtonLink>
           <ButtonLink href="/contact" variant="light">
             컨택

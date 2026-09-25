@@ -3,9 +3,17 @@ export const siteTitle = "AIKU | 고려대학교 딥러닝 학회";
 export const siteDescription = "고려대학교 딥러닝 학회 AIKU 공식 웹사이트입니다.";
 export const siteOgDescription =
   "지식 공유와 프로젝트를 통해 함께 성장하는 고려대학교 딥러닝 학회 AIKU";
-export const themeColor = "#40DAC5";
+export const themeColor = "#21D081";
 
-export type NavItem = { href: string; label: string; prefetch?: boolean };
+export type NavItem = {
+  href: string;
+  label: string;
+  prefetch?: boolean;
+  /** Secondary link (login), shown apart from the main menu. */
+  utility?: boolean;
+  /** Extra paths on which this item is shown as the current page. */
+  alsoActiveOn?: string[];
+};
 
 export const navItems: NavItem[] = [
   { href: "/about", label: "About" },
@@ -15,8 +23,7 @@ export const navItems: NavItem[] = [
   { href: "/gallery", label: "Gallery" },
   { href: "/members", label: "Members" },
   { href: "/contact", label: "Contact" },
-  { href: "/login", label: "Login", prefetch: false },
-  { href: "/admin", label: "Admin", prefetch: false },
+  { href: "/login", label: "Login", prefetch: false, utility: true, alsoActiveOn: ["/admin"] },
 ];
 
 export const instagramUrl = "https://www.instagram.com/aiku._.official/";

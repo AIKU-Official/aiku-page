@@ -12,19 +12,19 @@ export function ActivityRow({ id, label, title, children }: ActivityRowProps) {
   return (
     <article
       id={id}
-      className="grid scroll-mt-[calc(var(--header-height)+18px)] grid-cols-[190px_minmax(0,1fr)] items-start gap-6 border-b border-soft-line py-6 first:border-t max-sm:grid-cols-1 max-sm:gap-2 max-sm:py-5"
+      className="grid reveal scroll-mt-[calc(var(--header-height)+24px)] grid-cols-[200px_minmax(0,1fr)] items-start gap-8 py-8 max-lg:grid-cols-1 max-lg:gap-3 max-sm:gap-2.5 max-sm:py-5"
     >
-      <span className="inline-flex min-h-[46px] w-full items-center justify-center rounded-control border border-aiku-green/24 bg-surface-mint px-3 py-2 text-center text-[1.02rem] leading-[1.2] font-black text-brand-deep">
+      <span className="inline-flex h-9 w-fit items-center rounded-full bg-green-50 px-4 text-label text-green-800 ring-1 ring-green-500/25 ring-inset max-sm:h-7 max-sm:px-3">
         {label}
       </span>
       <div>
-        <h2 className="mb-2 text-[1.45rem]">{title}</h2>
-        <p className="text-muted">{children}</p>
+        <h3 className="text-[1.25rem]">{title}</h3>
+        <p className="mt-2 max-w-[720px] text-muted max-sm:mt-1.5">{children}</p>
       </div>
     </article>
   );
 }
 
 export function ActivityList({ children }: { children: ReactNode }) {
-  return <div className="grid gap-3">{children}</div>;
+  return <div className="divide-y divide-line border-y border-line">{children}</div>;
 }

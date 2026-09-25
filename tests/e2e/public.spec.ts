@@ -24,7 +24,8 @@ for (const { path, heading } of pages) {
   test(`${path} renders without errors or horizontal overflow`, async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto(path);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(heading);
+    // The home page title is the AIKU wordmark image, so match the accessible name.
+    await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
     // The menu is collapsed (display: none) on small screens, so check presence only.
     await expect(page.locator("nav#site-nav")).toBeAttached();
 
@@ -82,7 +83,10 @@ test("mobile navigation opens, locks scrolling and closes with Escape", async ({
   await page.goto("/about");
   const toggle = page.getByRole("button", { name: "메뉴 열기" });
   await toggle.click();
-  await expect(page.getByRole("navigation", { name: "주요 메뉴" })).toBeVisible();
+  const nav = page.getByRole("navigation", { name: "주요 메뉴" });
+  await expect(nav).toBeVisible();
+  // The last link must be on screen: the menu once collapsed to the header's height.
+  await expect(nav.getByRole("link", { name: "Login" })).toBeInViewport();
   expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("navigation", { name: "주요 메뉴" })).toBeHidden();

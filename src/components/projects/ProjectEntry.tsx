@@ -1,8 +1,12 @@
 "use client";
 
+import clsx from "clsx";
 import { useState, type ReactNode } from "react";
 
+import { buttonClassName } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { ChevronDownIcon } from "@/components/ui/icons";
+import { parseTags } from "@/lib/projects/tags";
 
 type ProjectEntryProps = {
   id: string;
@@ -18,32 +22,59 @@ type ProjectEntryProps = {
 export function ProjectEntry({ id, period, title, summary, resources, body }: ProjectEntryProps) {
   const [expanded, setExpanded] = useState(false);
   const bodyId = `project-body-${id}`;
+  const tags = parseTags(summary);
 
   return (
     <article
       id={`project-${id}`}
-      className="scroll-mt-[calc(var(--header-height)+18px)] rounded-card border border-line bg-surface p-7 max-sm:p-5"
+      className="reveal scroll-mt-[calc(var(--header-height)+24px)] card p-8 max-sm:p-5"
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)] items-start gap-7 border-b border-soft-line pb-6 max-lg:grid-cols-1">
-        <div>
-          <Eyebrow>{period || "AIKU"}</Eyebrow>
-          <h2>{title}</h2>
-          <p className="mt-2.5 max-w-[620px] text-muted">
-            {summary || "관련 분야 태그가 곧 공개됩니다."}
-          </p>
-          <button
-            type="button"
-            aria-expanded={expanded}
-            aria-controls={bodyId}
-            onClick={() => setExpanded((value) => !value)}
-            className="mt-[18px] min-h-10 w-fit rounded-control border border-line bg-surface px-3.5 text-[0.92rem] font-extrabold text-ink transition-[border-color,background-color] hover:border-aiku-green hover:bg-surface-mint focus-visible:border-aiku-green focus-visible:bg-surface-mint"
-          >
-            {expanded ? "접기" : "자세히 보기"}
-          </button>
+      <div className="flex items-start justify-between gap-8 max-lg:flex-col max-lg:gap-5 max-sm:gap-4">
+        <div className="min-w-0">
+          <Eyebrow spacing="tight">{period || "AIKU"}</Eyebrow>
+          <h2 className="text-[1.625rem] leading-[1.3] font-extrabold tracking-[-0.025em] max-sm:text-[1.25rem]">
+            {title}
+          </h2>
+          {tags ? (
+            <ul className="mt-4 flex flex-wrap gap-1.5 max-sm:mt-3" aria-label="관련 분야">
+              {tags.map((tag) => (
+                <li
+                  key={tag}
+                  className="inline-flex h-7 items-center rounded-full bg-green-50 px-3 text-label text-green-800 ring-1 ring-green-200 ring-inset"
+                >
+                  #{tag}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 max-w-[640px] text-muted">
+              {summary || "관련 분야 태그가 곧 공개됩니다."}
+            </p>
+          )}
         </div>
-        {resources}
+        <div className="shrink-0 max-sm:w-full">{resources}</div>
       </div>
-      <div id={bodyId} hidden={!expanded}>
+
+      <div className="mt-6 border-t border-soft-line pt-5 max-sm:mt-4 max-sm:pt-4">
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={bodyId}
+          onClick={() => setExpanded((value) => !value)}
+          className={buttonClassName({
+            variant: "secondary",
+            size: "sm",
+            fullWidthOnMobile: false,
+          })}
+        >
+          {expanded ? "접기" : "자세히 보기"}
+          <ChevronDownIcon
+            className={clsx("size-4 transition-transform", expanded && "rotate-180")}
+          />
+        </button>
+      </div>
+
+      <div id={bodyId} hidden={!expanded} className="motion-safe:animate-fade">
         {body}
       </div>
     </article>

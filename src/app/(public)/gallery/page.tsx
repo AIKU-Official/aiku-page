@@ -25,7 +25,7 @@ export default async function GalleryPage() {
       />
 
       <Section>
-        <div className="site-container grid grid-cols-3 gap-4 max-lg:grid-cols-1">
+        <div className="site-container grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:gap-3">
           <GalleryCard
             feature
             category="AIKU"
