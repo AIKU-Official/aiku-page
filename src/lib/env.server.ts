@@ -24,8 +24,12 @@ export function serverEnv(): ServerEnv {
   if (!cached) {
     const parsed = serverEnvSchema.safeParse(process.env);
     if (!parsed.success) {
-      const issues = parsed.error.issues.map((issue) => `- ${issue.message}`).join("\n");
-      throw new Error(`서버 환경변수가 올바르지 않습니다.\n${issues}`);
+      const issues = parsed.error.issues
+        .map((issue) => `- ${issue.path.join(".")}: ${issue.message}`)
+        .join("\n");
+      throw new Error(
+        `서버 환경변수가 올바르지 않습니다. (Vercel: Settings → Environment Variables)\n${issues}`,
+      );
     }
     cached = parsed.data;
   }
