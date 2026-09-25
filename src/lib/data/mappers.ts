@@ -1,5 +1,5 @@
 import type { Tables } from "@/lib/supabase/database.types";
-import type { GalleryItem, Member, NewsItem, Project, Season } from "@/lib/types";
+import type { Member, NewsItem, Project, Season } from "@/lib/types";
 
 export const mapSeason = (row: Pick<Tables<"seasons">, "id" | "name">): Season => ({
   id: row.id,
@@ -26,14 +26,6 @@ export const mapNews = (row: Tables<"news">): NewsItem => ({
   summary: row.summary,
   linkUrl: row.link_url,
   linkLabel: row.link_label,
-});
-
-export const mapGalleryItem = (row: Tables<"gallery_items">): GalleryItem => ({
-  id: row.id,
-  category: row.category,
-  title: row.title,
-  description: row.description,
-  imagePath: row.image_path,
 });
 
 export const mapMember = (row: Tables<"members">): Member => ({

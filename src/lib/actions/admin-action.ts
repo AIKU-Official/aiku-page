@@ -41,7 +41,6 @@ export function unwrap<T>(
 const affectedPaths = {
   news: ["/"],
   projects: ["/projects"],
-  gallery: ["/gallery"],
   members: ["/members"],
 } as const;
 

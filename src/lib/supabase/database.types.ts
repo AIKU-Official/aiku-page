@@ -28,47 +28,10 @@ export type Database = {
   };
   public: {
     Tables: {
-      gallery_items: {
-        Row: {
-          category: string;
-          created_at: string;
-          description: string;
-          id: string;
-          image_path: string | null;
-          legacy_id: string | null;
-          sort_order: number;
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          category?: string;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          image_path?: string | null;
-          legacy_id?: string | null;
-          sort_order?: number;
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          category?: string;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          image_path?: string | null;
-          legacy_id?: string | null;
-          sort_order?: number;
-          title?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       generations: {
         Row: {
           created_at: string;
           id: string;
-          legacy_id: string | null;
           name: string;
           sort_order: number;
           updated_at: string;
@@ -76,7 +39,6 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
-          legacy_id?: string | null;
           name: string;
           sort_order?: number;
           updated_at?: string;
@@ -84,7 +46,6 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
-          legacy_id?: string | null;
           name?: string;
           sort_order?: number;
           updated_at?: string;
@@ -116,7 +77,6 @@ export type Database = {
           generation_id: string;
           github_url: string | null;
           id: string;
-          legacy_id: string | null;
           linkedin_url: string | null;
           name: string;
           photo_path: string | null;
@@ -131,7 +91,6 @@ export type Database = {
           generation_id: string;
           github_url?: string | null;
           id?: string;
-          legacy_id?: string | null;
           linkedin_url?: string | null;
           name: string;
           photo_path?: string | null;
@@ -146,7 +105,6 @@ export type Database = {
           generation_id?: string;
           github_url?: string | null;
           id?: string;
-          legacy_id?: string | null;
           linkedin_url?: string | null;
           name?: string;
           photo_path?: string | null;
@@ -169,7 +127,6 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
-          legacy_id: string | null;
           link_label: string;
           link_url: string | null;
           published_on: string | null;
@@ -181,7 +138,6 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
-          legacy_id?: string | null;
           link_label?: string;
           link_url?: string | null;
           published_on?: string | null;
@@ -193,7 +149,6 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
-          legacy_id?: string | null;
           link_label?: string;
           link_url?: string | null;
           published_on?: string | null;
@@ -210,7 +165,6 @@ export type Database = {
           github_url: string | null;
           id: string;
           image_paths: string[];
-          legacy_id: string | null;
           markdown: string;
           presentation_name: string | null;
           presentation_path: string | null;
@@ -225,7 +179,6 @@ export type Database = {
           github_url?: string | null;
           id?: string;
           image_paths?: string[];
-          legacy_id?: string | null;
           markdown?: string;
           presentation_name?: string | null;
           presentation_path?: string | null;
@@ -240,7 +193,6 @@ export type Database = {
           github_url?: string | null;
           id?: string;
           image_paths?: string[];
-          legacy_id?: string | null;
           markdown?: string;
           presentation_name?: string | null;
           presentation_path?: string | null;

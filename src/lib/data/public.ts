@@ -1,9 +1,9 @@
 import "server-only";
 
 import { createPublicClient } from "@/lib/supabase/public-client";
-import type { GalleryItem, Generation, NewsItem, Project, Season } from "@/lib/types";
+import type { Generation, NewsItem, Project, Season } from "@/lib/types";
 
-import { mapGalleryItem, mapMember, mapNews, mapProject, mapSeason } from "./mappers";
+import { mapMember, mapNews, mapProject, mapSeason } from "./mappers";
 
 // Loaders for the public pages. They throw on failure: at build time that
 // fails the deploy, and during ISR revalidation Next.js keeps serving the last
@@ -53,17 +53,6 @@ export async function getProjectArchive(): Promise<ProjectArchive> {
     .sort((a, b) => (seasonRank.get(a.seasonId) ?? 0) - (seasonRank.get(b.seasonId) ?? 0));
 
   return { seasons, projects };
-}
-
-export async function getGalleryItems(): Promise<GalleryItem[]> {
-  const { data, error } = await createPublicClient()
-    .from("gallery_items")
-    .select("*")
-    .order("sort_order")
-    .order("created_at", { ascending: false });
-
-  if (error) fail("갤러리", error.message);
-  return (data ?? []).map(mapGalleryItem);
 }
 
 export async function getGenerations(): Promise<Generation[]> {

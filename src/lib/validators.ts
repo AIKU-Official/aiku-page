@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { UPLOAD_SCOPES } from "@/lib/storage/keys";
+
 // Input schemas for the admin Server Actions. Messages reuse the legacy
 // server's Korean wording. Empty optional fields arrive as "" and become null.
 
@@ -75,18 +77,6 @@ export const projectSchema = z.object({
   removeImages: z.array(z.string().min(1)).max(100),
 });
 
-// Gallery ------------------------------------------------------------------
-
-export const galleryItemSchema = z.object({
-  id: idSchema,
-  isNew: z.boolean(),
-  category: text(40).transform((value) => value || "AIKU"),
-  title: required("갤러리 제목을 입력하세요."),
-  description: text(2000),
-  /** New image (replaces the current one). */
-  image: z.string().min(1).nullable(),
-});
-
 // Generations & members ----------------------------------------------------
 
 export const generationNameSchema = groupName("기수");
@@ -114,7 +104,7 @@ export const memberSchema = z.object({
 // Uploads ------------------------------------------------------------------
 
 export const uploadRequestSchema = z.object({
-  scope: z.enum(["projects", "gallery", "members"]),
+  scope: z.enum(UPLOAD_SCOPES),
   entityId: idSchema,
   files: z
     .array(

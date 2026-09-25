@@ -10,10 +10,10 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
+import { UPLOAD_SCOPES } from "../src/lib/storage/keys";
 import type { Database } from "../src/lib/supabase/database.types";
 
 const BUCKET = "aiku-uploads";
-const SCOPES = ["projects", "gallery", "members"] as const;
 const MIN_AGE_MS = 24 * 60 * 60 * 1000;
 const apply = process.argv.includes("--apply");
 
@@ -42,7 +42,7 @@ async function listAll(prefix: string) {
 /** Every object as { path, createdAt }. Layout: <scope>/<entity id>/<file>. */
 async function listObjects() {
   const objects: { path: string; createdAt: number }[] = [];
-  for (const scope of SCOPES) {
+  for (const scope of UPLOAD_SCOPES) {
     for (const folder of await listAll(scope)) {
       // Folders have no id; files directly under a scope are unexpected but listed too.
       const files = folder.id ? [folder] : await listAll(`${scope}/${folder.name}`);
@@ -59,6 +59,8 @@ async function listObjects() {
   return objects;
 }
 
+const storageKeyPattern = new RegExp(`(?:${UPLOAD_SCOPES.join("|")})/[^\\s)>"']+`, "g");
+
 async function referencedPaths(): Promise<Set<string>> {
   const referenced = new Set<string>();
   const add = (path: string | null | undefined) => path && referenced.add(path);
@@ -71,14 +73,10 @@ async function referencedPaths(): Promise<Set<string>> {
     add(project.presentation_path);
     project.image_paths.forEach(add);
     // Images referenced inside the markdown text (e.g. imported legacy content).
-    for (const match of project.markdown.matchAll(/(?:projects|gallery|members)\/[^\s)>"']+/g)) {
+    for (const match of project.markdown.matchAll(storageKeyPattern)) {
       add(match[0]);
     }
   }
-
-  const gallery = await supabase.from("gallery_items").select("image_path");
-  if (gallery.error) throw new Error(gallery.error.message);
-  gallery.data.forEach((item) => add(item.image_path));
 
   const members = await supabase.from("members").select("photo_path");
   if (members.error) throw new Error(members.error.message);

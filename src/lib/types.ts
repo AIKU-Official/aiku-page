@@ -32,14 +32,6 @@ export type NewsItem = {
   linkLabel: string;
 };
 
-export type GalleryItem = {
-  id: string;
-  category: string;
-  title: string;
-  description: string;
-  imagePath: string | null;
-};
-
 export type Member = {
   id: string;
   generationId: string;

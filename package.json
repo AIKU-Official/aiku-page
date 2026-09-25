@@ -16,7 +16,6 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts && prettier --write src/lib/supabase/database.types.ts --ignore-path=/dev/null",
-    "migrate:legacy": "tsx --env-file=.env.local scripts/migrate-legacy.ts",
     "storage:gc": "tsx --env-file=.env.local scripts/storage-gc.ts",
     "test:e2e": "playwright test"
   },

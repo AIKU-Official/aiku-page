@@ -1,6 +1,6 @@
 # AIKU 공식 홈페이지
 
-고려대학교 딥러닝 학회 AIKU의 공식 홈페이지입니다. 공개 페이지(소개, 활동, 커리큘럼, 프로젝트, 갤러리, Members, 컨택)와 운영진용 관리자 페이지(`/admin`)로 구성됩니다.
+고려대학교 딥러닝 학회 AIKU의 공식 홈페이지입니다. 공개 페이지(소개, 활동, 커리큘럼, 프로젝트, Members, 컨택)와 운영진용 관리자 페이지(`/admin`)로 구성됩니다.
 
 | 영역 | 사용 기술 |
 | --- | --- |
@@ -17,8 +17,7 @@
 pnpm install
 pnpm db:start                 # 로컬 Supabase 실행 (처음엔 이미지 내려받느라 몇 분 걸림)
 cp .env.example .env.local    # 아래 설명대로 값 채우기
-pnpm db:reset                 # 마이그레이션 적용 (DB 초기화)
-pnpm migrate:legacy           # 레거시 content.json 데이터 가져오기 (legacy/ 폴더가 있을 때만)
+pnpm db:reset                 # 마이그레이션과 예시 데이터(supabase/seed.sql) 적용 (DB 초기화)
 pnpm dev                      # http://localhost:3000
 ```
 
@@ -38,16 +37,15 @@ pnpm dev                      # http://localhost:3000
 | `pnpm lint` / `pnpm typecheck` / `pnpm test` | 린트 / 타입 검사 / 단위 테스트 |
 | `pnpm test:e2e` | Playwright 스모크 테스트 (`pnpm build` 후, 로컬 DB와 데이터가 있어야 함) |
 | `pnpm db:start` / `pnpm db:stop` | 로컬 Supabase 켜기 / 끄기 (Studio: http://127.0.0.1:54323) |
-| `pnpm db:reset` | 로컬 DB를 마이그레이션 기준으로 초기화 |
+| `pnpm db:reset` | 로컬 DB를 마이그레이션 기준으로 초기화하고 예시 데이터(`supabase/seed.sql`, 로컬 전용)를 넣기 |
 | `pnpm db:types` | DB 스키마에서 TypeScript 타입 재생성 (`src/lib/supabase/database.types.ts`) |
-| `pnpm migrate:legacy [--dry-run]` | 레거시 사이트 데이터와 파일을 Supabase로 가져오기 (여러 번 실행해도 안전) |
 | `pnpm storage:gc [--apply]` | 어디에서도 쓰지 않는 업로드 파일 찾기 / 지우기 |
 
 ## 폴더 구조
 
 ```text
 src/
-  app/(public)/        공개 페이지 (about, activities, curriculum, projects, gallery, members, contact)
+  app/(public)/        공개 페이지 (about, activities, curriculum, projects, members, contact)
   app/(admin)/         로그인, 관리자 페이지
   app/api/cron/        매일 실행되는 keepalive 작업
   actions/             관리자 Server Actions (저장, 삭제, 순서 변경, 업로드 URL 발급)
@@ -55,14 +53,14 @@ src/
   lib/                 데이터 조회, 인증, 입력 검증, 마크다운 처리, Storage 규칙
   proxy.ts             로그인하지 않은 /admin 접근을 /login으로 보냄
 supabase/migrations/   DB 스키마, 정렬 함수, 권한(RLS), Storage 버킷
-scripts/               레거시 데이터 이관, Storage 정리
+scripts/               Storage 정리
 tests/e2e/             Playwright 스모크 테스트
 public/assets/         로고, 파비콘, 배경 이미지
 ```
 
 ## 콘텐츠 관리
 
-**DB에서 관리하는 콘텐츠:** 소식, 시즌과 프로젝트, 갤러리, 기수와 멤버. 모두 `/login`에서 관리자 계정으로 로그인한 뒤 `/admin`에서 관리합니다.
+**DB에서 관리하는 콘텐츠:** 소식, 시즌과 프로젝트, 기수와 멤버. 모두 `/login`에서 관리자 계정으로 로그인한 뒤 `/admin`에서 관리합니다.
 
 - **새 분기 프로젝트:** 시즌을 먼저 추가한 다음 그 시즌에 프로젝트를 올립니다. 프로젝트가 있는 시즌과 멤버가 있는 기수는 삭제할 수 없습니다.
 - **순서 변경:** 카드를 드래그하거나 ⋮⋮ 손잡이에 포커스한 뒤 스페이스와 방향키로 옮깁니다. 바꾼 순서는 공개 페이지에 그대로 반영됩니다.
@@ -98,13 +96,6 @@ public/assets/         로고, 파비콘, 배경 이미지
    ```
 
 3. Project Settings → API Keys에서 Project URL, publishable key, secret key를 확인합니다. **secret key는 절대 코드나 브라우저에 넣지 않습니다.**
-4. 레거시 데이터를 운영 DB로 옮깁니다. 운영용 값을 담은 `.env.prod`를 만들어 두고 실행합니다.
-
-   ```bash
-   pnpm exec tsx --env-file=.env.prod scripts/migrate-legacy.ts --dry-run
-   pnpm exec tsx --env-file=.env.prod scripts/migrate-legacy.ts
-   ```
-
 ### 2. Vercel
 
 1. 공식 계정으로 Vercel(Hobby)에 가입하고 GitHub `AIKU-Official/aiku-page` 레포를 Import 합니다.

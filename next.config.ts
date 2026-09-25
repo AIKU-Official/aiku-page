@@ -2,18 +2,9 @@ import type { NextConfig } from "next";
 
 // Old static-site URLs keep working; browsers carry the #hash across redirects,
 // so deep links like /activities.html#activity-seminar land on the same anchor.
-const legacyPages = [
-  "about",
-  "activities",
-  "curriculum",
-  "projects",
-  "gallery",
-  "contact",
-  "login",
-  "admin",
-];
+const legacyPages = ["about", "activities", "curriculum", "projects", "contact", "login", "admin"];
 
-// Uploaded images (gallery, member photos) are served from Supabase Storage.
+// Uploaded images (project images, member photos) are served from Supabase Storage.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL)
   : null;

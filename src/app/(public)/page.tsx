@@ -1,3 +1,5 @@
+import clsx from "clsx";
+
 import { HomeHero } from "@/components/home/HomeHero";
 import { LinkPanel } from "@/components/home/LinkPanel";
 import { NewsList } from "@/components/home/NewsList";
@@ -27,12 +29,6 @@ const homeLinks = [
     description: "문제의식, 접근 방식, 발표자료, GitHub 링크를 함께 살펴봅니다.",
   },
   {
-    href: "/gallery",
-    label: "Gallery",
-    title: "AIKU 활동 갤러리",
-    description: "컨퍼런스, 프로젝트, 네트워킹의 순간을 모아둡니다.",
-  },
-  {
     href: "/members",
     label: "Members",
     title: "기수별 학회원 네트워크",
@@ -54,9 +50,20 @@ export default async function HomePage() {
       <HomeHero />
 
       <Section>
-        <div className="site-container grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-3">
-          {homeLinks.map((link) => (
-            <LinkPanel key={link.href} {...link} />
+        {/* Five panels: three across, then two wider ones on desktop; on
+            tablets the last panel spans both columns. */}
+        <div className="site-container grid grid-cols-6 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-3">
+          {homeLinks.map((link, index) => (
+            <LinkPanel
+              key={link.href}
+              {...link}
+              className={clsx(
+                index < 3 ? "col-span-2" : "col-span-3",
+                index === homeLinks.length - 1
+                  ? "max-lg:col-span-2 max-sm:col-span-1"
+                  : "max-lg:col-span-1",
+              )}
+            />
           ))}
         </div>
       </Section>

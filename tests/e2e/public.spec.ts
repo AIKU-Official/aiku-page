@@ -6,7 +6,6 @@ const pages = [
   { path: "/activities", heading: "AIKU의 학술 활동과 교류 행사" },
   { path: "/curriculum", heading: "AIKU 커리큘럼" },
   { path: "/projects", heading: "분기별 우수 프로젝트" },
-  { path: "/gallery", heading: "AIKU의 활동을 기록하는 공간" },
   { path: "/members", heading: "AIKU Members" },
   { path: "/contact", heading: "AIKU 컨택" },
 ];

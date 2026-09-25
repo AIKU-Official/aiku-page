@@ -22,7 +22,7 @@ export default async function LoginPage() {
       <PageHero
         eyebrow="Admin"
         title="관리자 로그인"
-        lead="프로젝트와 갤러리 콘텐츠를 업로드하고 수정하려면 관리자 계정으로 로그인하세요."
+        lead="소식, 프로젝트, 멤버 콘텐츠를 등록하고 수정하려면 관리자 계정으로 로그인하세요."
       />
       <Section>
         <div className="site-container">

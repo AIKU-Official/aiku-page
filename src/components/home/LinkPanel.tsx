@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import Link from "next/link";
 
 import { ArrowRightIcon } from "@/components/ui/icons";
@@ -7,13 +8,18 @@ type LinkPanelProps = {
   label: string;
   title: string;
   description: string;
+  /** Grid placement only; the panel sets its own look. */
+  className?: string;
 };
 
-export function LinkPanel({ href, label, title, description }: LinkPanelProps) {
+export function LinkPanel({ href, label, title, description, className }: LinkPanelProps) {
   return (
     <Link
       href={href}
-      className="group flex card-interactive reveal flex-col gap-3 card p-7 max-sm:gap-1.5 max-sm:p-5"
+      className={clsx(
+        "group flex card-interactive reveal flex-col gap-3 card p-7 max-sm:gap-1.5 max-sm:p-5",
+        className,
+      )}
     >
       <span className="flex items-center justify-between">
         <span className="text-eyebrow text-green-700 uppercase">{label}</span>

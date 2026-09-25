@@ -32,6 +32,6 @@ describe("isObjectKeyOf", () => {
     expect(isObjectKeyOf("projects/abc/1-x-deck.pptx", "projects", "abc")).toBe(true);
     expect(isObjectKeyOf("projects/other/1-x-deck.pptx", "projects", "abc")).toBe(false);
     expect(isObjectKeyOf("projects/abc/../other/x.png", "projects", "abc")).toBe(false);
-    expect(isObjectKeyOf("gallery/abc/x.png", "projects", "abc")).toBe(false);
+    expect(isObjectKeyOf("members/abc/x.png", "projects", "abc")).toBe(false);
   });
 });

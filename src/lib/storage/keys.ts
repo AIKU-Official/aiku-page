@@ -1,5 +1,5 @@
 // Storage object naming and file-type rules shared by admin uploads and the
-// legacy import script. Must stay free of server-only imports.
+// maintenance scripts. Must stay free of server-only imports.
 
 export const IMAGE_EXTENSIONS = [".gif", ".jpeg", ".jpg", ".png", ".webp"] as const;
 export const PRESENTATION_EXTENSIONS = [".pdf", ".ppt", ".pptx"] as const;
@@ -18,7 +18,10 @@ export const CONTENT_TYPES: Record<string, string> = {
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export const MAX_PRESENTATION_BYTES = 50 * 1024 * 1024;
 
-export type UploadScope = "projects" | "gallery" | "members";
+/** Top-level folders of the bucket, one per kind of content with uploads. */
+export const UPLOAD_SCOPES = ["projects", "members"] as const;
+
+export type UploadScope = (typeof UPLOAD_SCOPES)[number];
 
 /** Lower-cased extension including the dot (".pptx"), or "" when absent. */
 export function fileExtension(fileName: string): string {

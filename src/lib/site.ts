@@ -20,7 +20,6 @@ export const navItems: NavItem[] = [
   { href: "/activities", label: "Activity" },
   { href: "/curriculum", label: "Curriculum" },
   { href: "/projects", label: "Projects" },
-  { href: "/gallery", label: "Gallery" },
   { href: "/members", label: "Members" },
   { href: "/contact", label: "Contact" },
   { href: "/login", label: "Login", prefetch: false, utility: true, alsoActiveOn: ["/admin"] },

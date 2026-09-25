@@ -1,9 +1,10 @@
 import { defaultUrlTransform } from "react-markdown";
 
+import { UPLOAD_SCOPES } from "@/lib/storage/keys";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 
 /** Paths of objects uploaded through the admin (Storage keys). */
-const storagePathPattern = /^(projects|gallery|members)\//;
+const storagePathPattern = new RegExp(`^(${UPLOAD_SCOPES.join("|")})/`);
 
 export const isExternalUrl = (url: string) =>
   /^(https?:)?\/\//.test(url) || url.startsWith("mailto:");

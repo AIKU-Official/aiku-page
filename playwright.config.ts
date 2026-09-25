@@ -1,8 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Smoke tests against a running production build with the local Supabase
-// stack and imported legacy data:
-//   pnpm db:start && pnpm migrate:legacy && pnpm build && pnpm test:e2e
+// stack and its sample data (supabase/seed.sql):
+//   pnpm db:start && pnpm db:reset && pnpm build && pnpm test:e2e
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({

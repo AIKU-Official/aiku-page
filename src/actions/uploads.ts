@@ -15,6 +15,7 @@ import {
   MAX_IMAGE_BYTES,
   MAX_PRESENTATION_BYTES,
   PRESENTATION_EXTENSIONS,
+  UPLOAD_SCOPES,
   type UploadScope,
 } from "@/lib/storage/keys";
 import { UPLOAD_BUCKET } from "@/lib/storage/public-url";
@@ -69,7 +70,7 @@ export async function requestUploadUrls(input: unknown): Promise<ActionResult<Si
 }
 
 const discardSchema = z.object({
-  scope: z.enum(["projects", "gallery", "members"]),
+  scope: z.enum(UPLOAD_SCOPES),
   entityId: idSchema,
   paths: z.array(z.string()).max(30),
 });
