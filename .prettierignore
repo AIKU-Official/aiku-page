@@ -1,0 +1,11 @@
+legacy/
+pnpm-lock.yaml
+.next/
+node_modules/
+PLAN.md
+src/lib/supabase/database.types.ts
+README.md
+.github/
+supabase/
+test-results/
+playwright-report/

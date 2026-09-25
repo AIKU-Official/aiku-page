@@ -1,0 +1,1 @@
+-- Local seed data. Real content is imported with `pnpm migrate:legacy`.

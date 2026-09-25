@@ -1,0 +1,40 @@
+# planning docs and AI agent notes (local only)
+PLAN.md
+AGENTS.md
+CLAUDE.md
+
+# legacy beta site (local reference only; content migrated to Supabase)
+legacy/
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# build / test output
+build/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# env
+.env*
+!.env.example
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+
+# vercel
+.vercel/
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+*.pem
