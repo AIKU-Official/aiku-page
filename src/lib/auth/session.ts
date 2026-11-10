@@ -22,11 +22,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   return adminId ? { adminId } : null;
 }
 
-/** For pages: sends visitors without a valid session to /login. */
+/** For pages: sends visitors without a valid session to /login/admin. */
 export async function requireAdmin(): Promise<AdminSession> {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/login");
+    redirect("/login/admin");
   }
   return session;
 }

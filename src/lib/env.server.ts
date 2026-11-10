@@ -12,6 +12,11 @@ const serverEnvSchema = z.object({
     .min(isProduction ? 12 : 1, "ADMIN_PASSWORD는 운영 환경에서 12자 이상이어야 합니다."),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET은 32자 이상이어야 합니다."),
   CRON_SECRET: z.string().optional(),
+  // Only member sign-up needs it, so its absence must not break the admin.
+  MEMBER_VERIFICATION_SECRET: z
+    .string()
+    .min(32, "MEMBER_VERIFICATION_SECRET은 32자 이상이어야 합니다.")
+    .optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

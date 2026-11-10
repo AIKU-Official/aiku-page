@@ -56,6 +56,24 @@
   --color-surface: #ffffff;
   --color-surface-soft: #f6f6f6; /* +96% white */
 
+  /*
+   * Pastel tag tones for member grades and officer titles. Each pair is a
+   * tinted background with a darker text of the same hue (at least 5:1).
+   */
+  --color-sprout-100: #ecf7d0;
+  --color-sprout-500: #8fc31f;
+  --color-sprout-800: #46650f;
+  --color-sky-100: #e4f1fc;
+  --color-sky-800: #1c5a94;
+  --color-sand-100: #f3efe6;
+  --color-sand-800: #6a5a37;
+  --color-amber-100: #fdf1cf;
+  --color-amber-800: #7d5200;
+  --color-silver-100: #e9edf2;
+  --color-silver-800: #4a5564;
+  --color-violet-100: #eee9fd;
+  --color-violet-800: #5a3ea6;
+
   /* Admin error/delete states only (not part of the brand palette). */
   --color-danger: #9d2a2a;
   --color-danger-soft: #fff6f4;

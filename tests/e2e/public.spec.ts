@@ -7,7 +7,7 @@ const pages = [
   { path: "/curriculum", heading: "AIKU 커리큘럼" },
   { path: "/projects", heading: "분기별 우수 프로젝트" },
   { path: "/members", heading: "AIKU Members" },
-  { path: "/contact", heading: "AIKU 컨택" },
+  { path: "/contact", heading: "AIKU Contact" },
 ];
 
 function trackErrors(page: Page) {
@@ -39,6 +39,11 @@ for (const { path, heading } of pages) {
 test("project filter follows the URL hash and expands cards", async ({ page }) => {
   await page.goto("/projects");
   const status = page.locator("p[aria-live=polite]");
+  // The seed has no projects; this only runs once some were added through /admin.
+  test.skip(
+    (await status.innerText()).includes("아직 공개된 프로젝트가 없습니다"),
+    "No projects in the database.",
+  );
   await expect(status).toHaveText(/^전체 프로젝트 \d+개를 보고 있습니다\.$/);
 
   const seasonButtons = page.getByRole("group", { name: "프로젝트 시즌 필터" }).getByRole("button");

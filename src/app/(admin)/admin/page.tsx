@@ -4,10 +4,12 @@ import { LogoutButton } from "@/components/admin/LogoutButton";
 import { MembersPanel } from "@/components/admin/MembersPanel";
 import { NewsPanel } from "@/components/admin/NewsPanel";
 import { ProjectPanel } from "@/components/admin/ProjectPanel";
+import { SignupRequestsPanel } from "@/components/admin/SignupRequestsPanel";
 import { PageHero } from "@/components/layout/PageHero";
 import { Section } from "@/components/layout/Section";
 import { requireAdmin } from "@/lib/auth/session";
 import { getGenerations, getNews, getProjectArchive } from "@/lib/data/public";
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export const metadata: Metadata = {
   title: "관리자",
@@ -17,11 +19,23 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   await requireAdmin();
 
-  const [news, { seasons, projects }, generations] = await Promise.all([
+  const [news, { seasons, projects }, generations, signups] = await Promise.all([
     getNews(),
     getProjectArchive(),
     getGenerations(),
+    createAdminClient()
+      .from("member_signup_requests")
+      .select("user_id, email, name, generation_name, attempts")
+      .order("created_at"),
   ]);
+  if (signups.error) throw new Error(`가입 요청을 불러오지 못했습니다: ${signups.error.message}`);
+  const signupRequests = signups.data.map((row) => ({
+    userId: row.user_id,
+    email: row.email,
+    name: row.name,
+    generationName: row.generation_name,
+    attempts: row.attempts,
+  }));
 
   return (
     <>
@@ -36,6 +50,7 @@ export default async function AdminPage() {
           <NewsPanel news={news} />
           <ProjectPanel seasons={seasons} projects={projects} />
           <MembersPanel generations={generations} />
+          <SignupRequestsPanel requests={signupRequests} generations={generations} />
         </div>
       </Section>
     </>

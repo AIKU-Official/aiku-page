@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { useMemberAccount } from "@/lib/auth/member";
 import { navItems, type NavItem } from "@/lib/site";
 
 const subscribeToScroll = (onChange: () => void) => {
@@ -21,6 +22,8 @@ const toggleBar =
 
 export function SiteHeader() {
   const pathname = usePathname();
+  // Signed-in members see their name where "Login" would be.
+  const account = useMemberAccount();
   const isScrolled = useSyncExternalStore(
     subscribeToScroll,
     () => window.scrollY > 8,
@@ -68,7 +71,11 @@ export function SiteHeader() {
         item.utility ? "text-small text-muted" : "text-[0.9375rem] text-body",
       )}
     >
-      {item.label}
+      {item.utility && account ? (
+        <span className="max-w-[9rem] truncate">{account.name}</span>
+      ) : (
+        item.label
+      )}
     </Link>
   );
 
@@ -77,10 +84,9 @@ export function SiteHeader() {
       className={clsx(
         // The blur sits on a pseudo-element: backdrop-filter on the header itself
         // would become the containing block of the fixed mobile menu and clip it.
-        "sticky top-0 z-20 flex min-h-(--header-height) items-center justify-between gap-6 border-b header-gutter transition-[border-color,box-shadow] before:absolute before:inset-0 before:-z-10 before:bg-white/85 before:backdrop-blur-md",
-        isScrolled
-          ? "border-soft-line shadow-[0_6px_24px_rgb(29_29_29/0.06)]"
-          : "border-transparent",
+        // The bottom line matches the footer's top line, so both panels meet the page the same way.
+        "sticky top-0 z-20 flex min-h-(--header-height) items-center justify-between gap-6 border-b border-soft-line header-gutter transition-shadow before:absolute before:inset-0 before:-z-10 before:bg-white/85 before:backdrop-blur-md",
+        isScrolled && "shadow-[0_6px_24px_rgb(29_29_29/0.06)]",
       )}
     >
       <Link href="/" className="inline-flex shrink-0 items-center" aria-label="AIKU 홈으로 이동">

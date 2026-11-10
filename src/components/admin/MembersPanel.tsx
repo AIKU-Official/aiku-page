@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { displayFileName } from "@/lib/admin/files";
 import { cleanUpUploads, pickedFiles, uploadFiles } from "@/lib/admin/upload";
 import { storagePublicUrl } from "@/lib/storage/public-url";
-import type { Generation, Member } from "@/lib/types";
+import { MEMBER_GRADE_LABELS, MEMBER_GRADES, type Generation, type Member } from "@/lib/types";
 
 import { AdminItem, EmptyAdminText, ItemButton, ItemText, ListHead } from "./AdminList";
 import { AdminPanel } from "./AdminPanel";
@@ -100,6 +100,10 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
         isNew: !editing,
         generationId: form.get("generationId") ?? "",
         name: form.get("name"),
+        department: form.get("department"),
+        grade: form.get("grade"),
+        gradePinned: form.get("gradePinned") === "on",
+        position: form.get("position"),
         summary: form.get("summary"),
         email: form.get("email"),
         githubUrl: form.get("githubUrl"),
@@ -181,6 +185,42 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
           </SelectField>
           <TextField label="멤버 이름" name="name" required defaultValue={editing?.name} />
         </FormGrid>
+        <FormGrid>
+          <SelectField label="등급" name="grade" required defaultValue={editing?.grade ?? "junior"}>
+            {MEMBER_GRADES.map((grade) => (
+              <option key={grade} value={grade}>
+                {MEMBER_GRADE_LABELS[grade]}
+              </option>
+            ))}
+          </SelectField>
+          <TextField
+            label="학과"
+            name="department"
+            placeholder="예: 컴퓨터학과"
+            defaultValue={editing?.department}
+          />
+        </FormGrid>
+        <label className="flex items-start gap-2.5 text-small text-body">
+          <input
+            type="checkbox"
+            name="gradePinned"
+            defaultChecked={editing?.gradePinned}
+            className="mt-1 size-4 accent-green-600"
+          />
+          <span>
+            등급 고정 (특이사항)
+            <span className="block text-muted">
+              최신 기수보다 두 기수 이상 앞선 멤버는 저장할 때 자동으로 OB가 됩니다. 예외로 위에서
+              고른 등급을 유지하려면 체크하세요.
+            </span>
+          </span>
+        </label>
+        <TextField
+          label="직책"
+          name="position"
+          placeholder="예: 8기 회장 (없으면 비워두세요)"
+          defaultValue={editing?.position}
+        />
         <TextField label="프로필 사진" name="photo" type="file" accept="image/*" />
         <TextField
           label="한 줄 소개"
@@ -359,6 +399,9 @@ function MemberSummary({ member, index }: { member: Member; index: number }) {
         label={index + 1}
         title={member.name}
         details={[
+          [MEMBER_GRADE_LABELS[member.grade], member.department, member.position]
+            .filter(Boolean)
+            .join(" · "),
           member.summary || "한 줄 소개가 없습니다.",
           links.join(" · ") || "연결 정보가 없습니다.",
         ]}

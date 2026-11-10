@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { UPLOAD_SCOPES } from "@/lib/storage/keys";
+import { MEMBER_GRADES } from "@/lib/types";
 
 // Input schemas for the admin Server Actions. Messages reuse the legacy
 // server's Korean wording. Empty optional fields arrive as "" and become null.
@@ -86,6 +87,10 @@ export const memberSchema = z.object({
   isNew: z.boolean(),
   generationId: z.uuid("기수를 먼저 추가하고 선택하세요."),
   name: required("이름을 입력하세요.", 60),
+  department: text(60),
+  grade: z.enum(MEMBER_GRADES, "등급을 선택하세요."),
+  gradePinned: z.boolean(),
+  position: text(60),
   summary: text(200),
   email: text(200)
     .refine(
@@ -100,6 +105,21 @@ export const memberSchema = z.object({
   photo: z.string().min(1).nullable(),
   removePhoto: z.boolean(),
 });
+
+// Member sign-up ------------------------------------------------------------
+
+export const memberSignupSchema = z.object({
+  /** Supabase access token of the signed-in visitor. */
+  accessToken: z.string().min(1, "로그인이 필요합니다."),
+  name: required("이름을 입력하세요.", 60),
+  generation: required("기수를 선택하세요.", 40),
+  studentId: z
+    .string()
+    .trim()
+    .regex(/^\d{10}$/, "학번 10자리를 숫자로 입력하세요."),
+});
+
+export const signupDecisionSchema = z.object({ userId: idSchema, memberId: idSchema });
 
 // Uploads ------------------------------------------------------------------
 

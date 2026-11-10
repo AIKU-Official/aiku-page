@@ -65,6 +65,10 @@ export async function saveMember(input: unknown): Promise<ActionResult> {
     const row = {
       generation_id: data.generationId,
       name: data.name,
+      department: data.department,
+      grade: data.grade,
+      grade_pinned: data.gradePinned,
+      position: data.position,
       summary: data.summary,
       email: data.email,
       github_url: data.githubUrl,

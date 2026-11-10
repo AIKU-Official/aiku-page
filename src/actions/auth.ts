@@ -50,5 +50,5 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
 
 export async function logout(): Promise<void> {
   await endAdminSession();
-  redirect("/login");
+  redirect("/login/admin");
 }

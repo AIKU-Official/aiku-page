@@ -77,6 +77,10 @@ describe("memberSchema", () => {
       isNew: true,
       generationId: "6e7700a5-5006-4a9c-8206-c91051af0010",
       name: "홍길동",
+      department: "",
+      grade: "junior",
+      gradePinned: false,
+      position: "",
       summary: "",
       email: "not-an-email",
       githubUrl: "",
@@ -87,5 +91,26 @@ describe("memberSchema", () => {
     };
     expect(firstMessage(memberSchema.safeParse(base))).toBe("메일주소 형식이 올바르지 않습니다.");
     expect(memberSchema.parse({ ...base, email: "a@b.co" }).email).toBe("a@b.co");
+  });
+
+  it("accepts only known grades", () => {
+    const result = memberSchema.safeParse({
+      id: "8d5f5842-c0ab-4c63-b31a-361b043bc39a",
+      isNew: true,
+      generationId: "6e7700a5-5006-4a9c-8206-c91051af0010",
+      name: "홍길동",
+      department: " 컴퓨터학과 ",
+      grade: "honorary",
+      gradePinned: false,
+      position: "",
+      summary: "",
+      email: "",
+      githubUrl: "",
+      linkedinUrl: "",
+      websiteUrl: "",
+      photo: null,
+      removePhoto: false,
+    });
+    expect(firstMessage(result)).toBe("등급을 선택하세요.");
   });
 });

@@ -70,16 +70,105 @@ export type Database = {
         };
         Relationships: [];
       };
+      member_accounts: {
+        Row: {
+          created_at: string;
+          member_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          member_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          member_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_accounts_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      member_signup_requests: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          email: string | null;
+          generation_name: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          email?: string | null;
+          generation_name: string;
+          name: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          email?: string | null;
+          generation_name?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      member_student_ids: {
+        Row: {
+          created_at: string;
+          digest: string;
+          member_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          digest: string;
+          member_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          digest?: string;
+          member_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_student_ids_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: true;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       members: {
         Row: {
           created_at: string;
+          department: string;
           email: string | null;
           generation_id: string;
           github_url: string | null;
+          grade: string;
+          grade_pinned: boolean;
           id: string;
           linkedin_url: string | null;
           name: string;
           photo_path: string | null;
+          position: string;
           sort_order: number;
           summary: string;
           updated_at: string;
@@ -87,13 +176,17 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          department?: string;
           email?: string | null;
           generation_id: string;
           github_url?: string | null;
+          grade?: string;
+          grade_pinned?: boolean;
           id?: string;
           linkedin_url?: string | null;
           name: string;
           photo_path?: string | null;
+          position?: string;
           sort_order?: number;
           summary?: string;
           updated_at?: string;
@@ -101,13 +194,17 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          department?: string;
           email?: string | null;
           generation_id?: string;
           github_url?: string | null;
+          grade?: string;
+          grade_pinned?: boolean;
           id?: string;
           linkedin_url?: string | null;
           name?: string;
           photo_path?: string | null;
+          position?: string;
           sort_order?: number;
           summary?: string;
           updated_at?: string;
@@ -241,6 +338,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      generation_number: { Args: { p_name: string }; Returns: number };
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string };
         Returns: undefined;

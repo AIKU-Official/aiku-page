@@ -32,10 +32,29 @@ export type NewsItem = {
   linkLabel: string;
 };
 
+export const MEMBER_GRADES = ["junior", "senior", "ob"] as const;
+export type MemberGrade = (typeof MEMBER_GRADES)[number];
+
+export const MEMBER_GRADE_LABELS: Record<MemberGrade, string> = {
+  junior: "주니어",
+  senior: "시니어",
+  ob: "OB",
+};
+
 export type Member = {
   id: string;
   generationId: string;
   name: string;
+  /** e.g. "컴퓨터학과"; empty when unknown. */
+  department: string;
+  grade: MemberGrade;
+  /**
+   * Exempt from the automatic OB rule (generations two or more behind the
+   * newest become OB in the database).
+   */
+  gradePinned: boolean;
+  /** Officer title such as "8기 회장"; empty for members without one. */
+  position: string;
   summary: string;
   email: string | null;
   githubUrl: string | null;

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/token";
 
 /**
- * Sends visitors without a valid session from /admin to /login. This is only
+ * Sends visitors without a valid session from /admin to /login/admin. This is only
  * a convenience redirect: the admin page and every admin Server Action check
  * the session themselves.
  */
@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
   );
 
   if (!adminId) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login/admin", request.url));
   }
   return NextResponse.next();
 }

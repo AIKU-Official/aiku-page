@@ -3,6 +3,9 @@ PLAN.md
 AGENTS.md
 CLAUDE.md
 
+# member roster source files (personal data; never commit)
+data/
+
 # legacy beta site (local reference only; content migrated to Supabase)
 legacy/
 

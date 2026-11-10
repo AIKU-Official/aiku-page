@@ -1,6 +1,6 @@
 # AIKU 공식 홈페이지
 
-고려대학교 딥러닝 학회 AIKU의 공식 홈페이지입니다. 공개 페이지(소개, 활동, 커리큘럼, 프로젝트, Members, 컨택)와 운영진용 관리자 페이지(`/admin`)로 구성됩니다.
+고려대학교 딥러닝 학회 AIKU의 공식 홈페이지입니다. 공개 페이지(소개, 활동, 커리큘럼, 프로젝트, Members, Contact)와 운영진용 관리자 페이지(`/admin`)로 구성됩니다.
 
 | 영역 | 사용 기술 |
 | --- | --- |
@@ -51,7 +51,7 @@ src/
   actions/             관리자 Server Actions (저장, 삭제, 순서 변경, 업로드 URL 발급)
   components/          화면 컴포넌트 (layout, home, projects, markdown, admin 등)
   lib/                 데이터 조회, 인증, 입력 검증, 마크다운 처리, Storage 규칙
-  proxy.ts             로그인하지 않은 /admin 접근을 /login으로 보냄
+  proxy.ts             로그인하지 않은 /admin 접근을 /login/admin으로 보냄
 supabase/migrations/   DB 스키마, 정렬 함수, 권한(RLS), Storage 버킷
 scripts/               Storage 정리
 tests/e2e/             Playwright 스모크 테스트
@@ -60,7 +60,7 @@ public/assets/         로고, 파비콘, 배경 이미지
 
 ## 콘텐츠 관리
 
-**DB에서 관리하는 콘텐츠:** 소식, 시즌과 프로젝트, 기수와 멤버. 모두 `/login`에서 관리자 계정으로 로그인한 뒤 `/admin`에서 관리합니다.
+**DB에서 관리하는 콘텐츠:** 소식, 시즌과 프로젝트, 기수와 멤버. 모두 `/login/admin`에서 관리자 계정으로 로그인한 뒤 `/admin`에서 관리합니다.
 
 - **새 분기 프로젝트:** 시즌을 먼저 추가한 다음 그 시즌에 프로젝트를 올립니다. 프로젝트가 있는 시즌과 멤버가 있는 기수는 삭제할 수 없습니다.
 - **순서 변경:** 카드를 드래그하거나 ⋮⋮ 손잡이에 포커스한 뒤 스페이스와 방향키로 옮깁니다. 바꾼 순서는 공개 페이지에 그대로 반영됩니다.
@@ -78,7 +78,7 @@ public/assets/         로고, 파비콘, 배경 이미지
 - 표는 모바일에서 가로 스크롤됩니다. HTML 태그는 표시되지 않습니다.
 - "프로젝트 이미지"로 올린 이미지는 설명 맨 아래에 순서대로 붙습니다.
 
-**코드에서 관리하는 문구:** 소개, 활동, 커리큘럼, 컨택 페이지의 문구와 모집 안내입니다. `src/app/(public)/<페이지>/page.tsx`를 수정합니다. 공식 채널 링크와 메뉴는 `src/lib/site.ts`에 있습니다.
+**코드에서 관리하는 문구:** 소개, 활동, 커리큘럼, Contact 페이지의 문구와 모집 안내입니다. `src/app/(public)/<페이지>/page.tsx`를 수정합니다. 공식 채널 링크와 메뉴는 `src/lib/site.ts`에 있습니다.
 
 ## 배포
 
@@ -96,6 +96,18 @@ public/assets/         로고, 파비콘, 배경 이미지
    ```
 
 3. Project Settings → API Keys에서 Project URL, publishable key, secret key를 확인합니다. **secret key는 절대 코드나 브라우저에 넣지 않습니다.**
+### 회원 로그인 (Google, GitHub)
+
+`/login`의 회원 로그인은 Supabase Auth의 OAuth를 씁니다. 두 제공자를 Supabase에 등록해야 버튼이 동작합니다.
+
+1. **Google:** Google Cloud Console → APIs & Services → Credentials에서 OAuth 클라이언트 ID(웹 애플리케이션)를 만듭니다. 승인된 리디렉션 URI에 `https://<프로젝트 ref>.supabase.co/auth/v1/callback`을 넣습니다.
+2. **GitHub:** AIKU-Official org의 Settings → Developer settings → OAuth Apps에서 앱을 만들고, Authorization callback URL에 같은 주소를 넣습니다.
+3. **Supabase:** 대시보드 Authentication → Providers에서 Google과 GitHub를 켜고 각 Client ID와 Secret을 넣습니다. Authentication → URL Configuration에서 Site URL을 실제 도메인으로 바꾸고, Redirect URLs에 `https://<도메인>/login/callback`을 추가합니다.
+
+로컬에서 시험하려면 `supabase/config.toml`의 `[auth.external.google]`, `[auth.external.github]`을 `enabled = true`로 바꾸고 `SUPABASE_AUTH_EXTERNAL_*` 환경변수 네 개를 설정한 뒤 `pnpm db:stop && pnpm db:start`를 실행합니다. 이때 리디렉션 URI는 `http://127.0.0.1:54321/auth/v1/callback`입니다.
+
+회원 로그인은 방문자가 누구인지 확인할 뿐이고 콘텐츠 수정 권한은 주지 않습니다. 관리자 로그인(`/login/admin`)과는 별개입니다.
+
 ### 2. Vercel
 
 1. 공식 계정으로 Vercel(Hobby)에 가입하고 GitHub `AIKU-Official/aiku-page` 레포를 Import 합니다.

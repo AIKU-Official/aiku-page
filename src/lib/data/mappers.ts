@@ -1,5 +1,12 @@
 import type { Tables } from "@/lib/supabase/database.types";
-import type { Member, NewsItem, Project, Season } from "@/lib/types";
+import {
+  MEMBER_GRADES,
+  type Member,
+  type MemberGrade,
+  type NewsItem,
+  type Project,
+  type Season,
+} from "@/lib/types";
 
 export const mapSeason = (row: Pick<Tables<"seasons">, "id" | "name">): Season => ({
   id: row.id,
@@ -32,6 +39,11 @@ export const mapMember = (row: Tables<"members">): Member => ({
   id: row.id,
   generationId: row.generation_id,
   name: row.name,
+  department: row.department,
+  // The column has a check constraint; the fallback only guards the type.
+  grade: MEMBER_GRADES.includes(row.grade as MemberGrade) ? (row.grade as MemberGrade) : "ob",
+  gradePinned: row.grade_pinned,
+  position: row.position,
   summary: row.summary,
   email: row.email,
   githubUrl: row.github_url,
