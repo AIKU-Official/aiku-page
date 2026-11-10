@@ -59,7 +59,8 @@ export function ProjectArchive({
 
   return (
     <>
-      <Section soft>
+      {/* White like the first section of every other page; the list below continues it. */}
+      <Section className="pb-0 max-lg:pb-0 max-sm:pb-0">
         <div className="site-container">
           <SectionHead eyebrow="Filter" title="분기별로 살펴보기">
             <p>

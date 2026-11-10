@@ -7,8 +7,8 @@ import { ArrowUpRightIcon } from "@/components/ui/icons";
 import { contactChannels, instagramUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "컨택",
-  description: "AIKU 모집 안내와 공식 컨택 채널을 확인하세요.",
+  title: "Contact",
+  description: "AIKU 모집 안내와 공식 채널을 확인하세요.",
 };
 
 export default function ContactPage() {
@@ -16,7 +16,7 @@ export default function ContactPage() {
     <>
       <PageHero
         eyebrow="Contact"
-        title="AIKU 컨택"
+        title="AIKU Contact"
         lead="모집 안내, 공식 채널, 문의 메일을 한곳에서 확인할 수 있습니다."
       />
 
@@ -28,7 +28,7 @@ export default function ContactPage() {
                 <span aria-hidden="true" className="size-1.5 rounded-full bg-green-500" />
                 Recruitment
               </span>
-              <h2 className="mt-4">현재 정규 모집 기간은 아닙니다.</h2>
+              <h2 className="mt-4">현재 정규 모집 기간이 아닙니다.</h2>
               <p className="mt-3 max-w-[640px] text-muted">
                 다음 모집 공지가 확정되면 지원 기간, 대상, 지원 링크, 선발 절차를 이곳과 공식 채널에
                 업데이트합니다.

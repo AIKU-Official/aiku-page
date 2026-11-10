@@ -42,7 +42,7 @@ export function HomeHero() {
             <ArrowRightIcon className="size-4" />
           </ButtonLink>
           <ButtonLink href="/contact" variant="light">
-            컨택
+            Contact
           </ButtonLink>
         </div>
       </div>
