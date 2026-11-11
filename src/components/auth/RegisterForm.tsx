@@ -57,6 +57,9 @@ export function RegisterForm({ generations }: { generations: string[] }) {
     );
   }
 
+  const providerName =
+    account.provider === "google" ? "Google" : account.provider === "github" ? "GitHub" : null;
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -88,8 +91,9 @@ export function RegisterForm({ generations }: { generations: string[] }) {
       <div>
         <h2 className="text-subheading">회원 등록</h2>
         <p className="mt-1 text-small text-muted">
-          처음 로그인하셨습니다. AIKU 회원 명단과 대조할 정보를 입력해주세요. 학번은 본인 확인에만
-          쓰이고 공개되지 않습니다.
+          {providerName ? `${providerName} 계정으로는` : "이 계정으로는"} 처음 로그인하셨습니다.
+          로그인 방법마다 한 번씩 본인 확인이 필요합니다. 확인되면 이미 쓰던 계정과 같은 회원으로
+          연결되고, 프로필도 그대로 보입니다. 학번은 본인 확인에만 쓰이고 공개되지 않습니다.
         </p>
       </div>
       <TextField label="이름" name="name" autoComplete="name" required maxLength={60} />

@@ -20,7 +20,7 @@ export default async function RegisterPage() {
       <PageHero
         eyebrow="Sign up"
         title="회원 등록"
-        lead="로그인한 계정을 AIKU 회원 명단과 연결합니다. 한 번만 하면 됩니다."
+        lead="로그인한 계정을 AIKU 회원 명단과 연결합니다. 로그인 방법마다 한 번만 하면 됩니다."
       />
       <Section>
         <div className="site-container grid justify-items-center">
