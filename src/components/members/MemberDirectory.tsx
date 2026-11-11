@@ -31,7 +31,7 @@ const chipClassName = (active: boolean) =>
   clsx(
     "inline-flex h-10 items-center justify-center rounded-full border px-4 text-small font-semibold transition-[border-color,background-color,color,scale] active:scale-[0.97]",
     active
-      ? "border-green-200 bg-green-100 text-green-800"
+      ? "border-line-strong bg-surface-soft text-ink"
       : "border-line bg-surface text-body hover:border-line-strong hover:text-ink",
   );
 
@@ -136,7 +136,7 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
                       grade !== option.value && "border-line bg-surface hover:border-line-strong",
                       grade === option.value &&
                         (option.value === ALL
-                          ? "border-green-200 bg-green-100"
+                          ? "border-line-strong bg-surface-soft"
                           : ["border-transparent", gradeToneClassName[option.value]]),
                     )}
                   >
