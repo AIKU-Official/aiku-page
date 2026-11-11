@@ -107,7 +107,7 @@ export function ProjectPanel({ seasons, projects }: { seasons: Season[]; project
 
       <ListHead
         title="등록된 프로젝트 관리"
-        description="프로젝트를 수정/삭제하거나, 같은 시즌 안에서 프로젝트 카드를 드래그해 공개 순서를 조정합니다."
+        description="프로젝트를 수정/삭제하거나, 같은 분기 안에서 프로젝트 카드를 드래그해 공개 순서를 조정합니다."
       />
       {groups.length ? (
         <div className="grid border-t border-soft-line">
@@ -167,7 +167,7 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = new FormData(event.currentTarget).get("season");
-    setStatus(info("시즌을 추가하는 중입니다."));
+    setStatus(info("분기를 추가하는 중입니다."));
     startTransition(async () => {
       const result = await addSeason(name);
       if (result.ok) setFormKey((key) => key + 1);
@@ -176,7 +176,7 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
   };
 
   const remove = (season: Season) => {
-    if (!window.confirm(`${season.name} 시즌을 삭제할까요? 프로젝트가 없는 시즌만 삭제됩니다.`)) {
+    if (!window.confirm(`${season.name} 분기를 삭제할까요? 프로젝트가 없는 분기만 삭제됩니다.`)) {
       return;
     }
     startTransition(async () => {
@@ -188,8 +188,8 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
     <div className="grid gap-4 border-b border-soft-line pb-7">
       <ListHead
         flush
-        title="시즌 추가 및 순서 관리"
-        description="프로젝트가 공개될 분기를 추가하고, 시즌 카드를 드래그해서 공개 페이지의 순서를 조정합니다."
+        title="분기 추가 및 순서 관리"
+        description="프로젝트가 공개될 분기를 추가하고, 분기 카드를 드래그해서 공개 페이지의 순서를 조정합니다."
       />
       <form
         key={`season-form-${formKey}`}
@@ -199,10 +199,10 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
           "grid-cols-[minmax(0,1fr)_auto] items-end max-lg:grid-cols-1",
         )}
       >
-        <TextField label="새 시즌" name="season" placeholder="예: 26-summer" required />
+        <TextField label="새 분기" name="season" placeholder="예: 26-여름" required />
         <AdminActions>
           <Button type="submit" variant="dark" disabled={pending}>
-            시즌 추가
+            분기 추가
           </Button>
         </AdminActions>
         <StatusMessage status={status} className="col-span-full" />
@@ -213,7 +213,7 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
           items={seasons}
           getId={(season) => season.id}
           onReorder={async (ids) => {
-            setStatus(info("시즌 순서를 저장하는 중입니다."));
+            setStatus(info("분기 순서를 저장하는 중입니다."));
             setStatus(fromResult(await reorderSeasons(ids)));
           }}
           getLabel={(season) => season.name}
@@ -230,10 +230,10 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
                   <ItemButton
                     danger
                     disabled={count > 0 || pending}
-                    title={count > 0 ? "프로젝트가 있는 시즌은 삭제할 수 없습니다." : undefined}
+                    title={count > 0 ? "프로젝트가 있는 분기은 삭제할 수 없습니다." : undefined}
                     onClick={() => remove(season)}
                   >
-                    시즌 삭제
+                    분기 삭제
                   </ItemButton>
                 }
               />
@@ -242,7 +242,7 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
         />
       ) : (
         <EmptyAdminText>
-          등록된 시즌이 없습니다. 프로젝트를 올리려면 시즌을 먼저 추가하세요.
+          등록된 분기이 없습니다. 프로젝트를 올리려면 분기를 먼저 추가하세요.
         </EmptyAdminText>
       )}
     </div>
@@ -292,7 +292,7 @@ function ProjectForm({
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!seasons.length) {
-      setStatus(failure("프로젝트를 저장하려면 시즌을 먼저 추가하세요."));
+      setStatus(failure("프로젝트를 저장하려면 분기를 먼저 추가하세요."));
       return;
     }
 
@@ -352,7 +352,7 @@ function ProjectForm({
       <FormGrid>
         <SelectField
           ref={seasonRef}
-          label="시즌"
+          label="분기"
           name="seasonId"
           required
           disabled={!seasons.length}
@@ -365,7 +365,7 @@ function ProjectForm({
               </option>
             ))
           ) : (
-            <option value="">시즌을 먼저 추가하세요</option>
+            <option value="">분기를 먼저 추가하세요</option>
           )}
         </SelectField>
         <TextField label="프로젝트명" name="title" required defaultValue={project?.title} />

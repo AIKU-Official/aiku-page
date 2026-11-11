@@ -34,13 +34,19 @@ export function hashForFilter(filter: string): string {
     : `${PERIOD_HASH_PREFIX}${encodeURIComponent(filter)}`;
 }
 
-export function filterStatusText(filter: string, visibleCount: number, totalCount: number): string {
+export function filterStatusText(
+  filter: string,
+  visibleCount: number,
+  totalCount: number,
+  narrowed = false,
+): string {
   if (!totalCount) {
     return "아직 공개된 프로젝트가 없습니다.";
   }
-  return filter === ALL_PROJECTS
-    ? `전체 프로젝트 ${visibleCount}개를 보고 있습니다.`
-    : `${filter} 프로젝트 ${visibleCount}개를 보고 있습니다.`;
+  const scope = filter === ALL_PROJECTS ? "전체" : filter;
+  return narrowed
+    ? `${scope} 프로젝트 중 조건에 맞는 ${visibleCount}개를 보고 있습니다.`
+    : `${scope} 프로젝트 ${visibleCount}개를 보고 있습니다.`;
 }
 
 export function emptyFilterText(filter: string): string {

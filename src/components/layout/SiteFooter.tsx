@@ -4,7 +4,7 @@ import Link from "next/link";
 import { contactChannels } from "@/lib/site";
 
 const footerChannels = contactChannels.filter((channel) =>
-  ["GitHub", "Instagram", "YouTube", "LinkedIn"].includes(channel.label),
+  ["GitHub", "Instagram"].includes(channel.label),
 );
 
 // Logo heights are inline so the logos keep their size even before the

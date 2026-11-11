@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { useState } from "react";
 
-/** Round profile picture; falls back to the first letter of the name. */
+/** Round profile picture; without one, a grey silhouette. */
 export function Avatar({
   name,
   src,
@@ -19,7 +19,7 @@ export function Avatar({
   return (
     <span
       className={clsx(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100 font-semibold text-green-800",
+        "inline-flex shrink-0 items-end justify-center overflow-hidden rounded-full bg-[#e3e5e8] text-[#b3b8bf]",
         className,
       )}
     >
@@ -34,7 +34,16 @@ export function Avatar({
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        <span aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>
+        <svg
+          aria-label={name}
+          role="img"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="size-full"
+        >
+          <circle cx="12" cy="9.2" r="4.3" />
+          <path d="M12 15c-5 0-8.6 2.7-9.4 7.2V24h18.8v-1.8C20.6 17.7 17 15 12 15Z" />
+        </svg>
       )}
     </span>
   );

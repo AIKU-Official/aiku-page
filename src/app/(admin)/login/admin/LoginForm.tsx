@@ -14,7 +14,7 @@ export function LoginForm() {
     <form action={formAction} className={clsx(adminFormClassName, "w-full max-w-[520px]")}>
       {/* React resets the form after each attempt; keep the ID that was typed. */}
       <TextField
-        label="ID"
+        label="아이디"
         name="username"
         type="text"
         autoComplete="username"
@@ -22,7 +22,7 @@ export function LoginForm() {
         defaultValue={state?.username}
       />
       <TextField
-        label="Password"
+        label="비밀번호"
         name="password"
         type="password"
         autoComplete="current-password"

@@ -72,10 +72,10 @@ export function ProfileView() {
     );
   }
 
-  const { subject, profile } = state.page;
+  const { subject, profile, projects } = state.page;
   return (
     <div className="grid gap-10 max-sm:gap-8">
-      <ProfileContent subject={subject} profile={profile} />
+      <ProfileContent subject={subject} profile={profile} projects={projects} />
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-soft-line pt-5">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
@@ -92,7 +92,7 @@ export function ProfileView() {
             ? "Members 페이지에서 내 카드를 누르면 누구나 이 프로필을 볼 수 있습니다."
             : "지금은 나만 볼 수 있습니다."}
         </p>
-        <ButtonLink href="/profile/edit" variant="dark" size="sm">
+        <ButtonLink href="/profile/edit" variant="secondary" size="sm">
           프로필 수정
         </ButtonLink>
       </div>

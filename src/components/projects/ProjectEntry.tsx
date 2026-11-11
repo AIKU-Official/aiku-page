@@ -1,82 +1,205 @@
 "use client";
 
 import clsx from "clsx";
-import { useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { buttonClassName } from "@/components/ui/Button";
+import { CenterPeek } from "@/components/ui/CenterPeek";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import { ChevronDownIcon } from "@/components/ui/icons";
 import { parseTags } from "@/lib/projects/tags";
+import type { ProjectPerson } from "@/lib/types";
+
+import { PersonName } from "./PersonName";
 
 type ProjectEntryProps = {
   id: string;
   period: string;
   title: string;
   summary: string;
+  oneLine: string;
+  awardRank: 1 | 2 | 3 | null;
+  people: ProjectPerson[];
   /** Server-rendered resource links. */
   resources: ReactNode;
-  /** Server-rendered markdown body, shown after "자세히 보기". */
+  /** Server-rendered markdown body, shown when the card is opened. */
   body: ReactNode;
 };
 
-export function ProjectEntry({ id, period, title, summary, resources, body }: ProjectEntryProps) {
-  const [expanded, setExpanded] = useState(false);
-  const bodyId = `project-body-${id}`;
-  const tags = parseTags(summary);
+// Gold, silver and bronze: the tag, and a faint diagonal wash that starts at
+// the top right of the card and fades to white.
+const AWARDS = {
+  1: {
+    label: "1등",
+    pill: "bg-amber-100 text-amber-800",
+    card: "border-amber-800/10 bg-linear-to-bl from-amber-100/45 to-white to-70%",
+  },
+  2: {
+    label: "2등",
+    pill: "bg-silver-100 text-silver-800",
+    card: "border-silver-800/10 bg-linear-to-bl from-silver-100/55 to-white to-70%",
+  },
+  3: {
+    label: "3등",
+    pill: "bg-bronze-100 text-bronze-800",
+    card: "border-bronze-800/10 bg-linear-to-bl from-bronze-100/45 to-white to-70%",
+  },
+} as const;
 
+function Heading({ period, awardRank }: Pick<ProjectEntryProps, "period" | "awardRank">) {
   return (
-    <article
-      id={`project-${id}`}
-      className="reveal scroll-mt-[calc(var(--header-height)+24px)] card p-8 max-sm:p-5"
-    >
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+      <Eyebrow spacing="none">{period || "AIKU"}</Eyebrow>
+      {awardRank ? (
+        <span
+          className={clsx(
+            "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap",
+            AWARDS[awardRank].pill,
+          )}
+        >
+          {AWARDS[awardRank].label}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function Tags({ summary }: { summary: string }) {
+  const tags = parseTags(summary);
+  if (!tags) return summary ? <p className="mt-3 max-w-[640px] text-muted">{summary}</p> : null;
+  return (
+    <ul className="mt-4 flex flex-wrap gap-1.5 max-sm:mt-3" aria-label="관련 분야">
+      {tags.map((tag) => (
+        <li
+          key={tag}
+          className="inline-flex h-7 items-center rounded-full bg-green-50 px-3 text-label text-green-800 ring-1 ring-green-200 ring-inset"
+        >
+          {tag}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function People({ people }: { people: ProjectPerson[] }) {
+  if (!people.length) return null;
+  return (
+    // Above the card's click layer, so names can be hovered and clicked.
+    <dl className="relative z-10 mt-4 grid w-fit gap-1 text-small max-sm:mt-3">
+      {(["leader", "member"] as const).map((role) => {
+        const group = people.filter((person) => person.role === role);
+        return group.length ? (
+          <div key={role} className="flex gap-3">
+            <dt className="w-9 shrink-0 text-muted">{role === "leader" ? "팀장" : "팀원"}</dt>
+            <dd className="min-w-0 text-body">
+              {group.map((person, index) => (
+                <Fragment key={person.name}>
+                  {index ? ", " : null}
+                  <PersonName person={person} />
+                </Fragment>
+              ))}
+            </dd>
+          </div>
+        ) : null;
+      })}
+    </dl>
+  );
+}
+
+const cardPadding = "p-8 max-sm:p-5";
+
+/**
+ * What a project shows at a glance. The card and the top of the opened panel
+ * both render this, at the same padding, so one can turn into the other.
+ */
+function Face({
+  period,
+  title,
+  summary,
+  oneLine,
+  awardRank,
+  people,
+  resources,
+  onOpen,
+}: Omit<ProjectEntryProps, "id" | "body"> & { onOpen?: () => void }) {
+  return (
+    <>
       <div className="flex items-start justify-between gap-8 max-lg:flex-col max-lg:gap-5 max-sm:gap-4">
         <div className="min-w-0">
-          <Eyebrow spacing="tight">{period || "AIKU"}</Eyebrow>
-          <h2 className="text-[1.625rem] leading-[1.3] font-extrabold tracking-[-0.025em] max-sm:text-[1.25rem]">
-            {title}
+          <Heading period={period} awardRank={awardRank} />
+          <h2 className="mt-2 text-[1.625rem] leading-[1.3] font-extrabold tracking-[-0.025em] max-sm:text-[1.25rem]">
+            {onOpen ? (
+              // The button's ::after covers the card, so the whole card opens the project.
+              <button
+                type="button"
+                onClick={onOpen}
+                className="cursor-pointer text-left font-[inherit] tracking-[inherit] after:absolute after:inset-0 after:rounded-card focus-visible:outline-none"
+              >
+                {title}
+              </button>
+            ) : (
+              title
+            )}
           </h2>
-          {tags ? (
-            <ul className="mt-4 flex flex-wrap gap-1.5 max-sm:mt-3" aria-label="관련 분야">
-              {tags.map((tag) => (
-                <li
-                  key={tag}
-                  className="inline-flex h-7 items-center rounded-full bg-green-50 px-3 text-label text-green-800 ring-1 ring-green-200 ring-inset"
-                >
-                  #{tag}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 max-w-[640px] text-muted">
-              {summary || "관련 분야 태그가 곧 공개됩니다."}
-            </p>
-          )}
+          <Tags summary={summary} />
+          <People people={people} />
         </div>
-        <div className="shrink-0 max-sm:w-full">{resources}</div>
+        <div className="relative z-10 shrink-0 max-sm:w-full">{resources}</div>
       </div>
+      {/* Spans the card, so the sentence wraps as little as possible. */}
+      {oneLine ? <p className="mt-4 text-body max-sm:mt-3">{oneLine}</p> : null}
+    </>
+  );
+}
 
-      <div className="mt-6 border-t border-soft-line pt-5 max-sm:mt-4 max-sm:pt-4">
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={bodyId}
-          onClick={() => setExpanded((value) => !value)}
-          className={buttonClassName({
-            variant: "secondary",
-            size: "sm",
-            fullWidthOnMobile: false,
-          })}
+/** A project card. Clicking it unfolds the card into the full write-up. */
+export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
+  const { title, awardRank } = face;
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const card = useRef<HTMLElement>(null);
+  const cardRect = useCallback(() => card.current?.getBoundingClientRect(), []);
+
+  // A link to #project-<id> (from a member's profile) opens the project.
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === `#project-${id}`) setOpen(true);
+    };
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, [id]);
+
+  const surface = awardRank ? AWARDS[awardRank].card : "border-line";
+
+  return (
+    <>
+      <article
+        ref={card}
+        id={`project-${id}`}
+        className={clsx(
+          "relative reveal scroll-mt-[calc(var(--header-height)+24px)] card transition-[translate,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-[0_14px_36px_rgb(29_29_29/0.09)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-green-500",
+          cardPadding,
+          awardRank ? AWARDS[awardRank].card : "hover:border-line-strong",
+          // While open, the panel is this card: the original steps out of view.
+          open && "invisible",
+        )}
+      >
+        <Face {...face} onOpen={() => setOpen(true)} />
+      </article>
+
+      {open ? (
+        <CenterPeek
+          label={title}
+          onClose={close}
+          origin={cardRect}
+          className={clsx("border", cardPadding, surface)}
         >
-          {expanded ? "접기" : "자세히 보기"}
-          <ChevronDownIcon
-            className={clsx("size-4 transition-transform", expanded && "rotate-180")}
-          />
-        </button>
-      </div>
-
-      <div id={bodyId} hidden={!expanded} className="motion-safe:animate-fade">
-        {body}
-      </div>
-    </article>
+          <Face {...face} />
+          {/* Here the write-up uses the panel's full width, and its pictures share one height. */}
+          <div className="peek-body mt-7 border-t border-soft-line max-sm:mt-5 [&_.markdown-body]:max-w-none">
+            {body}
+          </div>
+        </CenterPeek>
+      ) : null}
+    </>
   );
 }

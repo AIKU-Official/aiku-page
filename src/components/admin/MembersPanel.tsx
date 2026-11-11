@@ -142,7 +142,7 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
   };
 
   return (
-    <AdminPanel id="alumni-admin-title" eyebrow="Members" title="Members 관리">
+    <AdminPanel id="alumni-admin-title" eyebrow="Members" title="멤버 관리">
       <form
         key={`generation-form-${generationFormKey}`}
         onSubmit={onAddGeneration}
@@ -286,7 +286,7 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
       </form>
 
       <ListHead
-        title="등록된 Members 관리"
+        title="등록된 멤버 관리"
         description="활동 중인 학회원과 AIKU를 거쳐간 멤버를 기수별로 수정/삭제하거나, 같은 기수 안에서 카드를 드래그해 공개 순서를 조정합니다."
       />
       {generations.length ? (

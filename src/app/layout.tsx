@@ -32,9 +32,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" data-scroll-behavior="smooth">
-      <body>
+      {/* A column at least one screen tall, so the footer sits at the bottom on short pages. */}
+      <body className="flex min-h-dvh flex-col">
         <SiteHeader />
-        <main>{children}</main>
+        <main className="flex-1">{children}</main>
         <SiteFooter />
       </body>
     </html>

@@ -62,8 +62,8 @@ export function ProjectResources({ project }: { project: Project }) {
             : null
         }
         icon={<DownloadIcon className="size-4" />}
-        label="PPT 다운로드"
-        emptyLabel="PPT 없음"
+        label="발표자료 PDF"
+        emptyLabel="발표자료 없음"
       />
       <Resource
         href={project.githubUrl}

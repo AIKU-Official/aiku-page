@@ -1,7 +1,12 @@
 import type { ComponentProps, ElementType } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkCjkFriendly from "remark-cjk-friendly";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import type { PluggableList } from "unified";
+
+import "katex/dist/katex.min.css";
 
 import { remarkBlockquoteBreaks } from "@/lib/markdown/plugins/remark-blockquote-breaks";
 import { remarkFigures } from "@/lib/markdown/plugins/remark-figures";
@@ -13,10 +18,15 @@ import { MarkdownFigure } from "./MarkdownFigure";
 const remarkPlugins = [
   remarkNoIndentedCode,
   remarkGfm,
+  // $…$ and $$…$$ are typeset with KaTeX.
+  remarkMath,
   remarkCjkFriendly,
   remarkBlockquoteBreaks,
   remarkFigures,
 ];
+
+// A formula KaTeX cannot parse is shown as written instead of failing the page.
+const rehypePlugins: PluggableList = [[rehypeKatex, { throwOnError: false, strict: false }]];
 
 // Headings are shifted one level down (# → h2) so they sit below the project
 // title, as in the legacy renderer.
@@ -54,6 +64,7 @@ export function Markdown({ children }: { children: string }) {
     <div className="markdown-body">
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
+        rehypePlugins={rehypePlugins}
         components={components}
         urlTransform={markdownUrlTransform}
       >

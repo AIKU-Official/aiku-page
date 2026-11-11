@@ -20,7 +20,7 @@ import {
 import { MEMBER_GRADE_LABELS, MEMBER_GRADES, type Generation } from "@/lib/types";
 
 import { MemberCard } from "./MemberCard";
-import { gradeDotClassName, gradeToneClassName } from "./tones";
+import { gradeBorderClassName, gradeDotClassName, gradeToneClassName } from "./tones";
 
 const subscribeToHash = (onChange: () => void) => {
   window.addEventListener("hashchange", onChange);
@@ -137,7 +137,7 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
                       grade === option.value &&
                         (option.value === ALL
                           ? "border-line-strong bg-surface-soft"
-                          : ["border-transparent", gradeToneClassName[option.value]]),
+                          : [gradeBorderClassName[option.value], gradeToneClassName[option.value]]),
                     )}
                   >
                     <span className="flex items-center gap-1.5 text-label text-muted">

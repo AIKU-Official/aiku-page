@@ -25,7 +25,7 @@ export const navItems: NavItem[] = [
   { href: "/login", label: "Login", prefetch: false, utility: true, alsoActiveOn: ["/admin"] },
 ];
 
-export const instagramUrl = "https://www.instagram.com/aiku._.official/";
+export const instagramUrl = "https://www.instagram.com/aiku__official/";
 
 export const contactChannels = [
   {
@@ -36,21 +36,9 @@ export const contactChannels = [
   },
   {
     label: "Instagram",
-    name: "@aiku._.official",
+    name: "@aiku__official",
     description: "모집 공지와 활동 소식",
     href: instagramUrl,
-  },
-  {
-    label: "YouTube",
-    name: "@AIKU_KOREA_UNIV",
-    description: "세미나와 행사 영상 콘텐츠",
-    href: "https://www.youtube.com/@AIKU_KOREA_UNIV",
-  },
-  {
-    label: "LinkedIn",
-    name: "aiku-korea",
-    description: "AIKU의 외부 네트워크와 활동 이력",
-    href: "https://www.linkedin.com/in/aiku-korea/",
   },
   {
     label: "KakaoTalk",

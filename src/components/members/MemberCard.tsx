@@ -1,61 +1,30 @@
 import clsx from "clsx";
-import type { ComponentType, SVGProps } from "react";
 
-import {
-  GitHubIcon,
-  GlobeIcon,
-  InstagramIcon,
-  LinkedInIcon,
-  MailIcon,
-} from "@/components/ui/icons";
+import { Avatar } from "@/components/ui/Avatar";
+import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS, type Member } from "@/lib/types";
 
 import { gradeToneClassName, positionToneClassName } from "./tones";
 
-type MemberLinkProps = {
-  href: string;
-  label: string;
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
-};
-
-function MemberLink({ href, label, Icon }: MemberLinkProps) {
-  const isMail = href.startsWith("mailto:");
-  return (
-    <a
-      href={href}
-      title={label}
-      aria-label={label}
-      {...(isMail ? {} : { target: "_blank", rel: "noreferrer" })}
-      className="inline-flex size-8 items-center justify-center rounded-full border border-line text-muted transition-[border-color,background-color,color] hover:border-green-200 hover:bg-green-50 hover:text-green-800 max-sm:size-7"
-    >
-      <Icon className="size-4" />
-    </a>
-  );
-}
-
-/** Directory entry: who the member is at a glance, plus profile extras when they exist. */
+/** Directory entry laid out like a name card: picture on the left, name and tags beside it. */
 export function MemberCard({ member, onOpen }: { member: Member; onOpen?: () => void }) {
-  const links: MemberLinkProps[] = [];
-  if (member.email) links.push({ href: `mailto:${member.email}`, label: "Mail", Icon: MailIcon });
-  if (member.githubUrl) links.push({ href: member.githubUrl, label: "GitHub", Icon: GitHubIcon });
-  if (member.instagramUrl) {
-    links.push({ href: member.instagramUrl, label: "Instagram", Icon: InstagramIcon });
-  }
-  if (member.linkedinUrl) {
-    links.push({ href: member.linkedinUrl, label: "LinkedIn", Icon: LinkedInIcon });
-  }
-  if (member.websiteUrl) links.push({ href: member.websiteUrl, label: "Website", Icon: GlobeIcon });
+  const pill = "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
 
   return (
     <article
       className={clsx(
-        "relative flex flex-col gap-2.5 card px-4 py-3.5 max-sm:gap-2 max-sm:p-3",
+        "relative flex items-center gap-3 card px-4 py-3.5 max-sm:gap-2.5 max-sm:p-3",
         onOpen &&
-          "transition-[border-color,box-shadow] focus-within:border-green-200 hover:border-green-200 hover:shadow-[0_6px_20px_rgb(29_29_29/0.06)]",
+          "transition-[border-color,box-shadow] focus-within:border-green-200 hover:border-green-200 hover:shadow-[0_6px_20px_rgb(29_29_29/0.06)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-green-500",
       )}
     >
-      <div className="flex min-h-6 flex-wrap items-center gap-x-2 gap-y-1.5">
-        <h3 className="flex min-w-0 items-baseline text-[1rem] leading-[1.4] max-sm:text-[0.9375rem]">
+      <Avatar
+        name={member.name}
+        src={member.avatarPath ? storagePublicUrl(member.avatarPath) : null}
+        className="size-12 text-[1.0625rem] max-sm:size-10 max-sm:text-[0.9375rem]"
+      />
+      <div className="grid min-w-0 flex-1 gap-1.5">
+        <h3 className="flex min-w-0 items-baseline text-[1rem] leading-[1.4] max-sm:flex-col max-sm:items-start max-sm:text-[0.9375rem]">
           {onOpen ? (
             // The button's ::after covers the card, so the whole card opens the profile.
             <button
@@ -70,41 +39,25 @@ export function MemberCard({ member, onOpen }: { member: Member; onOpen?: () => 
             <span className="shrink-0">{member.name}</span>
           )}
           {member.department ? (
-            <span className="truncate text-small font-normal tracking-normal text-muted">
-              <span aria-hidden="true" className="mx-1.5 text-line-strong">
+            <span className="truncate text-small font-normal tracking-normal text-muted max-sm:max-w-full max-sm:text-[0.8125rem]">
+              <span aria-hidden="true" className="mx-1.5 text-line-strong max-sm:hidden">
                 ·
               </span>
               {member.department}
             </span>
           ) : null}
         </h3>
-        {member.position ? (
-          <span
-            className={clsx(
-              "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap",
-              positionToneClassName(member.position),
-            )}
-          >
-            {member.position}
+        <div className="flex flex-wrap gap-1.5">
+          {member.position ? (
+            <span className={clsx(pill, positionToneClassName(member.position))}>
+              {member.position}
+            </span>
+          ) : null}
+          <span className={clsx(pill, gradeToneClassName[member.grade])}>
+            {MEMBER_GRADE_LABELS[member.grade]}
           </span>
-        ) : null}
-      </div>
-      <span
-        className={clsx(
-          "inline-flex h-6 items-center self-start rounded-full px-2.5 text-label",
-          gradeToneClassName[member.grade],
-        )}
-      >
-        {MEMBER_GRADE_LABELS[member.grade]}
-      </span>
-      {member.summary ? <p className="text-small text-muted">{member.summary}</p> : null}
-      {links.length ? (
-        <div className="relative mt-auto flex flex-wrap gap-1.5 self-start">
-          {links.map((link) => (
-            <MemberLink key={link.label} {...link} />
-          ))}
         </div>
-      ) : null}
+      </div>
     </article>
   );
 }

@@ -8,6 +8,13 @@ export const gradeToneClassName: Record<MemberGrade, string> = {
   ob: "bg-sand-100 text-sand-800",
 };
 
+/** Border in the grade's hue, for a selected tile filled with the tone above. */
+export const gradeBorderClassName: Record<MemberGrade, string> = {
+  junior: "border-sprout-500/45",
+  senior: "border-sky-800/30",
+  ob: "border-sand-800/30",
+};
+
 /** Solid dot in the grade's hue, for places where a full tag would be too heavy. */
 export const gradeDotClassName: Record<MemberGrade, string> = {
   junior: "bg-sprout-500",

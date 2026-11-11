@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 
-const spacingClasses = { tight: "mb-2", default: "mb-3", loose: "mb-5" } as const;
+const spacingClasses = { none: "", tight: "mb-2", default: "mb-3", loose: "mb-5" } as const;
 
 type EyebrowProps = {
   children: ReactNode;

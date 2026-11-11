@@ -63,7 +63,11 @@ export function SelectField({
       {/* Safari ignores padding and borders on a native select, so the arrow is drawn here. */}
       <span className="relative block">
         <select
-          className={clsx(controlClassName, "cursor-pointer appearance-none pr-10", className)}
+          className={clsx(
+            controlClassName,
+            "cursor-pointer appearance-none pr-10 invalid:text-muted/70",
+            className,
+          )}
           {...props}
         />
         <svg

@@ -36,7 +36,9 @@ export async function getProjectArchive(): Promise<ProjectArchive> {
     supabase.from("seasons").select("id, name").order("sort_order").order("created_at"),
     supabase
       .from("projects")
-      .select("*")
+      .select(
+        "*, project_members(name, role, sort_order, members(id, name, department, grade, position, generations(name), member_profiles(is_public, avatar_path)))",
+      )
       .order("sort_order")
       .order("created_at", { ascending: false }),
   ]);
@@ -50,7 +52,12 @@ export async function getProjectArchive(): Promise<ProjectArchive> {
 
   const projects = (projectResult.data ?? [])
     .map((row) => mapProject(row, seasonName.get(row.season_id) ?? ""))
-    .sort((a, b) => (seasonRank.get(a.seasonId) ?? 0) - (seasonRank.get(b.seasonId) ?? 0));
+    // By season; within one, prize winners first in rank order, then the admin order.
+    .sort(
+      (a, b) =>
+        (seasonRank.get(a.seasonId) ?? 0) - (seasonRank.get(b.seasonId) ?? 0) ||
+        (a.awardRank ?? 9) - (b.awardRank ?? 9),
+    );
 
   return { seasons, projects };
 }
@@ -59,7 +66,7 @@ export async function getGenerations(): Promise<Generation[]> {
   const { data, error } = await createPublicClient()
     .from("generations")
     .select(
-      "id, name, members(*, member_profiles(is_public, contact_email, github_url, instagram_url, linkedin_url, website_url))",
+      "id, name, members(*, member_profiles(is_public, avatar_path, contact_email, github_url, instagram_url, linkedin_url, website_url))",
     )
     .order("sort_order")
     .order("created_at")

@@ -8,10 +8,11 @@ import { ProjectResources } from "@/components/projects/ProjectResources";
 import { getProjectArchive } from "@/lib/data/public";
 import { composeProjectMarkdown } from "@/lib/markdown/compose";
 import { getProjectSeasonList } from "@/lib/projects/filter";
+import { parseTags } from "@/lib/projects/tags";
 
 export const metadata: Metadata = {
   title: "프로젝트",
-  description: "AIKU 분기별 우수 프로젝트를 소개합니다.",
+  description: "AIKU 분기별 프로젝트를 소개합니다.",
 };
 
 // Refreshed on demand after admin edits; hourly as a safety net.
@@ -23,12 +24,17 @@ export default async function ProjectsPage() {
   const entries: ArchiveEntry[] = projects.map((project) => ({
     id: project.id,
     period: project.period,
+    awardRank: project.awardRank,
+    tags: parseTags(project.summary) ?? [],
     node: (
       <ProjectEntry
         id={project.id}
         period={project.period}
         title={project.title}
         summary={project.summary}
+        oneLine={project.oneLine}
+        awardRank={project.awardRank}
+        people={project.people}
         resources={<ProjectResources project={project} />}
         body={<Markdown>{composeProjectMarkdown(project)}</Markdown>}
       />
@@ -39,8 +45,8 @@ export default async function ProjectsPage() {
     <>
       <PageHero
         eyebrow="Projects"
-        title="분기별 우수 프로젝트"
-        lead="AIKU 학회원들이 한 학기 동안 탐구하고 구현한 딥러닝 프로젝트 중 우수한 결과물을 분기별로 소개합니다."
+        title="분기별 프로젝트"
+        lead="AIKU 학회원들이 한 학기 동안 탐구하고 구현한 딥러닝 프로젝트를 분기별로 소개합니다."
       />
       <ProjectArchive seasons={getProjectSeasonList(seasons, projects)} entries={entries} />
     </>

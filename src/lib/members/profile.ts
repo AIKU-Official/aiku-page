@@ -34,6 +34,15 @@ export type ProfileSubject = {
   position: string;
 };
 
+/** A project the member took part in; comes from the project records, not from the member. */
+export type ProfileProject = {
+  id: string;
+  title: string;
+  season: string;
+  role: "leader" | "member";
+  awardRank: 1 | 2 | 3 | null;
+};
+
 export const emptyProfile: MemberProfile = {
   isPublic: false,
   headline: "",

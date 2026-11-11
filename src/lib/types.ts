@@ -20,6 +20,32 @@ export type Project = {
   presentationPath: string | null;
   presentationName: string | null;
   imagePaths: string[];
+  /** One sentence shown on the card. */
+  oneLine: string;
+  /** 1, 2 or 3 for projects placed at the AIKU Conference; null otherwise. */
+  awardRank: 1 | 2 | 3 | null;
+  /** Participants, leaders first. */
+  people: ProjectPerson[];
+};
+
+export type ProjectPerson = {
+  /** The roster name when matched, else the name as written in the source. */
+  name: string;
+  role: "leader" | "member";
+  /** The roster member this person is, when matched. */
+  member: ProjectPersonMember | null;
+};
+
+/** What a name card needs to show about a participant. */
+export type ProjectPersonMember = {
+  id: string;
+  name: string;
+  generation: string;
+  department: string;
+  grade: MemberGrade;
+  position: string;
+  avatarPath: string | null;
+  hasPublicProfile: boolean;
 };
 
 export type NewsItem = {
@@ -62,6 +88,8 @@ export type Member = {
   linkedinUrl: string | null;
   websiteUrl: string | null;
   photoPath: string | null;
+  /** Picture uploaded on a public profile (storage object key). */
+  avatarPath: string | null;
   /** The member wrote a profile and made it public; the card opens it. */
   hasPublicProfile: boolean;
 };

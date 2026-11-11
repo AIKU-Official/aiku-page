@@ -12,6 +12,7 @@ import {
   mapProfile,
   MAX_AVATAR_BYTES,
   type MemberProfile,
+  type ProfileProject,
   type ProfileSubject,
 } from "@/lib/members/profile";
 import {
@@ -27,7 +28,12 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { MEMBER_GRADES, type MemberGrade } from "@/lib/types";
 import { avatarUploadSchema, idSchema, profileSchema } from "@/lib/validators";
 
-export type ProfilePage = { subject: ProfileSubject; profile: MemberProfile };
+export type ProfilePage = {
+  subject: ProfileSubject;
+  profile: MemberProfile;
+  /** Filled from the project records, newest season first. */
+  projects: ProfileProject[];
+};
 
 type Db = ReturnType<typeof createAdminClient>;
 
@@ -59,7 +65,29 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
       .maybeSingle(),
   );
   if (!row) return null;
+
+  const taken = unwrap(
+    await db
+      .from("project_members")
+      .select("role, projects(id, title, award_rank, seasons(name, sort_order))")
+      .eq("member_id", memberId),
+  );
+  const projects = (taken ?? [])
+    .map((entry) => ({ entry, order: entry.projects.seasons.sort_order }))
+    .sort((a, b) => a.order - b.order)
+    .map(({ entry }): ProfileProject => {
+      const rank = entry.projects.award_rank;
+      return {
+        id: entry.projects.id,
+        title: entry.projects.title,
+        season: entry.projects.seasons.name,
+        role: entry.role === "leader" ? "leader" : "member",
+        awardRank: rank === 1 || rank === 2 || rank === 3 ? rank : null,
+      };
+    });
+
   return {
+    projects,
     subject: {
       id: row.id,
       name: row.name,

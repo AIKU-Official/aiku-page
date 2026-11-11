@@ -89,7 +89,7 @@ export function SiteHeader() {
 
       <button
         type="button"
-        className="hidden size-10 rounded-control border border-line bg-surface transition-colors hover:bg-surface-soft max-lg:block"
+        className="hidden size-10 rounded-control border border-line bg-surface transition-colors hover:bg-surface-soft max-lg:block max-sm:size-11"
         aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"}
         aria-expanded={isOpen}
         aria-controls="site-nav"

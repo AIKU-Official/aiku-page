@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import Link from "next/link";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import { gradeToneClassName, positionToneClassName } from "@/components/members/tones";
@@ -10,9 +11,15 @@ import {
   LinkedInIcon,
   MailIcon,
 } from "@/components/ui/icons";
-import type { MemberProfile, ProfileSubject } from "@/lib/members/profile";
+import type { MemberProfile, ProfileProject, ProfileSubject } from "@/lib/members/profile";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS } from "@/lib/types";
+
+const AWARD_TONES = {
+  1: "bg-amber-100 text-amber-800",
+  2: "bg-silver-100 text-silver-800",
+  3: "bg-bronze-100 text-bronze-800",
+} as const;
 
 const pillClassName =
   "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
@@ -60,9 +67,12 @@ function MainSection({ title, children }: { title: string; children: ReactNode }
 export function ProfileContent({
   subject,
   profile,
+  projects = [],
 }: {
   subject: ProfileSubject;
   profile: MemberProfile;
+  /** Projects the member took part in, from the project records. */
+  projects?: ProfileProject[];
 }) {
   const links = [
     { href: profile.githubUrl, label: "GitHub", Icon: GitHubIcon },
@@ -81,7 +91,12 @@ export function ProfileContent({
             className="size-40 text-[3.25rem] max-sm:size-28 max-sm:text-[2.25rem]"
           />
           <div className="grid gap-2">
-            <h2 className="text-title">{subject.name}</h2>
+            <div>
+              <h2 className="text-title">{subject.name}</h2>
+              {subject.department ? (
+                <p className="mt-0.5 text-muted">{subject.department}</p>
+              ) : null}
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {subject.position ? (
                 <span className={clsx(pillClassName, positionToneClassName(subject.position))}>
@@ -100,9 +115,7 @@ export function ProfileContent({
             {profile.headline ? (
               <p className="font-medium whitespace-pre-line text-ink">{profile.headline}</p>
             ) : null}
-            <p className="text-small text-muted">
-              {[profile.tagline, subject.department].filter(Boolean).join(" · ")}
-            </p>
+            {profile.tagline ? <p className="text-small text-muted">{profile.tagline}</p> : null}
           </div>
           {profile.contactEmail || links.length ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -177,6 +190,36 @@ export function ProfileContent({
                       {interest.description}
                     </p>
                   ) : null}
+                </li>
+              ))}
+            </ul>
+          </MainSection>
+        ) : null}
+
+        {projects.length ? (
+          <MainSection title="Projects">
+            <ul className="divide-y divide-soft-line border-y border-soft-line">
+              {projects.map((project) => (
+                <li key={project.id}>
+                  <Link
+                    href={`/projects#project-${project.id}`}
+                    className="group flex flex-wrap items-center gap-x-3 gap-y-1 py-4"
+                  >
+                    <span className="w-14 shrink-0 text-small text-muted tabular-nums">
+                      {project.season}
+                    </span>
+                    <span className="min-w-0 flex-1 font-semibold text-ink underline-offset-4 group-hover:underline">
+                      {project.title}
+                    </span>
+                    {project.awardRank ? (
+                      <span className={clsx(pillClassName, AWARD_TONES[project.awardRank])}>
+                        {project.awardRank}등
+                      </span>
+                    ) : null}
+                    {project.role === "leader" ? (
+                      <span className={clsx(pillClassName, "bg-surface-soft text-body")}>팀장</span>
+                    ) : null}
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -69,6 +69,8 @@
   --color-sand-800: #6a5a37;
   --color-amber-100: #fdf1cf;
   --color-amber-800: #7d5200;
+  --color-bronze-100: #f6e3d3;
+  --color-bronze-800: #7a4317;
   --color-silver-100: #e9edf2;
   --color-silver-800: #4a5564;
   --color-violet-100: #eee9fd;
@@ -191,13 +193,27 @@
 }
 
 /*
- * Phones: everything is set in rem, so a 15px root scales type, spacing and
+ * Phones: everything is set in rem, so a 14px root scales type, spacing and
  * components down together and fits more content on a screen.
  */
 @media (width < 561px) {
   :root {
-    --header-height: 56px;
-    font-size: 93.75%;
+    --header-height: 52px;
+    font-size: 87.5%;
+  }
+
+  /* iOS zooms the page when a focused field's text is under 16px. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Keep single-line fields the same height as the buttons beside them. */
+  input:not([type="checkbox"], [type="file"]),
+  select {
+    padding-block: 0.5rem;
+    min-height: 2.75rem;
   }
 }
 
@@ -559,6 +575,17 @@
   .markdown-body figure img {
     width: 100%;
     height: auto;
+  }
+
+  /*
+   * In the project panel every picture gets the same height, sized from the
+   * window so it suits the device: small pictures are enlarged to it and tall
+   * ones reduced, each shown whole and centred in its frame.
+   */
+  .peek-body .markdown-body figure img {
+    width: 100%;
+    height: clamp(11rem, 38vh, 24rem);
+    object-fit: contain;
   }
 
   .markdown-body figcaption {

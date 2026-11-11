@@ -7,13 +7,13 @@
 export function TrackDiagram() {
   const label = {
     fill: "#9a9a9a",
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: 800,
     letterSpacing: "0.02em",
   } as const;
   const caption = {
     fill: "#ffffff",
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: 800,
     textAnchor: "middle",
     dominantBaseline: "central",
@@ -32,19 +32,20 @@ export function TrackDiagram() {
           <stop offset="1" stopColor="#21c98c" />
         </linearGradient>
         <linearGradient id="track-senior" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#21c481" />
-          <stop offset="1" stopColor="#168f5d" />
+          <stop offset="0" stopColor="#17a56b" />
+          <stop offset="1" stopColor="#0e7a4d" />
         </linearGradient>
       </defs>
 
       <text x="20" y="80" dominantBaseline="central" {...label}>
-        TRACK1
+        TRACK 1
       </text>
       <rect x="130" y="28" width="386" height="104" rx="6" fill="url(#track-junior)" />
       {/* The notch that points from Junior on to Senior. */}
       <path d="M516 70 L536 80 L516 90 Z" fill="#21c98c" />
       <rect x="536" y="28" width="394" height="104" rx="6" fill="url(#track-senior)" />
-      <text x="323" y="80" {...caption}>
+      {/* Dark text here: white does not read on the light mint. */}
+      <text x="323" y="80" {...caption} fill="#0b4a35">
         JUNIOR (0.5년)
       </text>
       <text x="733" y="80" {...caption}>
@@ -52,7 +53,7 @@ export function TrackDiagram() {
       </text>
 
       <text x="20" y="208" dominantBaseline="central" {...label}>
-        TRACK2
+        TRACK 2
       </text>
       <rect x="130" y="156" width="800" height="104" rx="6" fill="url(#track-senior)" />
       <text x="530" y="208" {...caption}>

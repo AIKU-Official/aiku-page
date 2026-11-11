@@ -13,7 +13,23 @@ export const mapSeason = (row: Pick<Tables<"seasons">, "id" | "name">): Season =
   name: row.name,
 });
 
-export const mapProject = (row: Tables<"projects">, period: string): Project => ({
+type ProjectPersonRow = Pick<Tables<"project_members">, "name" | "role" | "sort_order"> & {
+  members:
+    | (Pick<Tables<"members">, "id" | "name" | "department" | "grade" | "position"> & {
+        generations: { name: string };
+        member_profiles: Pick<Tables<"member_profiles">, "is_public" | "avatar_path"> | null;
+      })
+    | null;
+};
+
+const toGrade = (value: string): MemberGrade =>
+  MEMBER_GRADES.includes(value as MemberGrade) ? (value as MemberGrade) : "ob";
+
+/** `project_members` is present only when the query joined it. */
+export const mapProject = (
+  row: Tables<"projects"> & { project_members?: ProjectPersonRow[] },
+  period: string,
+): Project => ({
   id: row.id,
   seasonId: row.season_id,
   period,
@@ -24,6 +40,34 @@ export const mapProject = (row: Tables<"projects">, period: string): Project => 
   presentationPath: row.presentation_path,
   presentationName: row.presentation_name,
   imagePaths: row.image_paths,
+  oneLine: row.one_line,
+  awardRank: row.award_rank === 1 || row.award_rank === 2 || row.award_rank === 3 ? row.award_rank : null,
+  people: [...(row.project_members ?? [])]
+    .sort(
+      (a, b) =>
+        Number(b.role === "leader") - Number(a.role === "leader") || a.sort_order - b.sort_order,
+    )
+    .map((person) => {
+      const member = person.members;
+      // Visitors can read public profiles only, so a private one arrives as null.
+      const profile = member?.member_profiles?.is_public ? member.member_profiles : null;
+      return {
+        name: member?.name ?? person.name,
+        role: person.role === "leader" ? "leader" : "member",
+        member: member
+          ? {
+              id: member.id,
+              name: member.name,
+              generation: member.generations.name,
+              department: member.department,
+              grade: toGrade(member.grade),
+              position: member.position,
+              avatarPath: profile?.avatar_path ?? null,
+              hasPublicProfile: Boolean(profile),
+            }
+          : null,
+      };
+    }),
 });
 
 export const mapNews = (row: Tables<"news">): NewsItem => ({
@@ -37,7 +81,7 @@ export const mapNews = (row: Tables<"news">): NewsItem => ({
 
 type PublicProfileLinks = Pick<
   Tables<"member_profiles">,
-  "is_public" | "contact_email" | "github_url" | "instagram_url" | "linkedin_url" | "website_url"
+  "is_public" | "avatar_path" | "contact_email" | "github_url" | "instagram_url" | "linkedin_url" | "website_url"
 >;
 
 /**
@@ -64,6 +108,7 @@ export const mapMember = (
     linkedinUrl: profile?.linkedin_url ?? row.linkedin_url,
     websiteUrl: profile?.website_url ?? row.website_url,
     photoPath: row.photo_path,
+    avatarPath: profile?.avatar_path ?? null,
     hasPublicProfile: Boolean(profile),
   };
 };
