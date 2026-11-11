@@ -11,7 +11,7 @@ export function SiteNavLink({ onClick, ...props }: ComponentProps<typeof Link>) 
     <Link
       {...props}
       onClick={(event) => {
-        startTrail();
+        startTrail(typeof props.href === "string" ? props.href : (props.href.pathname ?? "/"));
         onClick?.(event);
       }}
     />

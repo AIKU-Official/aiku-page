@@ -58,7 +58,7 @@ export function SiteHeader() {
           : undefined
       }
       onClick={() => {
-        startTrail();
+        startTrail(item.href);
         closeNav();
       }}
       className={clsx(
@@ -82,7 +82,7 @@ export function SiteHeader() {
     >
       <Link
         href="/"
-        onClick={startTrail}
+        onClick={() => startTrail("/")}
         className="inline-flex shrink-0 items-center"
         aria-label="AIKU 홈으로 이동"
       >

@@ -42,8 +42,6 @@ export function AccountMenu({
   }, [open]);
 
   const close = () => {
-    // The account menu is site navigation: its pages start a new trail.
-    startTrail();
     setOpen(false);
     onNavigate();
   };
@@ -91,7 +89,11 @@ export function AccountMenu({
         <Link
           href="/profile"
           role="menuitem"
-          onClick={close}
+          onClick={() => {
+            // The account menu is site navigation: the profile starts a new trail.
+            startTrail("/profile");
+            close();
+          }}
           className={clsx(itemClassName, "text-body hover:bg-surface-soft hover:text-ink")}
         >
           프로필

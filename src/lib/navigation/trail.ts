@@ -1,87 +1,95 @@
 "use client";
 
-/**
- * The trail of pages visited in this tab, so a page can offer a way back to
- * the exact page before it (a profile → one of its projects → a teammate's
- * profile → …), labelled with that page's title. It mirrors the browser
- * history: moving to a new page appends, going back removes the last step.
- */
+import {
+  emptyTrail,
+  move,
+  name,
+  previous,
+  type Move,
+  type Trail,
+  type TrailStep,
+} from "./trail-core";
 
-export type TrailStep = { path: string; title: string };
+export type { TrailStep };
+
+// Browser side of the trail (rules in trail-core.ts): kept per tab in
+// sessionStorage, told how each navigation happened.
 
 const KEY = "aiku-trail";
-const MAX_STEPS = 30;
 const listeners = new Set<() => void>();
+let cached: { raw: string | null; trail: Trail } | null = null;
 
-let cached: TrailStep[] | null = null;
-let cachedRaw: string | null = null;
-
-function read(): TrailStep[] {
+function read(): Trail {
   let raw: string | null = null;
   try {
     raw = window.sessionStorage.getItem(KEY);
   } catch {
-    // Storage blocked: the trail is simply empty.
+    // Storage blocked: the trail lives only as long as the page.
   }
-  if (raw !== cachedRaw || cached === null) {
-    cachedRaw = raw;
-    try {
-      cached = raw ? (JSON.parse(raw) as TrailStep[]) : [];
-    } catch {
-      cached = [];
-    }
+  if (cached && cached.raw === raw) return cached.trail;
+  let trail = emptyTrail;
+  try {
+    trail = raw ? (JSON.parse(raw) as Trail) : emptyTrail;
+  } catch {
+    // Unreadable: start over.
   }
-  return cached;
+  cached = { raw, trail };
+  return trail;
 }
 
-function write(steps: TrailStep[]) {
+function write(trail: Trail) {
+  const raw = JSON.stringify(trail);
   try {
-    window.sessionStorage.setItem(KEY, JSON.stringify(steps.slice(-MAX_STEPS)));
+    window.sessionStorage.setItem(KEY, raw);
   } catch {
-    // Storage blocked: nothing to remember.
+    // Storage blocked: keep it in memory.
   }
+  cached = { raw, trail };
   listeners.forEach((listener) => listener());
 }
 
-/** Page title without the site suffix ("HanCLIP | AIKU" → "HanCLIP"). */
-const pageTitle = () => document.title.replace(/\s*\|\s*AIKU\s*$/, "").trim();
+// How the next page change came about, and to which page. A history
+// traversal fires `popstate` before the router renders the destination;
+// everything else is a link. The path guards against a note that never gets
+// used (a traversal between two anchors of one page, a click on the link to
+// the page already shown) being applied to a later, unrelated change.
+let pending: { kind: Move; path: string | null } | null = null;
+let listening = false;
 
-let startOver = false;
-
-/**
- * Called when the site's own navigation (header, account menu, footer) is
- * used: the page it leads to starts a new trail, so it offers no way back.
- */
-export function startTrail() {
-  startOver = true;
+function listen() {
+  if (listening) return;
+  listening = true;
+  window.addEventListener("popstate", () => {
+    pending = { kind: "pop", path: window.location.pathname };
+  });
+  // The first page this document shows: reloaded, reached through history, or opened.
+  const entry = performance.getEntriesByType("navigation")[0] as
+    PerformanceNavigationTiming | undefined;
+  const kind =
+    entry?.type === "reload" ? "reload" : entry?.type === "back_forward" ? "pop" : "push";
+  pending = { kind, path: null };
 }
 
-/** Records that `path` is now showing. Called on every navigation. */
+/** Called by the site's own navigation: the page at `href` starts a new trail. */
+export function startTrail(href: string) {
+  pending = { kind: "reset", path: new URL(href, window.location.href).pathname };
+}
+
+/** Records that `path` is now showing. Called on every page change. */
 export function visit(path: string) {
-  if (startOver) {
-    startOver = false;
-    write([{ path, title: "" }]);
-    return;
-  }
-  const steps = read();
-  const top = steps.at(-1);
-  if (top?.path === path) return;
-  if (steps.at(-2)?.path === path) {
-    write(steps.slice(0, -1)); // went back one step
-    return;
-  }
-  write([...steps, { path, title: "" }]);
+  listen();
+  const kind = pending && (pending.path === null || pending.path === path) ? pending.kind : "push";
+  pending = null;
+  write(move(read(), kind, path));
 }
 
-/** Fills in the current step's title once the page has set it. */
+/** Fills in the current page's title once the page has set it. */
 export function nameCurrentStep(path: string) {
-  const steps = read();
-  const top = steps.at(-1);
   // The home page carries the full site title; "홈" reads better as a step.
-  const title = path === "/" ? "홈" : pageTitle();
-  if (top?.path === path && title && top.title !== title) {
-    write([...steps.slice(0, -1), { path, title }]);
-  }
+  const title = path === "/" ? "홈" : document.title.replace(/\s*\|\s*AIKU\s*$/, "").trim();
+  const trail = read();
+  const named = name(trail, path, title);
+  if (named !== trail) write(named);
 }
 
 export function subscribeTrail(listener: () => void) {
@@ -91,8 +99,5 @@ export function subscribeTrail(listener: () => void) {
   };
 }
 
-/** The step before the current page, or null when this page was the first in the tab. */
-export function previousStep(): TrailStep | null {
-  const steps = read();
-  return steps.length >= 2 ? (steps.at(-2) ?? null) : null;
-}
+/** The page before the current one in this tab, or null. */
+export const previousStep = (): TrailStep | null => previous(read());
