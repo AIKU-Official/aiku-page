@@ -91,7 +91,12 @@ export function SiteFooter() {
         </div>
         <div className="flex justify-between gap-4 border-t border-soft-line pt-6 text-small text-muted max-sm:flex-col max-sm:gap-1">
           <p>고려대학교 딥러닝 학회 AIKU</p>
-          <p>© {new Date().getFullYear()} AIKU. All rights reserved.</p>
+          <p className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/privacy" className="transition-colors hover:text-ink">
+              개인정보처리방침
+            </Link>
+            <span>© {new Date().getFullYear()} AIKU. All rights reserved.</span>
+          </p>
         </div>
       </div>
     </footer>
