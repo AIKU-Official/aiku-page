@@ -92,8 +92,9 @@ export function RegisterForm({ generations }: { generations: string[] }) {
         <h2 className="text-subheading">회원 등록</h2>
         <p className="mt-1 text-small text-muted">
           {providerName ? `${providerName} 계정으로는` : "이 계정으로는"} 처음 로그인하셨습니다.
-          로그인 방법마다 한 번씩 본인 확인이 필요합니다. 확인되면 이미 쓰던 계정과 같은 회원으로
-          연결되고, 프로필도 그대로 보입니다. 학번은 본인 확인에만 쓰이고 공개되지 않습니다.
+          아래 정보로 한 번 확인하면 이미 쓰던 계정과 같은 회원으로 연결됩니다. 학번은 본인 확인에만
+          쓰이고 공개되지 않습니다. 이미 가입한 계정으로 로그인해 프로필 수정의 "로그인 방법"에서
+          바로 연결할 수도 있습니다.
         </p>
       </div>
       <TextField label="이름" name="name" autoComplete="name" required maxLength={60} />

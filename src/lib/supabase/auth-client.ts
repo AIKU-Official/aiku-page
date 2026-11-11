@@ -62,6 +62,32 @@ const sessionStorageAdapter = {
   },
 };
 
+/** sessionStorage key: access token of the verified account while another sign-in method is being added. */
+const LINK_TOKEN_KEY = "aiku-link-token";
+
+/**
+ * Starts adding `provider` as another sign-in method of the signed-in member.
+ * The current session's token is kept for the callback page, which hands both
+ * sessions to the server.
+ */
+export async function startLinking(provider: MemberAuthProvider) {
+  const auth = getAuthClient().auth;
+  const { data } = await auth.getSession();
+  if (!data.session) return { error: new Error("no session") };
+  store("session")?.setItem(LINK_TOKEN_KEY, data.session.access_token);
+  return auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: `${window.location.origin}/login/callback` },
+  });
+}
+
+/** The token left by `startLinking`, removed as it is read. */
+export function takeLinkToken(): string | null {
+  const token = store("session")?.getItem(LINK_TOKEN_KEY) ?? null;
+  store("session")?.removeItem(LINK_TOKEN_KEY);
+  return token;
+}
+
 let client: SupabaseClient<Database> | undefined;
 
 /**

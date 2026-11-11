@@ -145,6 +145,12 @@ export const passwordSignupSchema = z.object({
   ...identityFields,
 });
 
+/** Adds the account of `accountToken` to the member that `memberToken` is already verified as. */
+export const linkAccountSchema = z.object({
+  memberToken: z.string().min(1, "로그인이 필요합니다."),
+  accountToken: z.string().min(1, "로그인이 필요합니다."),
+});
+
 export const signupDecisionSchema = z.object({ userId: idSchema, memberId: idSchema });
 
 // Member profile -------------------------------------------------------------

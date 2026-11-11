@@ -13,6 +13,7 @@ import { studentIdDigest } from "@/lib/members/student-id";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import {
   idSchema,
+  linkAccountSchema,
   memberSignupSchema,
   passwordSignupSchema,
   signupDecisionSchema,
@@ -217,6 +218,87 @@ export async function signUpWithPassword(input: unknown): Promise<ActionResult<S
   } catch (error) {
     console.error("[member sign-up]", error);
     return { ok: false, message: "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요." };
+  }
+}
+
+/**
+ * Adds another sign-in method to a verified member without asking for their
+ * details again. The visitor proves both sides by holding a valid session for
+ * the verified account and for the new one at the same moment.
+ */
+export async function linkAccount(input: unknown): Promise<ActionResult<SignupOutcome>> {
+  const parsed = linkAccountSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "요청이 올바르지 않습니다." };
+  }
+
+  try {
+    const db = createAdminClient();
+    const [verified, added] = await Promise.all([
+      db.auth.getUser(parsed.data.memberToken),
+      db.auth.getUser(parsed.data.accountToken),
+    ]);
+    const verifiedUser = verified.data.user;
+    const addedUser = added.data.user;
+    if (!verifiedUser || !addedUser) {
+      return { ok: false, message: "로그인이 만료되었습니다. 다시 시도해주세요." };
+    }
+
+    const links = unwrap(
+      await db
+        .from("member_accounts")
+        .select("user_id, member_id")
+        .in("user_id", [verifiedUser.id, addedUser.id]),
+    );
+    const memberId = links?.find((link) => link.user_id === verifiedUser.id)?.member_id;
+    if (!memberId) {
+      return {
+        ok: false,
+        message: "학회원으로 확인된 계정에서만 로그인 방법을 연결할 수 있습니다.",
+      };
+    }
+    const existing = links?.find((link) => link.user_id === addedUser.id)?.member_id;
+    if (existing && existing !== memberId) {
+      return { ok: false, message: "이 계정은 이미 다른 회원에게 연결되어 있습니다." };
+    }
+    if (!existing) {
+      unwrap(
+        await db.from("member_accounts").insert({ user_id: addedUser.id, member_id: memberId }),
+      );
+      unwrap(await db.from("member_signup_requests").delete().eq("user_id", addedUser.id));
+    }
+    return { ok: true, message: "로그인 방법을 연결했습니다.", data: "linked" };
+  } catch (error) {
+    console.error("[member link]", error);
+    return { ok: false, message: "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요." };
+  }
+}
+
+/** Sign-in methods ("google", "github", "email") already linked to the signed-in member. */
+export async function getLinkedLogins(accessToken: string): Promise<ActionResult<string[]>> {
+  try {
+    const db = createAdminClient();
+    const { data } = await db.auth.getUser(String(accessToken ?? ""));
+    if (!data.user) return { ok: false, message: "로그인이 만료되었습니다." };
+    const own = unwrap(
+      await db
+        .from("member_accounts")
+        .select("member_id")
+        .eq("user_id", data.user.id)
+        .maybeSingle(),
+    );
+    if (!own) return { ok: true, message: "", data: [] };
+    const accounts = unwrap(
+      await db.from("member_accounts").select("user_id").eq("member_id", own.member_id),
+    );
+    const users = await Promise.all(
+      (accounts ?? []).map((account) => db.auth.admin.getUserById(account.user_id)),
+    );
+    const providers = users.flatMap((user) => user.data.user?.app_metadata.providers ?? []);
+    return { ok: true, message: "", data: [...new Set(providers as string[])] };
+  } catch (error) {
+    console.error("[member link]", error);
+    return { ok: false, message: "요청을 처리하지 못했습니다." };
   }
 }
 

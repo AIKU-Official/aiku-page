@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
+import { linkAccount } from "@/actions/membership";
 import { loadMembership, watchMemberAccount } from "@/lib/auth/member";
-import { getAuthClient } from "@/lib/supabase/auth-client";
+import { getAuthClient, takeLinkToken } from "@/lib/supabase/auth-client";
 
 /**
  * Landing page of the OAuth redirect. Creating the client exchanges the
@@ -12,6 +13,8 @@ import { getAuthClient } from "@/lib/supabase/auth-client";
  */
 export function LoginCallback() {
   const router = useRouter();
+  // SIGNED_IN and INITIAL_SESSION can both arrive; act on the first only.
+  const handled = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -31,6 +34,22 @@ export function LoginCallback() {
       }
       // Supabase forbids awaiting its own calls inside this callback.
       setTimeout(async () => {
+        if (handled.current) return;
+        handled.current = true;
+
+        // Arriving from "연결" on the profile: add this account to the member
+        // who started it, instead of asking for their details again.
+        const memberToken = takeLinkToken();
+        if (memberToken) {
+          const result = await linkAccount({ memberToken, accountToken: session.access_token });
+          const { member } = result.ok ? { member: true } : await loadMembership();
+          // A full navigation, so the profile editor reads the outcome from the address.
+          window.location.replace(
+            member ? `/profile/edit?linked=${result.ok ? 1 : 0}#logins` : "/login/register",
+          );
+          return;
+        }
+
         const { member } = await loadMembership();
         // Accounts not yet linked to a roster member go through sign-up first.
         router.replace(member ? "/" : "/login/register");

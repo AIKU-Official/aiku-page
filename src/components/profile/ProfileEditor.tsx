@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
+import { getLinkedLogins } from "@/actions/membership";
 import { requestAvatarUpload, saveMyProfile, type ProfilePage } from "@/actions/profile";
 import {
   Checkbox,
@@ -18,7 +19,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { refreshMemberAccount, useMemberAccount } from "@/lib/auth/member";
 import { MAX_AVATAR_BYTES, PROFILE_LIMITS, type MemberProfile } from "@/lib/members/profile";
 import { storagePublicUrl, UPLOAD_BUCKET } from "@/lib/storage/public-url";
-import { getAuthClient } from "@/lib/supabase/auth-client";
+import { getAuthClient, startLinking, type MemberAuthProvider } from "@/lib/supabase/auth-client";
 
 function Panel({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
@@ -101,6 +102,96 @@ function RowsEditor<T extends Row>({
         </div>
       ) : null}
     </div>
+  );
+}
+
+const LOGIN_METHODS: { id: "email" | MemberAuthProvider; label: string }[] = [
+  { id: "email", label: "AIKU 아이디" },
+  { id: "google", label: "Google" },
+  { id: "github", label: "GitHub" },
+];
+
+/** Which sign-in methods lead to this member, and a way to add Google or GitHub. */
+function LoginMethods() {
+  const [linked, setLinked] = useState<string[] | null>(null);
+  const [linking, setLinking] = useState<MemberAuthProvider | null>(null);
+  // Set by the callback page after an attempt to add a method.
+  const [result] = useState(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("linked"),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const response = await getLinkedLogins(await currentAccessToken());
+      if (!cancelled) setLinked(response.ok ? response.data : []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const link = async (provider: MemberAuthProvider) => {
+    setLinking(provider);
+    const { error } = await startLinking(provider);
+    if (error) setLinking(null);
+  };
+
+  return (
+    <section id="logins" className="grid scroll-mt-24 gap-5 card p-7 max-sm:p-5">
+      <div>
+        <h2 className="text-subheading">로그인 방법</h2>
+        <p className="mt-1 text-small text-muted">
+          연결한 방법 중 어느 것으로 로그인해도 같은 회원, 같은 프로필로 들어옵니다.
+        </p>
+      </div>
+      <ul className="divide-y divide-soft-line border-y border-soft-line">
+        {LOGIN_METHODS.map((method) => {
+          const isLinked = linked?.includes(method.id);
+          return (
+            <li key={method.id} className="flex min-h-14 items-center justify-between gap-4 py-2">
+              <span className="font-medium text-ink">{method.label}</span>
+              {linked === null ? (
+                <span className="text-small text-muted">확인 중…</span>
+              ) : isLinked ? (
+                <span className="inline-flex h-6 items-center rounded-full bg-green-100 px-2.5 text-label text-green-800">
+                  연결됨
+                </span>
+              ) : method.id === "email" ? (
+                <ButtonLink href="/login/signup" variant="secondary" size="sm">
+                  아이디 만들기
+                </ButtonLink>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={linking !== null}
+                  onClick={() => link(method.id as MemberAuthProvider)}
+                >
+                  {linking === method.id ? "이동 중…" : "연결"}
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <StatusMessage
+        status={
+          result === "1"
+            ? { tone: "success", message: "로그인 방법을 연결했습니다." }
+            : result === "0"
+              ? {
+                  tone: "error",
+                  message:
+                    "연결하지 못했습니다. 그 계정이 이미 다른 회원에게 연결되어 있을 수 있습니다.",
+                }
+              : null
+        }
+      />
+    </section>
   );
 }
 
@@ -390,6 +481,8 @@ function EditorForm({
           addLabel="분류 추가"
         />
       </Panel>
+
+      <LoginMethods />
 
       <Panel title="공개 여부">
         <label className="flex cursor-pointer items-start gap-2.5 text-small text-body">
