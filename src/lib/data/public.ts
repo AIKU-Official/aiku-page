@@ -58,7 +58,9 @@ export async function getProjectArchive(): Promise<ProjectArchive> {
 export async function getGenerations(): Promise<Generation[]> {
   const { data, error } = await createPublicClient()
     .from("generations")
-    .select("id, name, members(*)")
+    .select(
+      "id, name, members(*, member_profiles(is_public, contact_email, github_url, instagram_url, linkedin_url, website_url))",
+    )
     .order("sort_order")
     .order("created_at")
     .order("sort_order", { referencedTable: "members" })

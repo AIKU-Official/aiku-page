@@ -96,6 +96,74 @@ export type Database = {
           },
         ];
       };
+      member_profiles: {
+        Row: {
+          avatar_path: string | null;
+          bio: string;
+          contact_email: string | null;
+          created_at: string;
+          experience: Json;
+          focus: string[];
+          github_url: string | null;
+          headline: string;
+          instagram_url: string | null;
+          interests: Json;
+          is_public: boolean;
+          linkedin_url: string | null;
+          member_id: string;
+          skills: Json;
+          tagline: string;
+          updated_at: string;
+          website_url: string | null;
+        };
+        Insert: {
+          avatar_path?: string | null;
+          bio?: string;
+          contact_email?: string | null;
+          created_at?: string;
+          experience?: Json;
+          focus?: string[];
+          github_url?: string | null;
+          headline?: string;
+          instagram_url?: string | null;
+          interests?: Json;
+          is_public?: boolean;
+          linkedin_url?: string | null;
+          member_id: string;
+          skills?: Json;
+          tagline?: string;
+          updated_at?: string;
+          website_url?: string | null;
+        };
+        Update: {
+          avatar_path?: string | null;
+          bio?: string;
+          contact_email?: string | null;
+          created_at?: string;
+          experience?: Json;
+          focus?: string[];
+          github_url?: string | null;
+          headline?: string;
+          instagram_url?: string | null;
+          interests?: Json;
+          is_public?: boolean;
+          linkedin_url?: string | null;
+          member_id?: string;
+          skills?: Json;
+          tagline?: string;
+          updated_at?: string;
+          website_url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_profiles_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: true;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       member_signup_requests: {
         Row: {
           attempts: number;

@@ -82,6 +82,10 @@ async function referencedPaths(): Promise<Set<string>> {
   if (members.error) throw new Error(members.error.message);
   members.data.forEach((member) => add(member.photo_path));
 
+  const profiles = await supabase.from("member_profiles").select("avatar_path");
+  if (profiles.error) throw new Error(profiles.error.message);
+  profiles.data.forEach((profile) => add(profile.avatar_path));
+
   return referenced;
 }
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { LOGIN_ID_PATTERN, MIN_PASSWORD_LENGTH, normalizeLoginId } from "@/lib/auth/login-id";
+import { normalizeLink, PROFILE_LIMITS, type LinkKind } from "@/lib/members/profile";
 import { UPLOAD_SCOPES } from "@/lib/storage/keys";
 import { MEMBER_GRADES } from "@/lib/types";
 
@@ -145,6 +146,67 @@ export const passwordSignupSchema = z.object({
 });
 
 export const signupDecisionSchema = z.object({ userId: idSchema, memberId: idSchema });
+
+// Member profile -------------------------------------------------------------
+
+const link = (kind: LinkKind, label: string) =>
+  text(300)
+    .transform((value) => normalizeLink(kind, value))
+    .refine(
+      (value) => value === "" || /^https?:\/\/\S+$/i.test(value),
+      `${label} 주소가 올바르지 않습니다.`,
+    )
+    .transform((value) => value || null);
+
+/** Keeps the rows a member actually filled in. */
+const filled = <T extends Record<string, string>>(rows: T[]) =>
+  rows.filter((row) => Object.values(row).some((value) => value !== ""));
+
+export const profileSchema = z.object({
+  accessToken: z.string().min(1, "로그인이 필요합니다."),
+  isPublic: z.boolean(),
+  headline: text(120),
+  tagline: text(120),
+  bio: text(1200),
+  /** Object key of a newly uploaded picture, null to remove, undefined to keep. */
+  avatarPath: z.string().max(300).nullable().optional(),
+  contactEmail: text(200)
+    .refine(
+      (value) => value === "" || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value),
+      "이메일 주소가 올바르지 않습니다.",
+    )
+    .transform((value) => value || null),
+  githubUrl: link("github", "GitHub"),
+  instagramUrl: link("instagram", "Instagram"),
+  linkedinUrl: link("linkedin", "LinkedIn"),
+  websiteUrl: link("website", "웹사이트"),
+  focus: z
+    .array(text(40))
+    .transform((tags) => [...new Set(tags.filter(Boolean))])
+    .pipe(
+      z
+        .array(z.string())
+        .max(PROFILE_LIMITS.focus, `키워드는 ${PROFILE_LIMITS.focus}개까지 넣을 수 있습니다.`),
+    ),
+  interests: z
+    .array(z.object({ title: text(80), description: text(400) }))
+    .transform(filled)
+    .pipe(z.array(z.any()).max(PROFILE_LIMITS.interests)),
+  skills: z
+    .array(z.object({ label: text(40), items: text(400) }))
+    .transform(filled)
+    .pipe(z.array(z.any()).max(PROFILE_LIMITS.skills)),
+  experience: z
+    .array(z.object({ period: text(60), title: text(120), organization: text(160) }))
+    .transform(filled)
+    .pipe(z.array(z.any()).max(PROFILE_LIMITS.experience)),
+});
+
+export const avatarUploadSchema = z.object({
+  accessToken: z.string().min(1, "로그인이 필요합니다."),
+  name: z.string().min(1).max(255),
+  size: z.number().int().positive("빈 파일은 올릴 수 없습니다."),
+});
 
 // Uploads ------------------------------------------------------------------
 

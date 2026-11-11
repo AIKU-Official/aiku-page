@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { useEffect, useSyncExternalStore } from "react";
 
 import { emailToLoginId } from "@/lib/auth/login-id";
+import { storagePublicUrl } from "@/lib/storage/public-url";
 import type { MemberGrade } from "@/lib/types";
 import { hasStoredMemberSession } from "@/lib/supabase/auth-client";
 
@@ -15,8 +16,10 @@ export type MemberAccount = {
   loginId: string | null;
   /** "google", "github", or "email" for an AIKU ID / password account. */
   provider: string | null;
-  /** Profile picture from Google / GitHub, if any. */
+  /** Picture to show: the uploaded profile picture, else the one from Google / GitHub. */
   avatarUrl: string | null;
+  /** Picture from Google / GitHub, kept so removing an upload falls back to it. */
+  providerAvatarUrl: string | null;
   /** The roster member this account is linked to; null until sign-up is verified. */
   member: {
     id: string;
@@ -25,6 +28,8 @@ export type MemberAccount = {
     department: string;
     grade: MemberGrade;
     position: string;
+    /** Uploaded profile picture (storage object key), if any. */
+    avatarPath: string | null;
   } | null;
   /** A sign-up request is waiting for an admin. */
   pending: boolean;
@@ -40,6 +45,7 @@ const toAccount = (user: User): MemberAccount => {
     email: loginId ? null : (user.email ?? null),
     loginId,
     avatarUrl: pick("avatar_url") || pick("picture") || null,
+    providerAvatarUrl: pick("avatar_url") || pick("picture") || null,
     provider: typeof user.app_metadata.provider === "string" ? user.app_metadata.provider : null,
     member: null,
     pending: false,
@@ -53,7 +59,9 @@ export async function loadMembership(): Promise<Pick<MemberAccount, "member" | "
   const [link, request] = await Promise.all([
     db
       .from("member_accounts")
-      .select("members(id, name, department, grade, position, generations(name))")
+      .select(
+        "members(id, name, department, grade, position, generations(name), member_profiles(avatar_path))",
+      )
       .maybeSingle(),
     db.from("member_signup_requests").select("user_id").maybeSingle(),
   ]);
@@ -67,11 +75,24 @@ export async function loadMembership(): Promise<Pick<MemberAccount, "member" | "
           department: member.department ?? "",
           grade: member.grade as MemberGrade,
           position: member.position ?? "",
+          avatarPath: member.member_profiles?.avatar_path ?? null,
         }
       : null,
     pending: Boolean(request.data),
   };
 }
+
+const withMembership = (
+  account: MemberAccount,
+  membership: Pick<MemberAccount, "member" | "pending">,
+): MemberAccount => ({
+  ...account,
+  ...membership,
+  name: membership.member?.name ?? account.name,
+  avatarUrl: membership.member?.avatarPath
+    ? storagePublicUrl(membership.member.avatarPath)
+    : account.providerAvatarUrl,
+});
 
 type AccountState = MemberAccount | null | undefined;
 
@@ -111,7 +132,7 @@ export function watchMemberAccount() {
       setTimeout(async () => {
         const membership = await loadMembership();
         if (turn !== latest) return;
-        publish({ ...base, ...membership, name: membership.member?.name ?? base.name });
+        publish(withMembership(base, membership));
       }, 0);
     });
   });
@@ -121,7 +142,7 @@ export function watchMemberAccount() {
 export async function refreshMemberAccount() {
   if (!state) return;
   const membership = await loadMembership();
-  if (state) publish({ ...state, ...membership, name: membership.member?.name ?? state.name });
+  if (state) publish(withMembership(state, membership));
 }
 
 /**

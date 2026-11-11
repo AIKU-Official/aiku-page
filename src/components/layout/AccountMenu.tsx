@@ -4,36 +4,8 @@ import clsx from "clsx";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { Avatar } from "@/components/ui/Avatar";
 import type { MemberAccount } from "@/lib/auth/member";
-
-/** Round profile picture; falls back to the first letter of the name. */
-export function Avatar({ account, className }: { account: MemberAccount; className?: string }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const showImage = account.avatarUrl && account.avatarUrl !== failedUrl;
-
-  return (
-    <span
-      className={clsx(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100 font-semibold text-green-800",
-        className,
-      )}
-    >
-      {showImage ? (
-        // A plain img: the picture is served by Google or GitHub, outside the image optimizer's allowlist.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={account.avatarUrl ?? undefined}
-          alt=""
-          referrerPolicy="no-referrer"
-          className="size-full object-cover"
-          onError={() => setFailedUrl(account.avatarUrl)}
-        />
-      ) : (
-        <span aria-hidden="true">{account.name.trim().charAt(0).toUpperCase()}</span>
-      )}
-    </span>
-  );
-}
 
 const itemClassName =
   "flex h-10 w-full items-center rounded-control px-3 text-left text-[0.9375rem] font-medium transition-colors max-lg:h-12 max-lg:text-[1.0625rem]";
@@ -90,11 +62,11 @@ export function AccountMenu({
         onClick={() => setOpen((value) => !value)}
         className="flex cursor-pointer items-center rounded-full transition-shadow hover:shadow-[0_0_0_3px_var(--color-green-100)] focus-visible:shadow-[0_0_0_3px_var(--color-green-100)] focus-visible:outline-none max-lg:hidden"
       >
-        <Avatar account={account} className="size-9 text-[0.9375rem]" />
+        <Avatar name={account.name} src={account.avatarUrl} className="size-9 text-[0.9375rem]" />
       </button>
 
       <div className="hidden items-center gap-3 px-3 py-2 max-lg:flex">
-        <Avatar account={account} className="size-10" />
+        <Avatar name={account.name} src={account.avatarUrl} className="size-10" />
         <span className="min-w-0">
           <span className="block truncate font-semibold text-ink">{account.name}</span>
           {(account.email ?? account.loginId) ? (

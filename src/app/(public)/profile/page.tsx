@@ -13,9 +13,13 @@ export const metadata: Metadata = {
 export default function ProfilePage() {
   return (
     <>
-      <PageHero eyebrow="Profile" title="프로필" lead="AIKU 회원 명단에 등록된 내 정보입니다." />
+      <PageHero
+        eyebrow="Profile"
+        title="프로필"
+        lead="나를 소개하는 페이지입니다. 공개 여부는 직접 정할 수 있습니다."
+      />
       <Section>
-        <div className="site-container grid justify-items-center">
+        <div className="site-container">
           <ProfileView />
         </div>
       </Section>

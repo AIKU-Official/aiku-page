@@ -1,11 +1,14 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { Section, SectionHead } from "@/components/layout/Section";
+import { ProfileModal } from "@/components/profile/ProfileModal";
 import { EmptyNotice } from "@/components/ui/EmptyNotice";
 import { SearchIcon } from "@/components/ui/icons";
+import { useMemberAccount } from "@/lib/auth/member";
 import {
   ALL,
   directoryStatusText,
@@ -43,6 +46,12 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
   const [selectedGeneration, setSelectedGeneration] = useState<string | null>(null);
   const [grade, setGrade] = useState<DirectoryFilter["grade"]>(ALL);
   const [query, setQuery] = useState("");
+  // A signed-in member's own card leads to their profile page; other cards
+  // open the public profile here, when there is one.
+  const router = useRouter();
+  const ownMemberId = useMemberAccount()?.member?.id;
+  const [openProfile, setOpenProfile] = useState<string | null>(null);
+  const closeProfile = useCallback(() => setOpenProfile(null), []);
 
   useEffect(() => {
     const onHashChange = () => setSelectedGeneration(null);
@@ -201,7 +210,17 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
               </div>
               <div className="grid grid-cols-4 gap-3 max-lg:grid-cols-3 max-sm:grid-cols-2 max-sm:gap-2">
                 {generation.members.map((member) => (
-                  <MemberCard key={member.id} member={member} />
+                  <MemberCard
+                    key={member.id}
+                    member={member}
+                    onOpen={
+                      member.id === ownMemberId
+                        ? () => router.push("/profile")
+                        : member.hasPublicProfile
+                          ? () => setOpenProfile(member.id)
+                          : undefined
+                    }
+                  />
                 ))}
               </div>
             </section>
@@ -212,6 +231,7 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
           {allMembers.length === 0 ? <EmptyNotice>아직 공개된 멤버가 없습니다.</EmptyNotice> : null}
         </div>
       </Section>
+      {openProfile ? <ProfileModal memberId={openProfile} onClose={closeProfile} /> : null}
     </>
   );
 }

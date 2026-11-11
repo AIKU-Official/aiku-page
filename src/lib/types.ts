@@ -58,9 +58,12 @@ export type Member = {
   summary: string;
   email: string | null;
   githubUrl: string | null;
+  instagramUrl: string | null;
   linkedinUrl: string | null;
   websiteUrl: string | null;
   photoPath: string | null;
+  /** The member wrote a profile and made it public; the card opens it. */
+  hasPublicProfile: boolean;
 };
 
 export type Generation = {
