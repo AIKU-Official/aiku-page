@@ -5,12 +5,6 @@ import { useMyProfile } from "@/components/profile/useMyProfile";
 import { ButtonLink } from "@/components/ui/Button";
 import { useMemberAccount } from "@/lib/auth/member";
 
-const providerLabels: Record<string, string> = {
-  google: "Google",
-  github: "GitHub",
-  email: "AIKU",
-};
-
 function Notice({
   children,
   action,
@@ -79,13 +73,6 @@ export function ProfileView() {
   }
 
   const { subject, profile } = state.page;
-  const signIn = [
-    account.loginId ? `아이디 ${account.loginId}` : account.email,
-    account.provider ? `${providerLabels[account.provider] ?? account.provider} 계정` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
     <div className="grid gap-10 max-sm:gap-8">
       <ProfileContent
@@ -123,7 +110,6 @@ export function ProfileView() {
         <ButtonLink href="/profile/edit" variant="dark" size="sm">
           프로필 수정
         </ButtonLink>
-        {signIn ? <p className="w-full text-small text-muted">로그인 계정: {signIn}</p> : null}
       </div>
     </div>
   );
