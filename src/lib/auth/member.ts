@@ -5,7 +5,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { emailToLoginId } from "@/lib/auth/login-id";
 import type { MemberGrade } from "@/lib/types";
-import { MEMBER_SESSION_KEY } from "@/lib/supabase/auth-client";
+import { hasStoredMemberSession } from "@/lib/supabase/auth-client";
 
 export type MemberAccount = {
   /** Roster name once linked, else the name from Google / GitHub. */
@@ -44,14 +44,6 @@ const toAccount = (user: User): MemberAccount => {
     member: null,
     pending: false,
   };
-};
-
-const hasStoredSession = () => {
-  try {
-    return window.localStorage.getItem(MEMBER_SESSION_KEY) !== null;
-  } catch {
-    return false;
-  }
 };
 
 /** Reads the signed-in user's own link and request rows (Row Level Security allows only those). */
@@ -145,7 +137,7 @@ export function useMemberAccount({ eager = false } = {}): AccountState {
   );
 
   useEffect(() => {
-    if (eager || hasStoredSession()) {
+    if (eager || hasStoredMemberSession()) {
       watchMemberAccount();
     } else if (!started) {
       publish(null);

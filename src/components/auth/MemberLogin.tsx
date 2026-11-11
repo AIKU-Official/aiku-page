@@ -2,14 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 
 import { StatusMessage, TextField, type Status } from "@/components/admin/ui";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { GitHubIcon, GoogleIcon } from "@/components/ui/icons";
 import { loginIdToEmail } from "@/lib/auth/login-id";
 import { loadMembership, useMemberAccount } from "@/lib/auth/member";
-import { getAuthClient, type MemberAuthProvider } from "@/lib/supabase/auth-client";
+import {
+  getAuthClient,
+  getRememberMember,
+  setRememberMember,
+  subscribeRememberMember,
+  type MemberAuthProvider,
+} from "@/lib/supabase/auth-client";
 
 const providers: { id: MemberAuthProvider; label: string; icon: React.ReactNode }[] = [
   { id: "google", label: "Google로 계속하기", icon: <GoogleIcon className="size-[18px]" /> },
@@ -29,6 +35,9 @@ export function MemberLogin({ error }: { error?: string }) {
   );
   const [pending, setPending] = useState(false);
   const router = useRouter();
+  // "자동 로그인": on keeps the session after the browser closes. It applies to
+  // all three sign-in methods.
+  const remember = useSyncExternalStore(subscribeRememberMember, getRememberMember, () => true);
 
   const signIn = async (provider: MemberAuthProvider) => {
     setPending(true);
@@ -138,6 +147,15 @@ export function MemberLogin({ error }: { error?: string }) {
               required
               maxLength={72}
             />
+            <label className="flex w-fit cursor-pointer items-center gap-2 text-small text-body">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(event) => setRememberMember(event.target.checked)}
+                className="size-4 cursor-pointer accent-green-600"
+              />
+              자동 로그인
+            </label>
             <StatusMessage status={status} />
             <Button type="submit" variant="dark" disabled={pending || account === undefined}>
               로그인
