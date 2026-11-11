@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { approveSignupRequest, rejectSignupRequest } from "@/actions/membership";
+import { emailToLoginId } from "@/lib/auth/login-id";
 import type { Generation } from "@/lib/types";
 
 import { EmptyAdminText, ItemButton } from "./AdminList";
@@ -16,6 +17,11 @@ export type SignupRequest = {
   name: string;
   generationName: string;
   attempts: number;
+};
+
+const accountLabel = (email: string | null) => {
+  const loginId = emailToLoginId(email);
+  return loginId ? `아이디 ${loginId}` : (email ?? "이메일 없음");
 };
 
 /** Sign-ups whose name, generation and student ID did not match the roster. */
@@ -69,7 +75,7 @@ export function SignupRequestsPanel({
                   {request.generationName} {request.name}
                 </h3>
                 <p className="text-small text-muted">
-                  {[request.email ?? "이메일 없음", `확인 시도 ${request.attempts}회`].join(" · ")}
+                  {[accountLabel(request.email), `확인 시도 ${request.attempts}회`].join(" · ")}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">

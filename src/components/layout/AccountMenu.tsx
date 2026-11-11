@@ -97,8 +97,10 @@ export function AccountMenu({
         <Avatar account={account} className="size-10" />
         <span className="min-w-0">
           <span className="block truncate font-semibold text-ink">{account.name}</span>
-          {account.email ? (
-            <span className="block truncate text-small text-muted">{account.email}</span>
+          {(account.email ?? account.loginId) ? (
+            <span className="block truncate text-small text-muted">
+              {account.email ?? account.loginId}
+            </span>
           ) : null}
         </span>
       </div>

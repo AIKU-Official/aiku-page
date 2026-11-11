@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <PageHero
         eyebrow="Login"
         title="로그인"
-        lead="AIKU 회원은 Google 또는 GitHub 계정으로 로그인할 수 있습니다."
+        lead="AIKU 회원은 Google, GitHub 또는 AIKU 아이디로 로그인할 수 있습니다."
       />
       <Section>
         <div className="site-container grid justify-items-center gap-10 max-sm:gap-8">

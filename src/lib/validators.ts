@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { LOGIN_ID_PATTERN, MIN_PASSWORD_LENGTH, normalizeLoginId } from "@/lib/auth/login-id";
 import { UPLOAD_SCOPES } from "@/lib/storage/keys";
 import { MEMBER_GRADES } from "@/lib/types";
 
@@ -108,15 +109,39 @@ export const memberSchema = z.object({
 
 // Member sign-up ------------------------------------------------------------
 
-export const memberSignupSchema = z.object({
-  /** Supabase access token of the signed-in visitor. */
-  accessToken: z.string().min(1, "로그인이 필요합니다."),
+const identityFields = {
   name: required("이름을 입력하세요.", 60),
   generation: required("기수를 선택하세요.", 40),
   studentId: z
     .string()
     .trim()
     .regex(/^\d{10}$/, "학번 10자리를 숫자로 입력하세요."),
+};
+
+export const memberSignupSchema = z.object({
+  /** Supabase access token of the signed-in visitor. */
+  accessToken: z.string().min(1, "로그인이 필요합니다."),
+  ...identityFields,
+});
+
+/** Sign-up with AIKU's own ID and password, verified against the roster like any other. */
+export const passwordSignupSchema = z.object({
+  loginId: z
+    .string()
+    .transform(normalizeLoginId)
+    .pipe(
+      z
+        .string()
+        .regex(
+          LOGIN_ID_PATTERN,
+          "아이디는 영문 소문자, 숫자, . _ - 로 4~20자여야 하며 영문이나 숫자로 시작해야 합니다.",
+        ),
+    ),
+  password: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH, `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`)
+    .max(72, "비밀번호는 72자 이하여야 합니다."),
+  ...identityFields,
 });
 
 export const signupDecisionSchema = z.object({ userId: idSchema, memberId: idSchema });

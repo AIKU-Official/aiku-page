@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { registerMember } from "@/actions/membership";
 import {
@@ -12,15 +12,38 @@ import {
   type Status,
 } from "@/components/admin/ui";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { refreshMemberAccount, useMemberAccount } from "@/lib/auth/member";
+import { refreshMemberAccount, SIGNUP_NOTE_KEY, useMemberAccount } from "@/lib/auth/member";
 import { getAuthClient } from "@/lib/supabase/auth-client";
+
+const NOT_FOUND_MESSAGE =
+  "학회원 정보에서 찾을 수 없습니다. 입력한 내용을 확인해 다시 제출하거나 운영진에게 문의해주세요.";
+
+const readSignupNote = () => {
+  try {
+    return window.sessionStorage.getItem(SIGNUP_NOTE_KEY) === "notfound";
+  } catch {
+    return false;
+  }
+};
 
 /** First sign-in: the visitor proves which roster member they are. */
 export function RegisterForm({ generations }: { generations: string[] }) {
   const account = useMemberAccount({ eager: true });
-  const [status, setStatus] = useState<Status>(null);
+  // ID sign-up leaves a note when the roster check has just failed, so the
+  // message shows here once and not on later visits.
+  const [status, setStatus] = useState<Status>(() =>
+    readSignupNote() ? { tone: "error", message: NOT_FOUND_MESSAGE } : null,
+  );
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem(SIGNUP_NOTE_KEY);
+    } catch {
+      // Storage can be blocked; the note then simply was never written.
+    }
+  }, []);
   const [pending, setPending] = useState(false);
-  const [linkedNow, setLinkedNow] = useState(false);
+  // Set to the confirmation text once this visit links the account.
+  const [linkedMessage, setLinkedMessage] = useState<string | null>(null);
 
   if (account === undefined) {
     return (
@@ -43,20 +66,25 @@ export function RegisterForm({ generations }: { generations: string[] }) {
     );
   }
 
-  if (account.member || linkedNow) {
+  if (account.member || linkedMessage) {
     return (
       <div className="grid w-full max-w-[520px] gap-4 card p-7 max-sm:p-5">
-        <div>
-          <h2 className="text-subheading">회원 확인이 완료되었습니다.</h2>
-          {account.member ? (
-            <p className="mt-1 text-small text-muted">
-              {account.member.generation} {account.member.name} 회원으로 등록된 계정입니다.
-            </p>
-          ) : null}
+        <div role="status">
+          <h2 className="text-subheading">
+            {account.member
+              ? `${account.member.generation} ${account.member.name} 학회원으로 확인되었습니다.`
+              : linkedMessage}
+          </h2>
+          <p className="mt-1 text-small text-muted">
+            이제 이 계정으로 로그인하면 AIKU 학회원으로 인식됩니다.
+          </p>
         </div>
-        <div>
-          <ButtonLink href="/members" variant="dark" size="sm">
-            Members 보기
+        <div className="flex flex-wrap gap-2">
+          <ButtonLink href="/profile" variant="dark" size="sm">
+            내 프로필 보기
+          </ButtonLink>
+          <ButtonLink href="/" variant="secondary" size="sm">
+            홈으로
           </ButtonLink>
         </div>
       </div>
@@ -82,10 +110,10 @@ export function RegisterForm({ generations }: { generations: string[] }) {
       setStatus({ tone: "error", message: result.message });
     } else if (result.data === "linked") {
       setStatus(null);
-      setLinkedNow(true);
+      setLinkedMessage(result.message);
       void refreshMemberAccount();
     } else {
-      setStatus({ tone: "info", message: result.message });
+      setStatus({ tone: "error", message: result.message });
     }
   };
 
@@ -126,7 +154,7 @@ export function RegisterForm({ generations }: { generations: string[] }) {
             ? {
                 tone: "info",
                 message:
-                  "운영진의 승인을 기다리는 요청이 있습니다. 정보를 고쳐 다시 제출할 수 있습니다.",
+                  "이전에 제출한 정보는 운영진이 확인하고 있습니다. 정보를 고쳐 다시 제출할 수도 있습니다.",
               }
             : null)
         }

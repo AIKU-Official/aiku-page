@@ -8,7 +8,11 @@ import { ButtonLink } from "@/components/ui/Button";
 import { useMemberAccount } from "@/lib/auth/member";
 import { MEMBER_GRADE_LABELS } from "@/lib/types";
 
-const providerLabels: Record<string, string> = { google: "Google", github: "GitHub" };
+const providerLabels: Record<string, string> = {
+  google: "Google",
+  github: "GitHub",
+  email: "AIKU",
+};
 const pillClassName =
   "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
 
@@ -41,6 +45,7 @@ export function ProfileView() {
   const rows: [string, string][] = [
     ["기수", member?.generation ?? ""],
     ["학과", member?.department ?? ""],
+    ["아이디", account.loginId ?? ""],
     ["이메일", account.email ?? ""],
     ["로그인 계정", account.provider ? (providerLabels[account.provider] ?? account.provider) : ""],
   ];

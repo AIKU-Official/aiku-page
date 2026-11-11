@@ -3,14 +3,20 @@
 import type { User } from "@supabase/supabase-js";
 import { useEffect, useSyncExternalStore } from "react";
 
+import { emailToLoginId } from "@/lib/auth/login-id";
 import type { MemberGrade } from "@/lib/types";
 import { MEMBER_SESSION_KEY } from "@/lib/supabase/auth-client";
+
+/** sessionStorage key: ID sign-up notes a failed roster check for the registration page. */
+export const SIGNUP_NOTE_KEY = "aiku-signup-result";
 
 export type MemberAccount = {
   /** Roster name once linked, else the name from Google / GitHub. */
   name: string;
   email: string | null;
-  /** "google" or "github". */
+  /** AIKU ID for ID / password accounts, else null. */
+  loginId: string | null;
+  /** "google", "github", or "email" for an AIKU ID / password account. */
   provider: string | null;
   /** Profile picture from Google / GitHub, if any. */
   avatarUrl: string | null;
@@ -30,9 +36,12 @@ export type MemberAccount = {
 const toAccount = (user: User): MemberAccount => {
   const meta = user.user_metadata as Record<string, unknown>;
   const pick = (key: string) => (typeof meta[key] === "string" ? (meta[key] as string) : "");
+  const loginId = emailToLoginId(user.email);
   return {
-    name: pick("full_name") || pick("name") || pick("user_name") || user.email || "회원",
-    email: user.email ?? null,
+    name: pick("full_name") || pick("name") || pick("user_name") || loginId || user.email || "회원",
+    // The address behind an AIKU ID is synthetic and never shown.
+    email: loginId ? null : (user.email ?? null),
+    loginId,
     avatarUrl: pick("avatar_url") || pick("picture") || null,
     provider: typeof user.app_metadata.provider === "string" ? user.app_metadata.provider : null,
     member: null,

@@ -4,18 +4,123 @@ import { timingSafeEqual } from "node:crypto";
 
 import { ActionError, adminAction, unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
+import { loginIdToEmail } from "@/lib/auth/login-id";
 import { serverEnv } from "@/lib/env.server";
 import { studentIdDigest } from "@/lib/members/student-id";
 import { createAdminClient } from "@/lib/supabase/admin-client";
-import { idSchema, memberSignupSchema, signupDecisionSchema } from "@/lib/validators";
+import {
+  idSchema,
+  memberSignupSchema,
+  passwordSignupSchema,
+  signupDecisionSchema,
+} from "@/lib/validators";
 
 /** Sign-up is closed for an account after this many failed verifications. */
 const MAX_SIGNUP_ATTEMPTS = 5;
+
+/** With this many other accounts already failing for one person, even a match waits for an admin. */
+const MAX_FAILED_ACCOUNTS_PER_PERSON = 3;
 
 export type SignupOutcome = "linked" | "pending";
 
 const sameDigest = (a: string, b: string) =>
   a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
+type AdminDb = ReturnType<typeof createAdminClient>;
+type Identity = { name: string; generation: string; studentId: string };
+
+const NOT_READY: ActionResult<never> = {
+  ok: false,
+  message: "회원 등록이 아직 준비되지 않았습니다. 운영진에게 문의해주세요.",
+};
+
+const verificationSecret = () => {
+  const secret = serverEnv().MEMBER_VERIFICATION_SECRET;
+  if (!secret) {
+    // A deployment problem, not something the visitor can fix by retrying.
+    console.error("[member sign-up] MEMBER_VERIFICATION_SECRET is not set.");
+  }
+  return secret;
+};
+
+/**
+ * Checks an account's claimed identity against the roster and links it on a
+ * full match. The same check serves Google, GitHub and ID / password accounts,
+ * so every account of one person ends up on the same roster member.
+ */
+async function verifyAndLink(
+  db: AdminDb,
+  user: { id: string; email: string | null },
+  { name, generation, studentId }: Identity,
+  secret: string,
+): Promise<ActionResult<SignupOutcome>> {
+  const linked = unwrap(
+    await db.from("member_accounts").select("member_id").eq("user_id", user.id).maybeSingle(),
+  );
+  if (linked) {
+    return { ok: true, message: "이미 회원으로 등록된 계정입니다.", data: "linked" };
+  }
+
+  const request = unwrap(
+    await db.from("member_signup_requests").select("attempts").eq("user_id", user.id).maybeSingle(),
+  );
+  if (request && request.attempts >= MAX_SIGNUP_ATTEMPTS) {
+    return { ok: false, message: "확인 시도 횟수를 넘었습니다. 운영진의 승인을 기다려주세요." };
+  }
+
+  const candidates = unwrap(
+    await db
+      .from("members")
+      .select("id, generations!inner(name), member_student_ids(digest)")
+      .eq("name", name)
+      .eq("generations.name", generation),
+  );
+  const digest = studentIdDigest(studentId, secret);
+  const match = (candidates ?? []).find((member) => {
+    const stored = member.member_student_ids?.digest;
+    return Boolean(digest && stored && sameDigest(stored, digest));
+  });
+
+  // Accounts are free to create, so the per-account attempt limit alone would
+  // let someone guess a student ID across many accounts. Once several other
+  // accounts have failed for the same person, a match is held for review too.
+  const failedElsewhere = unwrap(
+    await db
+      .from("member_signup_requests")
+      .select("user_id")
+      .eq("name", name)
+      .eq("generation_name", generation)
+      .neq("user_id", user.id),
+  );
+  const suspicious = (failedElsewhere?.length ?? 0) >= MAX_FAILED_ACCOUNTS_PER_PERSON;
+
+  if (match && !suspicious) {
+    unwrap(await db.from("member_accounts").insert({ user_id: user.id, member_id: match.id }));
+    unwrap(await db.from("member_signup_requests").delete().eq("user_id", user.id));
+    return {
+      ok: true,
+      message: `${generation} ${name} 학회원으로 확인되었습니다.`,
+      data: "linked",
+    };
+  }
+
+  unwrap(
+    await db.from("member_signup_requests").upsert({
+      user_id: user.id,
+      email: user.email,
+      name,
+      generation_name: generation,
+      attempts: (request?.attempts ?? 0) + 1,
+    }),
+  );
+  return {
+    ok: true,
+    // The same reply whether the details were wrong or held for review.
+    message:
+      "학회원 정보에서 찾을 수 없습니다. 입력한 내용을 확인해 다시 제출하거나 운영진에게 문의해주세요.",
+    data: "pending",
+  };
+}
 
 /**
  * Links the signed-in visitor to a roster member. Name, generation and student
@@ -27,18 +132,11 @@ export async function registerMember(input: unknown): Promise<ActionResult<Signu
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "요청이 올바르지 않습니다." };
   }
-  const { accessToken, name, generation, studentId } = parsed.data;
+  const { accessToken, ...identity } = parsed.data;
 
   try {
-    const secret = serverEnv().MEMBER_VERIFICATION_SECRET;
-    if (!secret) {
-      // A deployment problem, not something the visitor can fix by retrying.
-      console.error("[member sign-up] MEMBER_VERIFICATION_SECRET is not set.");
-      return {
-        ok: false,
-        message: "회원 등록이 아직 준비되지 않았습니다. 운영진에게 문의해주세요.",
-      };
-    }
+    const secret = verificationSecret();
+    if (!secret) return NOT_READY;
 
     const db = createAdminClient();
     // The token is checked by Supabase Auth, so the user id cannot be forged.
@@ -47,62 +145,45 @@ export async function registerMember(input: unknown): Promise<ActionResult<Signu
     if (!user) {
       return { ok: false, message: "로그인이 만료되었습니다. 다시 로그인해주세요." };
     }
+    return await verifyAndLink(db, { id: user.id, email: user.email ?? null }, identity, secret);
+  } catch (error) {
+    console.error("[member sign-up]", error);
+    return { ok: false, message: "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요." };
+  }
+}
 
-    const linked = unwrap(
-      await db.from("member_accounts").select("member_id").eq("user_id", user.id).maybeSingle(),
-    );
-    if (linked) {
-      return { ok: true, message: "이미 회원으로 등록된 계정입니다.", data: "linked" };
-    }
+/**
+ * Creates an AIKU ID / password account and runs the same roster check on it.
+ * The account exists either way; an unverified one waits for an admin, exactly
+ * like a first Google or GitHub sign-in whose details did not match.
+ */
+export async function signUpWithPassword(input: unknown): Promise<ActionResult<SignupOutcome>> {
+  const parsed = passwordSignupSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "요청이 올바르지 않습니다." };
+  }
+  const { loginId, password, ...identity } = parsed.data;
 
-    const request = unwrap(
-      await db
-        .from("member_signup_requests")
-        .select("attempts")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-    );
-    if (request && request.attempts >= MAX_SIGNUP_ATTEMPTS) {
-      return {
-        ok: false,
-        message: "확인 시도 횟수를 넘었습니다. 운영진의 승인을 기다려주세요.",
-      };
-    }
+  try {
+    const secret = verificationSecret();
+    if (!secret) return NOT_READY;
 
-    const candidates = unwrap(
-      await db
-        .from("members")
-        .select("id, generations!inner(name), member_student_ids(digest)")
-        .eq("name", name)
-        .eq("generations.name", generation),
-    );
-    const digest = studentIdDigest(studentId, secret);
-    const match = (candidates ?? []).find((member) => {
-      const stored = member.member_student_ids?.digest;
-      return Boolean(digest && stored && sameDigest(stored, digest));
+    const db = createAdminClient();
+    const email = loginIdToEmail(loginId);
+    const { data, error } = await db.auth.admin.createUser({
+      email,
+      password,
+      // The address is synthetic, so there is no mailbox to confirm.
+      email_confirm: true,
+      user_metadata: { login_id: loginId, full_name: identity.name },
     });
-
-    if (match) {
-      unwrap(await db.from("member_accounts").insert({ user_id: user.id, member_id: match.id }));
-      unwrap(await db.from("member_signup_requests").delete().eq("user_id", user.id));
-      return { ok: true, message: "회원 확인이 완료되었습니다.", data: "linked" };
+    if (error || !data.user) {
+      if (error?.code === "email_exists" || error?.status === 422) {
+        return { ok: false, message: "이미 사용 중인 아이디입니다." };
+      }
+      throw error ?? new Error("createUser returned no user");
     }
-
-    unwrap(
-      await db.from("member_signup_requests").upsert({
-        user_id: user.id,
-        email: user.email ?? null,
-        name,
-        generation_name: generation,
-        attempts: (request?.attempts ?? 0) + 1,
-      }),
-    );
-    return {
-      ok: true,
-      message:
-        "입력한 정보가 회원 명단과 일치하지 않습니다. 운영진이 확인한 뒤 승인하며, 정보를 고쳐 다시 제출할 수도 있습니다.",
-      data: "pending",
-    };
+    return await verifyAndLink(db, { id: data.user.id, email }, identity, secret);
   } catch (error) {
     console.error("[member sign-up]", error);
     return { ok: false, message: "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요." };
