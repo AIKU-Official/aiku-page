@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 
+import { TrackDiagram } from "@/components/curriculum/TrackDiagram";
 import {
   CalendarLane,
   CalendarRow,
@@ -58,14 +58,7 @@ export default function CurriculumPage() {
           <SectionHead eyebrow="2-Track System" title="2-Track으로 AIKU 활동을 이어갑니다." />
           <div className="grid gap-5 max-sm:gap-3">
             <figure className="reveal card p-8 max-sm:p-3">
-              <Image
-                src="/assets/2-Track.webp"
-                alt="Track 1은 Junior 0.5년 후 Senior 0.5년, Track 2는 Senior 1년으로 구성됩니다."
-                width={1280}
-                height={437}
-                sizes="(max-width: 1080px) 100vw, 1032px"
-                className="h-auto w-full"
-              />
+              <TrackDiagram />
             </figure>
             <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1 max-sm:gap-3">
               <TrackCard label="Track 1" title="Junior 0.5년 + Senior 0.5년">
