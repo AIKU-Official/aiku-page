@@ -1,12 +1,58 @@
+<div align="center">
+
+<img src="public/assets/aiku-logo-green.png" alt="AIKU" width="180" />
+
 # AIKU 공식 홈페이지
 
-고려대학교 딥러닝 학회 AIKU의 공식 홈페이지입니다. 공개 페이지(소개, 활동, 커리큘럼, 프로젝트, Members, Contact)와 운영진용 관리자 페이지(`/admin`)로 구성됩니다.
+고려대학교 딥러닝 학회 **AIKU**의 공식 홈페이지입니다.<br />
+학회를 소개하는 공개 사이트이자, 회원과 프로젝트를 관리하는 학회 운영 도구입니다.
+
+**[aiku-page.vercel.app](https://aiku-page.vercel.app)**
+
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?logo=supabase&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-deployed-000000?logo=vercel&logoColor=white)
+
+<img src="docs/screenshots/home.png" alt="AIKU 홈페이지 첫 화면" width="100%" />
+
+</div>
+
+## 무엇을 할 수 있나요
+
+| | |
+| --- | --- |
+| **프로젝트 아카이브** | 2023년부터의 프로젝트를 분기별로 모았습니다. 분기, 수상(1·2·3등), 태그로 걸러 보고, 카드를 누르면 본문이 펼쳐집니다. |
+| **Members** | 0기부터 현재까지의 회원 명단입니다. 이름·학과·직책으로 검색하고 등급과 기수로 좁혀 봅니다. |
+| **회원 로그인** | AIKU 아이디, Google, GitHub으로 로그인합니다. 이름·기수·학번으로 본인을 확인하며, 어느 방법으로 들어와도 같은 회원으로 연결됩니다. |
+| **프로필** | 회원이 자기소개, 링크, 관심 분야, 경력을 직접 쓰고 공개 여부를 정합니다. 참여한 프로젝트는 자동으로 나타납니다. |
+| **관리자 페이지** | 운영진이 소식, 프로젝트, 회원 명단, 가입 요청을 관리합니다. |
+
+## 화면
+
+| 프로젝트 목록 | 프로젝트 본문 |
+| --- | --- |
+| <img src="docs/screenshots/projects.png" alt="분기·수상·태그 필터가 있는 프로젝트 목록" /> | <img src="docs/screenshots/project-detail.png" alt="카드에서 펼쳐진 프로젝트 본문" /> |
+
+| Members | 커리큘럼 |
+| --- | --- |
+| <img src="docs/screenshots/members.png" alt="등급과 기수로 걸러 보는 회원 명단" /> | <img src="docs/screenshots/curriculum.png" alt="2-Track 커리큘럼" /> |
+
+<div align="center">
+<img src="docs/screenshots/mobile-home.png" alt="모바일 홈" width="30%" />
+<img src="docs/screenshots/mobile-projects.png" alt="모바일 프로젝트" width="30%" />
+<img src="docs/screenshots/mobile-members.png" alt="모바일 Members" width="30%" />
+</div>
+
+## 기술 구성
 
 | 영역 | 사용 기술 |
 | --- | --- |
 | 웹 | Next.js 16 (App Router, TypeScript), React 19, Tailwind CSS v4 |
-| 데이터 | Supabase (Postgres + Storage) |
-| 배포 | Vercel |
+| 데이터 | Supabase (Postgres, Storage, Auth) |
+| 배포 | Vercel (`main`에 푸시하면 자동 배포) |
 | 테스트 | Vitest (단위), Playwright (E2E) |
 
 ## 로컬에서 실행하기
@@ -45,17 +91,48 @@ pnpm dev                      # http://localhost:3000
 
 ```text
 src/
-  app/(public)/        공개 페이지 (about, activities, curriculum, projects, members, contact)
-  app/(admin)/         로그인, 관리자 페이지
+  app/(public)/        공개 페이지 (about, activities, curriculum, projects, members, contact, profile, privacy)
+  app/(admin)/         회원 로그인·회원가입·회원 등록, 관리자 로그인, 관리자 페이지
   app/api/cron/        매일 실행되는 keepalive 작업
-  actions/             관리자 Server Actions (저장, 삭제, 순서 변경, 업로드 URL 발급)
-  components/          화면 컴포넌트 (layout, home, projects, markdown, admin 등)
+  actions/             Server Actions (콘텐츠 저장, 회원 확인과 계정 연결, 프로필, 업로드 URL 발급)
+  components/          화면 컴포넌트 (layout, home, projects, members, profile, auth, markdown, admin, ui)
   lib/                 데이터 조회, 인증, 입력 검증, 마크다운 처리, Storage 규칙
   proxy.ts             로그인하지 않은 /admin 접근을 /login/admin으로 보냄
 supabase/migrations/   DB 스키마, 정렬 함수, 권한(RLS), Storage 버킷
-scripts/               Storage 정리
+scripts/               Storage 정리, 노션 프로젝트 가져오기
 tests/e2e/             Playwright 스모크 테스트
 public/assets/         로고, 파비콘, 배경 이미지
+docs/screenshots/      이 문서의 화면 캡처
+```
+
+## 데이터 구조
+
+모든 콘텐츠는 Supabase(Postgres)에 정해진 형식으로 들어 있고, 화면에 직접 적어 넣은 내용은 없습니다.
+
+```text
+seasons ──< projects ──< project_members >── members >── generations
+                                               │
+                                               ├── member_profiles      본인이 쓰는 프로필 (공개 여부 선택)
+                                               ├── member_student_ids   본인 확인용 학번 해시 (원문은 저장하지 않음)
+                                               └── member_accounts >── auth.users   한 회원에 로그인 방법 여러 개
+```
+
+| 테이블 | 내용 |
+| --- | --- |
+| `seasons`, `projects` | 분기와 프로젝트. 제목, 태그, 한 줄 요약, 본문(Markdown), 수상 순위, GitHub 주소, 발표자료(PDF) |
+| `project_members` | 프로젝트 참여자와 역할(팀장·팀원). 명단의 회원과 연결되면 그 회원의 프로필에 프로젝트가 나타납니다. |
+| `generations`, `members` | 기수와 회원 명단. 이름, 학과, 등급(주니어·시니어·OB), 회장·부회장 직책 |
+| `member_profiles` | 회원이 직접 쓰는 소개, 링크, 관심 분야, 경력, 프로필 사진. 공개로 설정한 것만 다른 사람이 볼 수 있습니다. |
+| `member_accounts`, `member_signup_requests` | 로그인 계정과 회원의 연결, 본인 확인에 실패해 운영진 승인을 기다리는 요청 |
+| `news` | 홈 화면의 소식 |
+
+### 노션에서 프로젝트 가져오기
+
+과거 프로젝트는 노션에서 한 번 옮겨 왔습니다. `scripts/import-notion-projects.py`는 `data/notion/`에 준비된 프로젝트 폴더(본문, 이미지, 발표자료)를 읽어 DB와 Storage에 올립니다. 프로젝트는 노션 페이지 ID로 구분하므로 다시 실행해도 중복되지 않습니다. `data/`는 개인정보가 섞여 있어 git에 올리지 않습니다.
+
+```bash
+python3 scripts/import-notion-projects.py .env.local            # 무엇이 바뀔지만 확인
+python3 scripts/import-notion-projects.py .env.local --apply    # 실제 반영
 ```
 
 ## 콘텐츠 관리
@@ -66,7 +143,7 @@ public/assets/         로고, 파비콘, 배경 이미지
 - **순서 변경:** 카드를 드래그하거나 ⋮⋮ 손잡이에 포커스한 뒤 스페이스와 방향키로 옮깁니다. 바꾼 순서는 공개 페이지에 그대로 반영됩니다.
 - **공개 페이지 반영:** 저장하면 즉시 반영됩니다. Supabase 대시보드에서 직접 고친 내용은 최대 1시간 뒤에 반영됩니다.
 - **업로드 제한:**
-  - 발표자료는 PPT, PPTX, PDF이고 최대 50MB입니다.
+  - 발표자료는 PDF로 올리는 것을 권합니다(PPT, PPTX도 받으며 최대 50MB). 노션에서 가져온 발표자료는 모두 PDF로 바꿔 올렸습니다.
   - 이미지는 PNG, JPG, WebP, GIF이고 최대 10MB입니다.
   - 파일은 브라우저에서 Supabase Storage로 바로 올라가고, 항목을 삭제하면 같이 지워집니다.
 
@@ -96,9 +173,12 @@ public/assets/         로고, 파비콘, 배경 이미지
    ```
 
 3. Project Settings → API Keys에서 Project URL, publishable key, secret key를 확인합니다. **secret key는 절대 코드나 브라우저에 넣지 않습니다.**
-### 회원 로그인 (Google, GitHub)
+### 회원 로그인 (AIKU 아이디, Google, GitHub)
 
-`/login`의 회원 로그인은 Supabase Auth의 OAuth를 씁니다. 두 제공자를 Supabase에 등록해야 버튼이 동작합니다.
+`/login`의 회원 로그인은 Supabase Auth를 씁니다. 방법은 세 가지이고, 처음 로그인할 때 이름·가입 기수·학번으로 본인을 확인하면 명단의 회원과 연결됩니다. 프로필 수정의 "로그인 방법"에서 다른 방법을 추가로 연결할 수 있습니다.
+
+- **AIKU 아이디:** 별도 설정 없이 동작합니다. Supabase의 Email provider가 켜져 있어야 하고, `MEMBER_VERIFICATION_SECRET` 환경변수가 필요합니다.
+- **Google, GitHub:** 아래처럼 두 제공자를 Supabase에 등록해야 버튼이 동작합니다.
 
 1. **Google:** Google Cloud Console → APIs & Services → Credentials에서 OAuth 클라이언트 ID(웹 애플리케이션)를 만듭니다. 승인된 리디렉션 URI에 `https://<프로젝트 ref>.supabase.co/auth/v1/callback`을 넣습니다.
 2. **GitHub:** AIKU-Official org의 Settings → Developer settings → OAuth Apps에서 앱을 만들고, Authorization callback URL에 같은 주소를 넣습니다.
