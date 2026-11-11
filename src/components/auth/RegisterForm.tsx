@@ -12,7 +12,7 @@ import {
   type Status,
 } from "@/components/admin/ui";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { useMemberAccount } from "@/lib/auth/member";
+import { refreshMemberAccount, useMemberAccount } from "@/lib/auth/member";
 import { getAuthClient } from "@/lib/supabase/auth-client";
 
 /** First sign-in: the visitor proves which roster member they are. */
@@ -32,7 +32,7 @@ export function RegisterForm({ generations }: { generations: string[] }) {
 
   if (account === null) {
     return (
-      <div className="grid max-w-[520px] gap-4 card p-7 max-sm:p-5">
+      <div className="grid w-full max-w-[520px] gap-4 card p-7 max-sm:p-5">
         <p className="text-muted">회원 등록은 로그인한 뒤에 할 수 있습니다.</p>
         <div>
           <ButtonLink href="/login" variant="dark" size="sm">
@@ -45,7 +45,7 @@ export function RegisterForm({ generations }: { generations: string[] }) {
 
   if (account.member || linkedNow) {
     return (
-      <div className="grid max-w-[520px] gap-4 card p-7 max-sm:p-5">
+      <div className="grid w-full max-w-[520px] gap-4 card p-7 max-sm:p-5">
         <div>
           <h2 className="text-subheading">회원 확인이 완료되었습니다.</h2>
           {account.member ? (
@@ -83,13 +83,14 @@ export function RegisterForm({ generations }: { generations: string[] }) {
     } else if (result.data === "linked") {
       setStatus(null);
       setLinkedNow(true);
+      void refreshMemberAccount();
     } else {
       setStatus({ tone: "info", message: result.message });
     }
   };
 
   return (
-    <form onSubmit={onSubmit} className={clsx(adminFormClassName, "max-w-[520px]")}>
+    <form onSubmit={onSubmit} className={clsx(adminFormClassName, "w-full max-w-[520px]")}>
       <div>
         <h2 className="text-subheading">회원 등록</h2>
         <p className="mt-1 text-small text-muted">

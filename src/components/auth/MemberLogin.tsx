@@ -46,7 +46,7 @@ export function MemberLogin({ error }: { error?: string }) {
   };
 
   return (
-    <div className="grid max-w-[520px] gap-5 card p-7 max-sm:p-5">
+    <div className="grid w-full max-w-[520px] gap-5 card p-7 max-sm:p-5">
       {account ? (
         <>
           <div>

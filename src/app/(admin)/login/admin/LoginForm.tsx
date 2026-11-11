@@ -11,7 +11,7 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, null);
 
   return (
-    <form action={formAction} className={clsx(adminFormClassName, "max-w-[520px]")}>
+    <form action={formAction} className={clsx(adminFormClassName, "w-full max-w-[520px]")}>
       {/* React resets the form after each attempt; keep the ID that was typed. */}
       <TextField
         label="ID"

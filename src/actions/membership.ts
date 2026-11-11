@@ -31,7 +31,14 @@ export async function registerMember(input: unknown): Promise<ActionResult<Signu
 
   try {
     const secret = serverEnv().MEMBER_VERIFICATION_SECRET;
-    if (!secret) throw new Error("MEMBER_VERIFICATION_SECRET is not set.");
+    if (!secret) {
+      // A deployment problem, not something the visitor can fix by retrying.
+      console.error("[member sign-up] MEMBER_VERIFICATION_SECRET is not set.");
+      return {
+        ok: false,
+        message: "회원 등록이 아직 준비되지 않았습니다. 운영진에게 문의해주세요.",
+      };
+    }
 
     const db = createAdminClient();
     // The token is checked by Supabase Auth, so the user id cannot be forged.

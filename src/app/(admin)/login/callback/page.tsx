@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "로그인" };
 export default function LoginCallbackPage() {
   return (
     <Section>
-      <div className="site-container">
+      <div className="site-container grid justify-items-center">
         <LoginCallback />
       </div>
     </Section>

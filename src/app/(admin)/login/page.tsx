@@ -21,9 +21,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         lead="AIKU 회원은 Google 또는 GitHub 계정으로 로그인할 수 있습니다."
       />
       <Section>
-        <div className="site-container grid gap-10 max-sm:gap-8">
+        <div className="site-container grid justify-items-center gap-10 max-sm:gap-8">
           <MemberLogin error={typeof error === "string" ? error : undefined} />
-          <div className="grid max-w-[520px] gap-3 border-t border-line pt-6">
+          <div className="grid w-full max-w-[520px] gap-3 border-t border-line pt-6">
             <p className="text-small text-muted">
               소식, 프로젝트, 멤버 콘텐츠를 관리하는 운영진은 관리자 계정으로 로그인하세요.
             </p>

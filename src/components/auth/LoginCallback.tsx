@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { loadMembership } from "@/lib/auth/member";
+import { loadMembership, watchMemberAccount } from "@/lib/auth/member";
 import { getAuthClient } from "@/lib/supabase/auth-client";
 
 /**
@@ -20,6 +20,8 @@ export function LoginCallback() {
       return;
     }
 
+    // Lets the header pick up the new session without a reload.
+    watchMemberAccount();
     const { data } = getAuthClient().auth.onAuthStateChange((event, session) => {
       // INITIAL_SESSION fires once the code exchange has finished (or failed).
       if (event !== "SIGNED_IN" && event !== "INITIAL_SESSION") return;

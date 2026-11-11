@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { useMemberAccount } from "@/lib/auth/member";
 import { navItems, type NavItem } from "@/lib/site";
 
@@ -22,7 +23,7 @@ const toggleBar =
 
 export function SiteHeader() {
   const pathname = usePathname();
-  // Signed-in members see their name where "Login" would be.
+  // Signed-in members get their picture and an account menu where "Login" would be.
   const account = useMemberAccount();
   const isScrolled = useSyncExternalStore(
     subscribeToScroll,
@@ -71,11 +72,7 @@ export function SiteHeader() {
         item.utility ? "text-small text-muted" : "text-[0.9375rem] text-body",
       )}
     >
-      {item.utility && account ? (
-        <span className="max-w-[9rem] truncate">{account.name}</span>
-      ) : (
-        item.label
-      )}
+      {item.label}
     </Link>
   );
 
@@ -127,7 +124,11 @@ export function SiteHeader() {
           aria-hidden="true"
           className="mx-2 h-4 w-px bg-line max-lg:mx-0 max-lg:my-2 max-lg:h-px max-lg:w-full"
         />
-        {navItems.filter((item) => item.utility).map(renderLink)}
+        {account ? (
+          <AccountMenu account={account} onNavigate={closeNav} />
+        ) : (
+          navItems.filter((item) => item.utility).map(renderLink)
+        )}
       </nav>
     </header>
   );

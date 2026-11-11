@@ -25,7 +25,7 @@ export default async function LoginPage() {
         lead="소식, 프로젝트, 멤버 콘텐츠를 등록하고 수정하려면 관리자 계정으로 로그인하세요."
       />
       <Section>
-        <div className="site-container">
+        <div className="site-container grid justify-items-center">
           <LoginForm />
         </div>
       </Section>

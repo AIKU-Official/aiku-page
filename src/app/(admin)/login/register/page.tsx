@@ -23,7 +23,7 @@ export default async function RegisterPage() {
         lead="로그인한 계정을 AIKU 회원 명단과 연결합니다. 한 번만 하면 됩니다."
       />
       <Section>
-        <div className="site-container">
+        <div className="site-container grid justify-items-center">
           <RegisterForm generations={generations.map((generation) => generation.name)} />
         </div>
       </Section>
