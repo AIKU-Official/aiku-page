@@ -75,22 +75,7 @@ export function ProfileView() {
   const { subject, profile } = state.page;
   return (
     <div className="grid gap-10 max-sm:gap-8">
-      <ProfileContent
-        subject={subject}
-        profile={profile}
-        fallbackAvatarUrl={account.providerAvatarUrl}
-        emptyNote={
-          <div className="grid justify-items-start gap-4 rounded-card bg-surface-soft p-7 max-sm:p-5">
-            <p className="text-body">
-              아직 작성한 내용이 없습니다. 소개, 관심 분야, 경력을 채워 나만의 프로필을
-              만들어보세요.
-            </p>
-            <ButtonLink href="/profile/edit" variant="secondary" size="sm">
-              프로필 작성하기
-            </ButtonLink>
-          </div>
-        }
-      />
+      <ProfileContent subject={subject} profile={profile} />
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-soft-line pt-5">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">

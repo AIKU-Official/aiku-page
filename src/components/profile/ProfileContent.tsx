@@ -60,15 +60,9 @@ function MainSection({ title, children }: { title: string; children: ReactNode }
 export function ProfileContent({
   subject,
   profile,
-  fallbackAvatarUrl,
-  emptyNote,
 }: {
   subject: ProfileSubject;
   profile: MemberProfile;
-  /** Picture to use when none was uploaded (the member's own Google / GitHub picture). */
-  fallbackAvatarUrl?: string | null;
-  /** Shown in place of the main column when nothing has been written yet. */
-  emptyNote?: ReactNode;
 }) {
   const links = [
     { href: profile.githubUrl, label: "GitHub", Icon: GitHubIcon },
@@ -77,16 +71,13 @@ export function ProfileContent({
     { href: profile.websiteUrl, label: "Website", Icon: GlobeIcon },
   ].filter((link): link is typeof link & { href: string } => Boolean(link.href));
 
-  const hasMain =
-    Boolean(profile.bio) || profile.interests.length > 0 || profile.experience.length > 0;
-
   return (
     <div className="grid grid-cols-[minmax(0,300px)_minmax(0,1fr)] gap-14 max-lg:grid-cols-1 max-lg:gap-10">
       <aside className="grid content-start gap-7">
         <div className="grid gap-4">
           <Avatar
             name={subject.name}
-            src={profile.avatarPath ? storagePublicUrl(profile.avatarPath) : fallbackAvatarUrl}
+            src={profile.avatarPath ? storagePublicUrl(profile.avatarPath) : null}
             className="size-40 text-[3.25rem] max-sm:size-28 max-sm:text-[2.25rem]"
           />
           <div className="grid gap-2">
@@ -163,8 +154,6 @@ export function ProfileContent({
       </aside>
 
       <div className="grid content-start gap-14 max-lg:gap-10">
-        {hasMain ? null : emptyNote}
-
         {profile.bio ? (
           <MainSection title="About">
             <p className="max-w-[68ch] text-lead whitespace-pre-line text-body">{profile.bio}</p>

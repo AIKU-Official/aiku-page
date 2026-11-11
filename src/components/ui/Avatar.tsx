@@ -24,7 +24,7 @@ export function Avatar({
       )}
     >
       {showImage ? (
-        // A plain img: the picture comes from Google, GitHub or the uploads bucket, sized by CSS.
+        // A plain img: the picture comes from the uploads bucket and is sized by CSS.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}

@@ -218,13 +218,7 @@ const toDraft = (profile: MemberProfile): Draft => ({
   focus: profile.focus.join(", "),
 });
 
-function EditorForm({
-  page,
-  fallbackAvatarUrl,
-}: {
-  page: ProfilePage;
-  fallbackAvatarUrl: string | null;
-}) {
+function EditorForm({ page }: { page: ProfilePage }) {
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>(() => toDraft(page.profile));
   const [status, setStatus] = useState<Status>(null);
@@ -309,12 +303,14 @@ function EditorForm({
     router.push("/profile");
   };
 
-  const avatarSrc =
-    preview ?? (draft.avatarPath ? storagePublicUrl(draft.avatarPath) : fallbackAvatarUrl);
+  const avatarSrc = preview ?? (draft.avatarPath ? storagePublicUrl(draft.avatarPath) : null);
 
   return (
     <form onSubmit={onSubmit} className="mx-auto grid w-full max-w-[760px] gap-5">
-      <Panel title="프로필 사진" hint="PNG, JPG, WEBP, GIF · 최대 5MB. 원형으로 잘려 보입니다.">
+      <Panel
+        title="프로필 사진"
+        hint="PNG, JPG, WEBP, GIF · 최대 5MB. 원형으로 잘려 보입니다. 올리지 않으면 이름 첫 글자가 표시됩니다."
+      >
         <div className="flex flex-wrap items-center gap-5">
           <Avatar name={page.subject.name} src={avatarSrc} className="size-24 text-[2rem]" />
           <div className="flex flex-wrap gap-2">
@@ -545,5 +541,5 @@ export function ProfileEditor() {
       </p>
     );
   }
-  return <EditorForm page={state.page} fallbackAvatarUrl={account.providerAvatarUrl} />;
+  return <EditorForm page={state.page} />;
 }

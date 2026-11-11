@@ -16,10 +16,11 @@ export type MemberAccount = {
   loginId: string | null;
   /** "google", "github", or "email" for an AIKU ID / password account. */
   provider: string | null;
-  /** Picture to show: the uploaded profile picture, else the one from Google / GitHub. */
+  /**
+   * The picture the member uploaded on their profile, if any. Pictures from
+   * Google or GitHub are deliberately not used.
+   */
   avatarUrl: string | null;
-  /** Picture from Google / GitHub, kept so removing an upload falls back to it. */
-  providerAvatarUrl: string | null;
   /** The roster member this account is linked to; null until sign-up is verified. */
   member: {
     id: string;
@@ -44,8 +45,7 @@ const toAccount = (user: User): MemberAccount => {
     // The address behind an AIKU ID is synthetic and never shown.
     email: loginId ? null : (user.email ?? null),
     loginId,
-    avatarUrl: pick("avatar_url") || pick("picture") || null,
-    providerAvatarUrl: pick("avatar_url") || pick("picture") || null,
+    avatarUrl: null,
     provider: typeof user.app_metadata.provider === "string" ? user.app_metadata.provider : null,
     member: null,
     pending: false,
@@ -89,9 +89,7 @@ const withMembership = (
   ...account,
   ...membership,
   name: membership.member?.name ?? account.name,
-  avatarUrl: membership.member?.avatarPath
-    ? storagePublicUrl(membership.member.avatarPath)
-    : account.providerAvatarUrl,
+  avatarUrl: membership.member?.avatarPath ? storagePublicUrl(membership.member.avatarPath) : null,
 });
 
 type AccountState = MemberAccount | null | undefined;
