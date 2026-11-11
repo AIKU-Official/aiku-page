@@ -27,6 +27,7 @@ import {
   adminFormClassName,
   FileNote,
   FormGrid,
+  Checkbox,
   SelectField,
   StatusMessage,
   TextField,
@@ -201,12 +202,7 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
           />
         </FormGrid>
         <label className="flex items-start gap-2.5 text-small text-body">
-          <input
-            type="checkbox"
-            name="gradePinned"
-            defaultChecked={editing?.gradePinned}
-            className="mt-1 size-4 accent-green-600"
-          />
+          <Checkbox name="gradePinned" defaultChecked={editing?.gradePinned} className="mt-0.5" />
           <span>
             등급 고정 (특이사항)
             <span className="block text-muted">

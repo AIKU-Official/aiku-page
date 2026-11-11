@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, type FormEvent } from "react";
 
-import { StatusMessage, TextField, type Status } from "@/components/admin/ui";
+import { Checkbox, StatusMessage, TextField, type Status } from "@/components/admin/ui";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { GitHubIcon, GoogleIcon } from "@/components/ui/icons";
 import { loginIdToEmail } from "@/lib/auth/login-id";
@@ -148,11 +148,9 @@ export function MemberLogin({ error }: { error?: string }) {
               maxLength={72}
             />
             <label className="flex w-fit cursor-pointer items-center gap-2 text-small text-body">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={remember}
                 onChange={(event) => setRememberMember(event.target.checked)}
-                className="size-4 cursor-pointer accent-green-600"
               />
               자동 로그인
             </label>

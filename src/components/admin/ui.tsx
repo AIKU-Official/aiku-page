@@ -83,6 +83,31 @@ export function SelectField({
   );
 }
 
+/** Checkbox drawn to match the form controls: white with a hairline border, ink when checked. */
+export function Checkbox({ className, ...props }: Omit<ComponentProps<"input">, "type">) {
+  return (
+    <span className={clsx("relative inline-flex size-[18px] shrink-0", className)}>
+      <input
+        type="checkbox"
+        className="peer size-full cursor-pointer appearance-none rounded-[5px] border border-line-strong bg-surface transition-[background-color,border-color,box-shadow] checked:border-ink checked:bg-ink hover:border-ink/50 focus-visible:border-green-500 focus-visible:shadow-[0_0_0_3px_rgb(33_208_129/0.14)] focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-surface-soft"
+        {...props}
+      />
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        className="pointer-events-none absolute inset-0 m-auto size-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m3.5 8.5 3 3 6-7" />
+      </svg>
+    </span>
+  );
+}
+
 /** Two equal columns that collapse to one below 980px (legacy .form-grid). */
 export function FormGrid({ children }: { children: ReactNode }) {
   return <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">{children}</div>;
