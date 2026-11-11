@@ -2,7 +2,6 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { signUpWithPassword } from "@/actions/membership";
@@ -13,16 +12,64 @@ import {
   TextField,
   type Status,
 } from "@/components/admin/ui";
-import { Button } from "@/components/ui/Button";
+import { MemberConfirmed } from "@/components/auth/MemberConfirmed";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { loginIdToEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth/login-id";
-import { SIGNUP_NOTE_KEY, watchMemberAccount } from "@/lib/auth/member";
+import { useMemberAccount, watchMemberAccount } from "@/lib/auth/member";
 import { getAuthClient } from "@/lib/supabase/auth-client";
 
 /** Sign-up with an AIKU ID and password; identity is checked against the roster in the same step. */
 export function SignupForm({ generations }: { generations: string[] }) {
-  const router = useRouter();
   const [status, setStatus] = useState<Status>(null);
   const [pending, setPending] = useState(false);
+  const [confirmed, setConfirmed] = useState<{ message: string; signedIn: boolean } | null>(null);
+  const account = useMemberAccount({ eager: true });
+
+  if (confirmed?.signedIn) {
+    return <MemberConfirmed message={confirmed.message} />;
+  }
+  if (confirmed) {
+    return (
+      <div className="grid w-full max-w-[520px] gap-4 card p-7 max-sm:p-5">
+        <div role="status">
+          <h2 className="text-subheading">{confirmed.message}</h2>
+          <p className="mt-1 text-small text-muted">계정을 만들었습니다. 로그인해주세요.</p>
+        </div>
+        <div>
+          <ButtonLink href="/login" variant="dark" size="sm">
+            로그인하러 가기
+          </ButtonLink>
+        </div>
+      </div>
+    );
+  }
+
+  // Someone already signed in has no use for a second sign-up form.
+  if (account) {
+    return (
+      <div className="grid w-full max-w-[520px] gap-4 card p-7 max-sm:p-5">
+        <div>
+          <h2 className="text-subheading">이미 로그인되어 있습니다.</h2>
+          <p className="mt-1 text-small text-muted">
+            {account.member
+              ? `${account.member.generation} ${account.member.name} 학회원 계정입니다.`
+              : "아직 회원 명단과 연결되지 않은 계정입니다."}
+          </p>
+        </div>
+        <div>
+          {account.member ? (
+            <ButtonLink href="/profile" variant="dark" size="sm">
+              내 프로필 보기
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/login/register" variant="dark" size="sm">
+              회원 등록 계속하기
+            </ButtonLink>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,30 +96,16 @@ export function SignupForm({ generations }: { generations: string[] }) {
       return;
     }
 
-    // The account now exists, so sign in with it straight away. The header
-    // starts following the session here; it had none to follow when it loaded.
+    // Verified, so sign in. The header starts following the session here; it
+    // had none to follow when it loaded.
     watchMemberAccount();
     const { error } = await getAuthClient().auth.signInWithPassword({
       email: loginIdToEmail(loginId),
       password,
     });
-    if (error) {
-      setPending(false);
-      setStatus({
-        tone: "info",
-        message: "계정을 만들었습니다. 로그인 페이지에서 로그인해주세요.",
-      });
-      return;
-    }
-    // That page shows the outcome: the confirmed member, or that no match was found.
-    if (result.data !== "linked") {
-      try {
-        window.sessionStorage.setItem(SIGNUP_NOTE_KEY, "notfound");
-      } catch {
-        // Without storage the registration page shows its neutral note instead.
-      }
-    }
-    router.replace("/login/register");
+    setPending(false);
+    setStatus(null);
+    setConfirmed({ message: result.message, signedIn: !error });
   };
 
   return (
@@ -114,9 +147,9 @@ export function SignupForm({ generations }: { generations: string[] }) {
         maxLength={72}
       />
       <TextField label="이름" name="name" autoComplete="name" required maxLength={60} />
-      <SelectField label="기수" name="generation" required defaultValue="">
+      <SelectField label="가입 기수" name="generation" required defaultValue="">
         <option value="" disabled>
-          기수를 선택하세요
+          AIKU에 가입한 기수를 선택하세요
         </option>
         {generations.map((generation) => (
           <option key={generation} value={generation}>

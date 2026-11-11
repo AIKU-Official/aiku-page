@@ -7,9 +7,6 @@ import { emailToLoginId } from "@/lib/auth/login-id";
 import type { MemberGrade } from "@/lib/types";
 import { MEMBER_SESSION_KEY } from "@/lib/supabase/auth-client";
 
-/** sessionStorage key: ID sign-up notes a failed roster check for the registration page. */
-export const SIGNUP_NOTE_KEY = "aiku-signup-result";
-
 export type MemberAccount = {
   /** Roster name once linked, else the name from Google / GitHub. */
   name: string;

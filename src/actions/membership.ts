@@ -2,9 +2,12 @@
 
 import { timingSafeEqual } from "node:crypto";
 
+import { createClient } from "@supabase/supabase-js";
+
 import { ActionError, adminAction, unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
-import { loginIdToEmail } from "@/lib/auth/login-id";
+import { emailToLoginId, loginIdToEmail } from "@/lib/auth/login-id";
+import { publicEnv } from "@/lib/env.public";
 import { serverEnv } from "@/lib/env.server";
 import { studentIdDigest } from "@/lib/members/student-id";
 import { createAdminClient } from "@/lib/supabase/admin-client";
@@ -152,10 +155,31 @@ export async function registerMember(input: unknown): Promise<ActionResult<Signu
   }
 }
 
+const ID_TAKEN: ActionResult<never> = { ok: false, message: "이미 사용 중인 아이디입니다." };
+
 /**
- * Creates an AIKU ID / password account and runs the same roster check on it.
- * The account exists either way; an unverified one waits for an admin, exactly
- * like a first Google or GitHub sign-in whose details did not match.
+ * The account behind an ID whose sign-up has not been verified yet, if the
+ * password is right. Lets a visitor correct their details and submit the
+ * sign-up form again without being told the ID is taken by their own attempt.
+ */
+async function unverifiedAccount(db: AdminDb, email: string, password: string) {
+  const visitor = createClient(publicEnv.supabaseUrl, publicEnv.supabasePublishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await visitor.auth.signInWithPassword({ email, password });
+  if (!data.user) return null;
+  const linked = unwrap(
+    await db.from("member_accounts").select("member_id").eq("user_id", data.user.id).maybeSingle(),
+  );
+  return linked ? null : data.user;
+}
+
+/**
+ * Sign-up with an AIKU ID and password, checked against the roster in the same
+ * step. The visitor is only signed in once the check passes. A failed attempt
+ * leaves an unverified account behind so that attempts stay counted and the
+ * request reaches the admin queue; submitting again with the same ID and
+ * password continues that attempt.
  */
 export async function signUpWithPassword(input: unknown): Promise<ActionResult<SignupOutcome>> {
   const parsed = passwordSignupSchema.safeParse(input);
@@ -177,13 +201,19 @@ export async function signUpWithPassword(input: unknown): Promise<ActionResult<S
       email_confirm: true,
       user_metadata: { login_id: loginId, full_name: identity.name },
     });
-    if (error || !data.user) {
-      if (error?.code === "email_exists" || error?.status === 422) {
-        return { ok: false, message: "이미 사용 중인 아이디입니다." };
+    let userId = data.user?.id;
+    if (!userId) {
+      if (error?.code !== "email_exists" && error?.status !== 422) {
+        throw error ?? new Error("createUser returned no user");
       }
-      throw error ?? new Error("createUser returned no user");
+      userId = (await unverifiedAccount(db, email, password))?.id;
+      if (!userId) return ID_TAKEN;
     }
-    return await verifyAndLink(db, { id: data.user.id, email }, identity, secret);
+
+    const result = await verifyAndLink(db, { id: userId, email }, identity, secret);
+    // Unlike a first Google / GitHub sign-in, nobody is signed in yet, so a
+    // failed check is simply an error on the sign-up form.
+    return result.ok && result.data === "pending" ? { ok: false, message: result.message } : result;
   } catch (error) {
     console.error("[member sign-up]", error);
     return { ok: false, message: "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요." };
@@ -205,13 +235,24 @@ export async function approveSignupRequest(input: unknown): Promise<ActionResult
   });
 }
 
-/** Admin: discard a pending request (the visitor may submit again). */
+/**
+ * Admin: discard a pending request. A Google / GitHub visitor may submit again;
+ * an unverified AIKU ID account is removed with it, which frees the ID.
+ */
 export async function rejectSignupRequest(input: unknown): Promise<ActionResult> {
   return adminAction({ schema: idSchema, input }, async (userId, db) => {
     const deleted = unwrap(
-      await db.from("member_signup_requests").delete().eq("user_id", userId).select("user_id"),
+      await db
+        .from("member_signup_requests")
+        .delete()
+        .eq("user_id", userId)
+        .select("user_id, email"),
     );
     if (!deleted?.length) throw new ActionError("가입 요청을 찾을 수 없습니다.");
+    if (emailToLoginId(deleted[0]?.email)) {
+      const { error } = await db.auth.admin.deleteUser(userId);
+      if (error) throw error;
+    }
     return { message: "가입 요청을 거절했습니다." };
   });
 }
