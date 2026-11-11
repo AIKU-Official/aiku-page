@@ -137,7 +137,9 @@ function EditorForm({
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>(() => toDraft(page.profile));
   const [status, setStatus] = useState<Status>(null);
-  const [busy, setBusy] = useState(false);
+  // Which action is running; its button shows the progress and all are disabled meanwhile.
+  const [task, setTask] = useState<"upload" | "save" | null>(null);
+  const busy = task !== null;
   // Local preview of a picture chosen in this visit.
   const [preview, setPreview] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -170,15 +172,15 @@ function EditorForm({
       });
       return;
     }
-    setBusy(true);
-    setStatus({ tone: "info", message: "사진을 올리는 중입니다." });
+    setTask("upload");
+    setStatus(null);
     const request = await requestAvatarUpload({
       accessToken: await currentAccessToken(),
       name: file.name,
       size: file.size,
     });
     if (!request.ok) {
-      setBusy(false);
+      setTask(null);
       setStatus({ tone: "error", message: request.message });
       return;
     }
@@ -187,7 +189,7 @@ function EditorForm({
       .uploadToSignedUrl(request.data.path, request.data.token, file, {
         contentType: request.data.contentType,
       });
-    setBusy(false);
+    setTask(null);
     if (error) {
       setStatus({ tone: "error", message: "사진을 올리지 못했습니다. 다시 시도해주세요." });
       return;
@@ -199,15 +201,15 @@ function EditorForm({
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setBusy(true);
-    setStatus({ tone: "info", message: "저장하는 중입니다." });
+    setTask("save");
+    setStatus(null);
     const result = await saveMyProfile({
       ...draft,
       accessToken: await currentAccessToken(),
       focus: draft.focus.split(","),
     });
     if (!result.ok) {
-      setBusy(false);
+      setTask(null);
       setStatus({ tone: "error", message: result.message });
       return;
     }
@@ -243,7 +245,7 @@ function EditorForm({
               disabled={busy}
               onClick={() => fileInput.current?.click()}
             >
-              사진 선택
+              {task === "upload" ? "올리는 중…" : "사진 선택"}
             </Button>
             {draft.avatarPath ? (
               <Button
@@ -409,7 +411,7 @@ function EditorForm({
       <StatusMessage status={status} />
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="dark" disabled={busy}>
-          저장
+          {task === "save" ? "저장 중…" : "저장"}
         </Button>
         <ButtonLink href="/profile" variant="secondary">
           취소

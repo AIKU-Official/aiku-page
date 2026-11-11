@@ -33,21 +33,23 @@ export function MemberLogin({ error }: { error?: string }) {
   const [status, setStatus] = useState<Status>(
     error ? { tone: "error", message: "로그인하지 못했습니다. 다시 시도해주세요." } : null,
   );
-  const [pending, setPending] = useState(false);
+  // Which action is running; its button shows the progress and all are disabled meanwhile.
+  const [busy, setBusy] = useState<MemberAuthProvider | "password" | "signout" | null>(null);
+  const pending = busy !== null;
   const router = useRouter();
   // "자동 로그인": on keeps the session after the browser closes. It applies to
   // all three sign-in methods.
   const remember = useSyncExternalStore(subscribeRememberMember, getRememberMember, () => true);
 
   const signIn = async (provider: MemberAuthProvider) => {
-    setPending(true);
-    setStatus({ tone: "info", message: "로그인 페이지로 이동하는 중입니다." });
+    setBusy(provider);
+    setStatus(null);
     const { error: signInError } = await getAuthClient().auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/login/callback` },
     });
     if (signInError) {
-      setPending(false);
+      setBusy(null);
       setStatus({
         tone: "error",
         message: "로그인을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.",
@@ -58,14 +60,14 @@ export function MemberLogin({ error }: { error?: string }) {
   const signInWithPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    setPending(true);
-    setStatus({ tone: "info", message: "로그인하는 중입니다." });
+    setBusy("password");
+    setStatus(null);
     const { error: signInError } = await getAuthClient().auth.signInWithPassword({
       email: loginIdToEmail(String(form.get("loginId") ?? "")),
       password: String(form.get("password") ?? ""),
     });
     if (signInError) {
-      setPending(false);
+      setBusy(null);
       setStatus({ tone: "error", message: "아이디 또는 비밀번호가 올바르지 않습니다." });
       return;
     }
@@ -75,9 +77,9 @@ export function MemberLogin({ error }: { error?: string }) {
   };
 
   const signOut = async () => {
-    setPending(true);
+    setBusy("signout");
     await getAuthClient().auth.signOut();
-    setPending(false);
+    setBusy(null);
     setStatus({ tone: "success", message: "로그아웃했습니다." });
   };
 
@@ -117,7 +119,7 @@ export function MemberLogin({ error }: { error?: string }) {
           )}
           <StatusMessage status={status} />
           <Button variant="secondary" disabled={pending} onClick={signOut}>
-            로그아웃
+            {busy === "signout" ? "로그아웃 중…" : "로그아웃"}
           </Button>
         </>
       ) : (
@@ -156,7 +158,7 @@ export function MemberLogin({ error }: { error?: string }) {
             </label>
             <StatusMessage status={status} />
             <Button type="submit" variant="dark" disabled={pending || account === undefined}>
-              로그인
+              {busy === "password" ? "로그인 중…" : "로그인"}
             </Button>
           </form>
           <p className="text-center text-small text-muted">
@@ -182,7 +184,7 @@ export function MemberLogin({ error }: { error?: string }) {
                 onClick={() => signIn(provider.id)}
               >
                 {provider.icon}
-                {provider.label}
+                {busy === provider.id ? "이동 중…" : provider.label}
               </Button>
             ))}
           </div>

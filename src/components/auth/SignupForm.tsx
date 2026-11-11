@@ -82,7 +82,7 @@ export function SignupForm({ generations }: { generations: string[] }) {
     }
 
     setPending(true);
-    setStatus({ tone: "info", message: "확인하는 중입니다." });
+    setStatus(null);
     const result = await signUpWithPassword({
       loginId,
       password,
@@ -169,7 +169,7 @@ export function SignupForm({ generations }: { generations: string[] }) {
       />
       <StatusMessage status={status} />
       <Button type="submit" variant="dark" disabled={pending}>
-        회원가입
+        {pending ? "확인 중…" : "회원가입"}
       </Button>
       <p className="text-center text-small text-muted">
         이미 계정이 있으신가요?{" "}

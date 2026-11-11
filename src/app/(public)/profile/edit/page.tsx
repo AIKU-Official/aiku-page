@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { PageHero } from "@/components/layout/PageHero";
 import { Section } from "@/components/layout/Section";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 
@@ -10,19 +9,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Like the profile page, this starts right under the header without a page hero.
 export default function ProfileEditPage() {
   return (
-    <>
-      <PageHero
-        eyebrow="Profile"
-        title="프로필 수정"
-        lead="적은 항목만 프로필에 나타납니다. 비워 둔 항목은 보이지 않습니다."
-      />
-      <Section>
-        <div className="site-container">
-          <ProfileEditor />
+    <Section className="pt-12 max-lg:pt-10 max-sm:pt-7">
+      <div className="site-container grid gap-8 max-sm:gap-6">
+        <div className="mx-auto w-full max-w-[760px]">
+          <h1 className="text-heading">프로필 수정</h1>
+          <p className="mt-2 text-muted">
+            적은 항목만 프로필에 나타납니다. 비워 둔 항목은 보이지 않습니다.
+          </p>
         </div>
-      </Section>
-    </>
+        <ProfileEditor />
+      </div>
+    </Section>
   );
 }

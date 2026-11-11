@@ -28,15 +28,9 @@ export function LoginForm() {
         autoComplete="current-password"
         required
       />
-      <StatusMessage
-        status={
-          pending
-            ? { tone: "info", message: "로그인 중입니다." }
-            : state && { tone: "error", message: state.message }
-        }
-      />
+      <StatusMessage status={pending ? null : state && { tone: "error", message: state.message }} />
       <Button type="submit" variant="dark" disabled={pending}>
-        로그인
+        {pending ? "로그인 중…" : "로그인"}
       </Button>
     </form>
   );

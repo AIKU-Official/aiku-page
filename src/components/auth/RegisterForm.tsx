@@ -61,7 +61,7 @@ export function RegisterForm({ generations }: { generations: string[] }) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setPending(true);
-    setStatus({ tone: "info", message: "확인하는 중입니다." });
+    setStatus(null);
 
     const { data } = await getAuthClient().auth.getSession();
     const result = await registerMember({
@@ -126,7 +126,7 @@ export function RegisterForm({ generations }: { generations: string[] }) {
         }
       />
       <Button type="submit" variant="dark" disabled={pending}>
-        회원 확인
+        {pending ? "확인 중…" : "회원 확인"}
       </Button>
     </form>
   );

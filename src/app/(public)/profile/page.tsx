@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { ProfileView } from "@/components/auth/ProfileView";
-import { PageHero } from "@/components/layout/PageHero";
 import { Section } from "@/components/layout/Section";
 
 export const metadata: Metadata = {
@@ -10,19 +9,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// No page hero here: the profile itself starts right under the header.
 export default function ProfilePage() {
   return (
-    <>
-      <PageHero
-        eyebrow="Profile"
-        title="프로필"
-        lead="나를 소개하는 페이지입니다. 공개 여부는 직접 정할 수 있습니다."
-      />
-      <Section>
-        <div className="site-container">
-          <ProfileView />
-        </div>
-      </Section>
-    </>
+    <Section className="pt-12 max-lg:pt-10 max-sm:pt-7">
+      <div className="site-container">
+        <h1 className="sr-only">프로필</h1>
+        <ProfileView />
+      </div>
+    </Section>
   );
 }
