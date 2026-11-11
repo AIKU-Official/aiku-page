@@ -91,10 +91,26 @@ export function CenterPeek({
   const fullRadius = () =>
     panel.current ? getComputedStyle(panel.current).borderTopLeftRadius : "0px";
 
+  // Parts marked data-peek-origin-only belong to the origin's look (a card's
+  // tint, say): they fade away as the panel opens and return as it closes.
+  const fadeOriginOnly = (to: 0 | 1, duration: number) => {
+    panel.current?.querySelectorAll<HTMLElement>("[data-peek-origin-only]").forEach((element) => {
+      element.animate([{ opacity: 1 - to }, { opacity: to }], {
+        duration,
+        easing: "ease-in-out",
+        fill: "forwards",
+      });
+    });
+  };
+
   useLayoutEffect(() => {
     if (!mounted || !shell.current || !panel.current || entered.current) return;
     entered.current = true;
-    if (reducedMotion()) return;
+    if (reducedMotion()) {
+      fadeOriginOnly(0, 0);
+      return;
+    }
+    fadeOriginOnly(0, OPEN_MS);
     const options = { duration: OPEN_MS, easing: EASING } as const;
     const start = atOrigin(shell.current, origin, originRadius);
     if (start) {
@@ -129,6 +145,7 @@ export function CenterPeek({
     }
     // Back to the top, where the panel looks like its origin again.
     panel.current.scrollTop = 0;
+    fadeOriginOnly(1, CLOSE_MS);
     const options = { duration: CLOSE_MS, easing: EASING, fill: "forwards" } as const;
     const end = atOrigin(shell.current, origin, originRadius);
     let last: Animation;

@@ -168,7 +168,13 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
     return () => window.removeEventListener("hashchange", openFromHash);
   }, [id]);
 
-  const surface = awardRank ? AWARDS[awardRank].card : "border-line";
+  // Size of the card when it was opened: the tint in the panel covers exactly that.
+  const [tintSize, setTintSize] = useState<{ width: number; height: number } | null>(null);
+  const openPanel = () => {
+    const rect = card.current?.getBoundingClientRect();
+    setTintSize(rect ? { width: rect.width, height: rect.height } : null);
+    setOpen(true);
+  };
 
   return (
     <>
@@ -183,7 +189,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
           open && "invisible",
         )}
       >
-        <Face {...face} onOpen={() => setOpen(true)} />
+        <Face {...face} onOpen={openPanel} />
       </article>
 
       {open ? (
@@ -191,8 +197,20 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
           label={title}
           onClose={close}
           origin={cardRect}
-          className={clsx("border", cardPadding, surface)}
+          className={clsx("relative isolate border border-line", cardPadding)}
         >
+          {/* A prize card's tint: there at the start so the panel matches the card, then faded out. */}
+          {awardRank && tintSize ? (
+            <div
+              data-peek-origin-only
+              aria-hidden="true"
+              style={tintSize}
+              className={clsx(
+                "pointer-events-none absolute top-0 left-0 -z-10 rounded-card",
+                AWARDS[awardRank].card,
+              )}
+            />
+          ) : null}
           <Face {...face} />
           {/* Here the write-up uses the panel's full width, and its pictures share one height. */}
           <div className="peek-body mt-7 border-t border-soft-line max-sm:mt-5 [&_.markdown-body]:max-w-none">
