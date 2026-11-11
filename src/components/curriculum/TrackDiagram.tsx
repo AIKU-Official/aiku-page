@@ -1,6 +1,8 @@
 /**
  * The 2-Track diagram, drawn as SVG so it stays sharp at any size.
  * Track 1: Junior half a year, then Senior half a year. Track 2: Senior for a year.
+ * Colours come from the official artwork: its mint for Junior, the brand green
+ * (Main #2, #21d081) deepening for Senior.
  */
 export function TrackDiagram() {
   const label = {
@@ -26,12 +28,12 @@ export function TrackDiagram() {
     >
       <defs>
         <linearGradient id="track-junior" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#abe4b7" />
-          <stop offset="1" stopColor="#86cc8e" />
+          <stop offset="0" stopColor="#2fd6b4" />
+          <stop offset="1" stopColor="#21c98c" />
         </linearGradient>
         <linearGradient id="track-senior" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#86cc8e" />
-          <stop offset="1" stopColor="#62996a" />
+          <stop offset="0" stopColor="#21c481" />
+          <stop offset="1" stopColor="#168f5d" />
         </linearGradient>
       </defs>
 
@@ -40,7 +42,7 @@ export function TrackDiagram() {
       </text>
       <rect x="130" y="28" width="386" height="104" rx="6" fill="url(#track-junior)" />
       {/* The notch that points from Junior on to Senior. */}
-      <path d="M516 70 L536 80 L516 90 Z" fill="#86cc8e" />
+      <path d="M516 70 L536 80 L516 90 Z" fill="#21c98c" />
       <rect x="536" y="28" width="394" height="104" rx="6" fill="url(#track-senior)" />
       <text x="323" y="80" {...caption}>
         JUNIOR (0.5년)

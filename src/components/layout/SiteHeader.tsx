@@ -4,16 +4,11 @@ import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { useMemberAccount } from "@/lib/auth/member";
 import { navItems, type NavItem } from "@/lib/site";
-
-const subscribeToScroll = (onChange: () => void) => {
-  window.addEventListener("scroll", onChange, { passive: true });
-  return () => window.removeEventListener("scroll", onChange);
-};
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`);
@@ -25,11 +20,6 @@ export function SiteHeader() {
   const pathname = usePathname();
   // Signed-in members get their picture and an account menu where "Login" would be.
   const account = useMemberAccount();
-  const isScrolled = useSyncExternalStore(
-    subscribeToScroll,
-    () => window.scrollY > 8,
-    () => false,
-  );
 
   // The menu is tied to the path it was opened on, so navigating closes it.
   const [openedOn, setOpenedOn] = useState<string | null>(null);
@@ -82,8 +72,8 @@ export function SiteHeader() {
         // The blur sits on a pseudo-element: backdrop-filter on the header itself
         // would become the containing block of the fixed mobile menu and clip it.
         // The bottom line matches the footer's top line, so both panels meet the page the same way.
-        "sticky top-0 z-20 flex min-h-(--header-height) items-center justify-between gap-6 border-b border-soft-line header-gutter transition-shadow before:absolute before:inset-0 before:-z-10 before:bg-white/85 before:backdrop-blur-md",
-        isScrolled && "shadow-[0_6px_24px_rgb(29_29_29/0.06)]",
+        // The shadow is always there, at the top of the page as well as after scrolling.
+        "sticky top-0 z-20 flex min-h-(--header-height) items-center justify-between gap-6 border-b border-soft-line header-gutter shadow-[0_6px_24px_rgb(29_29_29/0.06)] before:absolute before:inset-0 before:-z-10 before:bg-white/85 before:backdrop-blur-md",
       )}
     >
       <Link href="/" className="inline-flex shrink-0 items-center" aria-label="AIKU 홈으로 이동">
