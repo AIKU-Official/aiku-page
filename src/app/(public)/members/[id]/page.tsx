@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPublicProfile } from "@/actions/profile";
+import { BackLink } from "@/components/navigation/BackLink";
 import { Section } from "@/components/layout/Section";
 import { ProfileContent } from "@/components/profile/ProfileContent";
 
@@ -31,12 +31,7 @@ export default async function MemberProfilePage({ params }: PageProps<"/members/
   return (
     <Section className="pt-8 max-lg:pt-8 max-sm:pt-5">
       <div className="site-container">
-        <Link
-          href="/members"
-          className="inline-flex items-center gap-1 text-small font-semibold text-muted transition-colors hover:text-ink"
-        >
-          <span aria-hidden="true">←</span> Members
-        </Link>
+        <BackLink fallback={{ href: "/members", label: "Members" }} />
         <div className="mt-6 max-sm:mt-5">
           <ProfileContent subject={subject} profile={profile} projects={projects} />
         </div>

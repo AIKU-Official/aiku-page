@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ProfileView } from "@/components/auth/ProfileView";
+import { BackLink } from "@/components/navigation/BackLink";
 import { Section } from "@/components/layout/Section";
 
 export const metadata: Metadata = {
@@ -15,6 +16,9 @@ export default function ProfilePage() {
     <Section className="pt-12 max-lg:pt-10 max-sm:pt-7">
       <div className="site-container">
         <h1 className="sr-only">프로필</h1>
+        <div className="mb-6 max-sm:mb-5">
+          <BackLink fallback={{ href: "/members", label: "Members" }} />
+        </div>
         <ProfileView />
       </div>
     </Section>

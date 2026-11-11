@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { TrailRecorder } from "@/components/navigation/TrailRecorder";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { publicEnv } from "@/lib/env.public";
 import { siteName, siteOgDescription, siteDescription, siteTitle, themeColor } from "@/lib/site";
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" data-scroll-behavior="smooth">
       {/* A column at least one screen tall, so the footer sits at the bottom on short pages. */}
       <body className="flex min-h-dvh flex-col">
+        <TrailRecorder />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

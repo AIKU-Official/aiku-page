@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useCallback, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 
 import { gradeToneClassName, positionToneClassName } from "@/components/members/tones";
 import { ProfileModal } from "@/components/profile/ProfileModal";
@@ -22,6 +23,7 @@ export function PersonName({ person }: { person: ProjectPerson }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const member = person.member;
+  const router = useRouter();
 
   if (!member) return <span>{person.name}</span>;
 
@@ -50,6 +52,11 @@ export function PersonName({ person }: { person: ProjectPerson }) {
           onClick={(event) => {
             event.stopPropagation();
             setPoint(null);
+            // Phones open the profile's page, as member cards do.
+            if (window.matchMedia("(width < 561px)").matches) {
+              router.push(`/members/${member.id}`);
+              return;
+            }
             setOpen(true);
           }}
           {...hover}

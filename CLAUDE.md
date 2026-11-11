@@ -42,5 +42,6 @@ The site is AIKU's public homepage and its internal management tool. The owner i
 - Sibling controls behave alike in every state: selected, hover, focus, disabled. Inputs and buttons in one form are the same height.
 - Page heroes keep one height and the same background above and below their divider. Profile pages have no hero.
 - Progress is shown on the button that was pressed (its label changes and the form's buttons are disabled), not in a separate status box. A box is for errors.
+- Every detail page (a project, a profile, my profile and its editor) starts with `BackLink` (`src/components/navigation/BackLink.tsx`): it goes back step by step along the tab's trail of pages, labelled with the previous page's title, and falls back to the parent list when the page was opened directly. New detail pages use it too.
 - Detail views open as a centre peek over a blurred page, full screen on phones (`src/components/ui/CenterPeek.tsx`). A card opens by unfolding in place, with its content at real size the whole way; no scaling tricks.
 - Copy is plain Korean. Avoid Konglish; use English where the navigation does (`Contact`, `Members`). Use one word for one thing across the site.

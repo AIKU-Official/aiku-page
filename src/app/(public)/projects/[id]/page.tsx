@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BackLink } from "@/components/navigation/BackLink";
 import { Section } from "@/components/layout/Section";
 import { Markdown } from "@/components/markdown/Markdown";
 import { ProjectFace } from "@/components/projects/ProjectEntry";
@@ -27,12 +27,7 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[id]"
   return (
     <Section className="pt-8 max-lg:pt-8 max-sm:pt-5">
       <div className="site-container">
-        <Link
-          href={`/projects#project-${project.id}`}
-          className="inline-flex items-center gap-1 text-small font-semibold text-muted transition-colors hover:text-ink"
-        >
-          <span aria-hidden="true">←</span> 프로젝트 목록
-        </Link>
+        <BackLink fallback={{ href: `/projects#project-${project.id}`, label: "프로젝트 목록" }} />
         <article className="relative mt-5 max-sm:mt-4">
           <ProjectFace
             period={project.period}
