@@ -46,8 +46,23 @@ function write(steps: TrailStep[]) {
 /** Page title without the site suffix ("HanCLIP | AIKU" → "HanCLIP"). */
 const pageTitle = () => document.title.replace(/\s*\|\s*AIKU\s*$/, "").trim();
 
+let startOver = false;
+
+/**
+ * Called when the site's own navigation (header, account menu, footer) is
+ * used: the page it leads to starts a new trail, so it offers no way back.
+ */
+export function startTrail() {
+  startOver = true;
+}
+
 /** Records that `path` is now showing. Called on every navigation. */
 export function visit(path: string) {
+  if (startOver) {
+    startOver = false;
+    write([{ path, title: "" }]);
+    return;
+  }
   const steps = read();
   const top = steps.at(-1);
   if (top?.path === path) return;
@@ -62,7 +77,8 @@ export function visit(path: string) {
 export function nameCurrentStep(path: string) {
   const steps = read();
   const top = steps.at(-1);
-  const title = pageTitle();
+  // The home page carries the full site title; "홈" reads better as a step.
+  const title = path === "/" ? "홈" : pageTitle();
   if (top?.path === path && title && top.title !== title) {
     write([...steps.slice(0, -1), { path, title }]);
   }

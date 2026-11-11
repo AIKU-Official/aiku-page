@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 
+import { SiteNavLink } from "@/components/navigation/SiteNavLink";
 import { contactChannels } from "@/lib/site";
 
 const footerChannels = contactChannels.filter((channel) =>
@@ -40,7 +40,7 @@ export function SiteFooter() {
       <div className="site-container grid gap-10 py-14 max-sm:gap-6 max-sm:py-8">
         <div className="flex items-center justify-between gap-8 max-lg:flex-col max-lg:items-start">
           <div className="flex items-center gap-7 max-sm:gap-3">
-            <Link href="/" aria-label="AIKU 홈으로 이동" className="shrink-0">
+            <SiteNavLink href="/" aria-label="AIKU 홈으로 이동" className="shrink-0">
               <Image
                 src="/assets/aiku-logo-green.png"
                 alt="AIKU"
@@ -49,7 +49,7 @@ export function SiteFooter() {
                 style={{ width: "auto", height: aikuLogoHeight }}
                 className="block"
               />
-            </Link>
+            </SiteNavLink>
             <span aria-hidden="true" className="h-8 w-px shrink-0 bg-line max-sm:h-6" />
             <ul className="flex items-center gap-6 max-sm:gap-3" aria-label="소속">
               {affiliations.map((affiliation) => (
@@ -92,9 +92,9 @@ export function SiteFooter() {
         <div className="flex justify-between gap-4 border-t border-soft-line pt-6 text-small text-muted max-sm:flex-col max-sm:gap-1">
           <p>고려대학교 딥러닝 학회 AIKU</p>
           <p className="flex flex-wrap gap-x-4 gap-y-1">
-            <Link href="/privacy" className="transition-colors hover:text-ink">
+            <SiteNavLink href="/privacy" className="transition-colors hover:text-ink">
               개인정보처리방침
-            </Link>
+            </SiteNavLink>
             <span>© {new Date().getFullYear()} AIKU. All rights reserved.</span>
           </p>
         </div>

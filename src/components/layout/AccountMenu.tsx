@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { Avatar } from "@/components/ui/Avatar";
+import { startTrail } from "@/lib/navigation/trail";
 import type { MemberAccount } from "@/lib/auth/member";
 
 const itemClassName =
@@ -41,6 +42,8 @@ export function AccountMenu({
   }, [open]);
 
   const close = () => {
+    // The account menu is site navigation: its pages start a new trail.
+    startTrail();
     setOpen(false);
     onNavigate();
   };

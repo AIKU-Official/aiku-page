@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { useMemberAccount } from "@/lib/auth/member";
+import { startTrail } from "@/lib/navigation/trail";
 import { navItems, type NavItem } from "@/lib/site";
 
 const isActive = (pathname: string, href: string) =>
@@ -56,7 +57,10 @@ export function SiteHeader() {
           ? "page"
           : undefined
       }
-      onClick={closeNav}
+      onClick={() => {
+        startTrail();
+        closeNav();
+      }}
       className={clsx(
         "inline-flex h-9 items-center rounded-full px-3.5 font-medium transition-[background-color,color] hover:bg-surface-soft hover:text-ink aria-[current=page]:bg-green-100 aria-[current=page]:font-semibold aria-[current=page]:text-green-800 max-lg:h-12 max-lg:rounded-control max-lg:px-3 max-lg:text-[1.0625rem]",
         item.utility ? "text-small text-muted" : "text-[0.9375rem] text-body",
@@ -76,7 +80,12 @@ export function SiteHeader() {
         "sticky top-0 z-20 flex min-h-(--header-height) items-center justify-between gap-6 border-b border-soft-line header-gutter shadow-[0_6px_24px_rgb(29_29_29/0.06)] before:absolute before:inset-0 before:-z-10 before:bg-white/85 before:backdrop-blur-md",
       )}
     >
-      <Link href="/" className="inline-flex shrink-0 items-center" aria-label="AIKU 홈으로 이동">
+      <Link
+        href="/"
+        onClick={startTrail}
+        className="inline-flex shrink-0 items-center"
+        aria-label="AIKU 홈으로 이동"
+      >
         <Image
           src="/assets/aiku-logo-green.png"
           alt="AIKU"
