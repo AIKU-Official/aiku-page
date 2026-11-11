@@ -46,7 +46,7 @@ const AWARDS = {
 
 function Heading({ period, awardRank }: Pick<ProjectEntryProps, "period" | "awardRank">) {
   return (
-    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 max-sm:min-h-9">
       <Eyebrow spacing="none">{period || "AIKU"}</Eyebrow>
       {awardRank ? (
         <span
@@ -142,7 +142,15 @@ function Face({
           <Tags summary={summary} />
           <People people={people} />
         </div>
-        <div className="relative z-10 shrink-0 max-sm:w-full">{resources}</div>
+        {/* Phones: icons in the top corner, clear of the panel's close button when open. */}
+        <div
+          className={clsx(
+            "relative z-10 shrink-0 max-sm:absolute max-sm:top-4",
+            onOpen ? "max-sm:right-4" : "max-sm:right-14",
+          )}
+        >
+          {resources}
+        </div>
       </div>
       {/* Spans the card, so the sentence wraps as little as possible. */}
       {oneLine ? <p className="mt-4 text-body max-sm:mt-3">{oneLine}</p> : null}

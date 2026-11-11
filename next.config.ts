@@ -8,10 +8,17 @@ const legacyPages = ["about", "activities", "curriculum", "projects", "contact",
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL)
   : null;
+// Other hostnames this machine's dev server is opened from, e.g. its Tailscale
+// address when previewing on a phone: DEV_ALLOWED_ORIGINS=100.x.y.z (comma-separated).
+const devOrigins = (process.env.DEV_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const isLocalSupabase =
-  supabaseUrl !== null && ["127.0.0.1", "localhost"].includes(supabaseUrl.hostname);
+  supabaseUrl !== null && ["127.0.0.1", "localhost", ...devOrigins].includes(supabaseUrl.hostname);
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: devOrigins,
   images: {
     remotePatterns: supabaseUrl
       ? [
