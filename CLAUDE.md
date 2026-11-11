@@ -7,6 +7,7 @@ The site is AIKU's public homepage and its internal management tool. The owner i
 ## How to work
 
 - **Think through the whole flow.** When asked for one change, handle the connected cases too (success, failure, retry, signed in or out, coming back later, phone and desktop) without being asked.
+- **Same kind of thing, same behaviour.** When one card, panel or control gets a behaviour, give every equivalent one the same behaviour on every screen size (e.g. project and member cards both open a page on phones and an unfolding panel on wider screens). Check the siblings before calling a change done.
 - **Verify before reporting.** Drive the change in a real browser with Playwright (desktop 1280 and phone 390), look at the screenshot, and say what was and was not checked. Temporary scripts go in `tests/.<name>.mjs` and are deleted afterwards; screenshots go to the scratchpad, not the repo.
 - **Deploy after each verified change.** Commit and push to `main` (Vercel deploys it), then confirm the live site shows it. Commit messages are plain English and say what changed and why.
 - **Production database.** Schema changes and bulk writes to production need the owner's go-ahead in the conversation. A change whose code depends on a new table or column is pushed only after the migration is applied, or the live page breaks.
