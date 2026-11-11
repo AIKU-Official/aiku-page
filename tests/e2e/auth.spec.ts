@@ -16,13 +16,13 @@ test("a forged session cookie is rejected", async ({ page, context, baseURL }) =
 
 test("wrong credentials show an error and keep the ID", async ({ page }) => {
   await page.goto("/login/admin");
-  await page.getByLabel("ID").fill("someone");
-  await page.getByLabel("Password").fill("definitely-wrong");
+  await page.getByLabel("아이디").fill("someone");
+  await page.getByLabel("비밀번호").fill("definitely-wrong");
   await page.getByRole("button", { name: "로그인" }).click();
   await expect(page.locator("form [role=alert]")).toHaveText(
     /ID 또는 비밀번호가 올바르지 않습니다|로그인 시도가 너무 많습니다/,
   );
-  await expect(page.getByLabel("ID")).toHaveValue("someone");
+  await expect(page.getByLabel("아이디")).toHaveValue("someone");
 });
 
 test("member login offers Google and GitHub, with admin login apart", async ({ page }) => {

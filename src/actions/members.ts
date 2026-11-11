@@ -4,8 +4,7 @@ import { z } from "zod";
 
 import { ActionError, adminAction, unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
-import { isObjectKeyOf } from "@/lib/storage/keys";
-import { removeFolder, removeObjects } from "@/lib/storage/server";
+import { removeFolder } from "@/lib/storage/server";
 import { generationNameSchema, idSchema, memberSchema, reorderSchema } from "@/lib/validators";
 
 // Generations ---------------------------------------------------------------
@@ -25,7 +24,7 @@ export async function addGeneration(input: unknown): Promise<ActionResult> {
 export async function deleteGeneration(input: unknown): Promise<ActionResult> {
   return adminAction({ schema: idSchema, input, revalidate: ["members"] }, async (id, db) => {
     const deleted = unwrap(await db.from("generations").delete().eq("id", id).select("id"), {
-      "23503": "해당 기수에 멤버가 있어 삭제할 수 없습니다.",
+      "23503": "해당 기수에 멤버나 직책이 있어 삭제할 수 없습니다.",
     });
     if (!deleted?.length) throw new ActionError("기수를 찾을 수 없습니다.");
     return { message: "기수를 삭제했습니다." };
@@ -49,32 +48,29 @@ const generationMessages = { "23503": "등록된 기수만 선택할 수 있습�
 
 export async function saveMember(input: unknown): Promise<ActionResult> {
   return adminAction({ schema: memberSchema, input, revalidate: ["members"] }, async (data, db) => {
-    const { id, isNew, photo } = data;
-    if (photo && !isObjectKeyOf(photo, "members", id)) {
-      throw new ActionError("업로드한 파일을 확인할 수 없습니다. 다시 시도하세요.");
-    }
+    const { id, isNew } = data;
 
-    const existing = isNew
-      ? null
-      : unwrap(await db.from("members").select("photo_path").eq("id", id).maybeSingle());
-    if (!isNew && !existing) {
-      throw new ActionError("멤버를 찾을 수 없습니다.");
-    }
+    // Resolve the titles before writing anything, so bad input changes nothing.
+    const generations = data.position.length
+      ? (unwrap(await db.from("generations").select("id, name")) ?? [])
+      : [];
+    const generationIds = new Map(
+      generations.map((generation) => [generation.name, generation.id]),
+    );
+    const positions = data.position.map(({ generation, title }) => {
+      const generationId = generationIds.get(generation);
+      if (!generationId) {
+        throw new ActionError(`직책의 기수 "${generation}"는 등록되지 않은 기수입니다.`);
+      }
+      return { member_id: id, generation_id: generationId, title };
+    });
 
-    const replacesPhoto = Boolean(photo) || data.removePhoto;
     const row = {
       generation_id: data.generationId,
       name: data.name,
       department: data.department,
       grade: data.grade,
       grade_pinned: data.gradePinned,
-      position: data.position,
-      summary: data.summary,
-      email: data.email,
-      github_url: data.githubUrl,
-      linkedin_url: data.linkedinUrl,
-      website_url: data.websiteUrl,
-      photo_path: replacesPhoto ? photo : (existing?.photo_path ?? null),
     };
 
     if (isNew) {
@@ -83,12 +79,37 @@ export async function saveMember(input: unknown): Promise<ActionResult> {
         "23505": "이미 저장된 멤버입니다. 새로고침 후 확인하세요.",
       });
     } else {
-      unwrap(await db.from("members").update(row).eq("id", id), generationMessages);
+      const updated = unwrap(
+        await db.from("members").update(row).eq("id", id).select("id"),
+        generationMessages,
+      );
+      if (!updated?.length) throw new ActionError("멤버를 찾을 수 없습니다.");
     }
 
-    if (replacesPhoto && existing?.photo_path?.startsWith(`members/${id}/`)) {
-      await removeObjects(db, [existing.photo_path]);
+    // Replace the member's titles: add the new ones first, then drop the rest,
+    // so a failure in between never leaves an officer without a title.
+    if (positions.length) {
+      unwrap(
+        await db.from("member_positions").upsert(positions, {
+          onConflict: "member_id,generation_id,title",
+          ignoreDuplicates: true,
+        }),
+      );
     }
+    const keep = new Set(
+      positions.map((position) => `${position.generation_id} ${position.title}`),
+    );
+    const current =
+      unwrap(
+        await db.from("member_positions").select("id, generation_id, title").eq("member_id", id),
+      ) ?? [];
+    const stale = current
+      .filter((position) => !keep.has(`${position.generation_id} ${position.title}`))
+      .map((position) => position.id);
+    if (stale.length) {
+      unwrap(await db.from("member_positions").delete().in("id", stale));
+    }
+
     return { message: "멤버 프로필을 저장했습니다." };
   });
 }

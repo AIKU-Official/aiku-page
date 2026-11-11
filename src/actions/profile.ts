@@ -22,6 +22,7 @@ import {
   IMAGE_EXTENSIONS,
   isObjectKeyOf,
 } from "@/lib/storage/keys";
+import { formatPositions, POSITION_SELECT } from "@/lib/members/positions";
 import { UPLOAD_BUCKET } from "@/lib/storage/public-url";
 import { removeObjects } from "@/lib/storage/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
@@ -60,7 +61,9 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
   const row = unwrap(
     await db
       .from("members")
-      .select("id, name, department, grade, position, generations(name), member_profiles(*)")
+      .select(
+        `id, name, department, grade, generations(name), member_profiles(*), ${POSITION_SELECT}`,
+      )
       .eq("id", memberId)
       .maybeSingle(),
   );
@@ -94,7 +97,7 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
       generation: row.generations.name,
       department: row.department,
       grade: MEMBER_GRADES.includes(row.grade as MemberGrade) ? (row.grade as MemberGrade) : "ob",
-      position: row.position,
+      position: formatPositions(row.member_positions),
     },
     profile: row.member_profiles ? mapProfile(row.member_profiles) : emptyProfile,
   };

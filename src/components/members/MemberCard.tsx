@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import type { CSSProperties } from "react";
 
 import { Avatar } from "@/components/ui/Avatar";
 import { storagePublicUrl } from "@/lib/storage/public-url";
@@ -7,11 +8,21 @@ import { MEMBER_GRADE_LABELS, type Member } from "@/lib/types";
 import { gradeToneClassName, positionToneClassName } from "./tones";
 
 /** Directory entry laid out like a name card: picture on the left, name and tags beside it. */
-export function MemberCard({ member, onOpen }: { member: Member; onOpen?: () => void }) {
+export function MemberCard({
+  member,
+  onOpen,
+  style,
+}: {
+  member: Member;
+  /** Called with the card element, which the profile panel opens out of. */
+  onOpen?: (card: HTMLElement) => void;
+  style?: CSSProperties;
+}) {
   const pill = "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
 
   return (
     <article
+      style={style}
       className={clsx(
         "relative flex items-center gap-3 card px-4 py-3.5 max-sm:gap-2.5 max-sm:p-3",
         onOpen &&
@@ -29,7 +40,10 @@ export function MemberCard({ member, onOpen }: { member: Member; onOpen?: () => 
             // The button's ::after covers the card, so the whole card opens the profile.
             <button
               type="button"
-              onClick={onOpen}
+              onClick={(event) => {
+                const card = event.currentTarget.closest("article");
+                if (card) onOpen(card);
+              }}
               aria-label={`${member.name} 프로필 보기`}
               className="shrink-0 cursor-pointer font-[inherit] tracking-[inherit] after:absolute after:inset-0 after:rounded-card focus-visible:outline-none"
             >

@@ -1,16 +1,18 @@
 /**
- * Splits a project's field tags ("#NLP #RL #LLM") into ["NLP", "RL", "LLM"].
- * A tag may contain spaces ("#Quantum Machine Learning"); it runs until the
- * next " #". Returns null when the summary is plain text rather than tags.
+ * Reads the admin's tag input into the list stored in `projects.tags`.
+ * Accepts hash tags ("#NLP #RL #LLM") or a comma-separated list
+ * ("NLP, RL, LLM"). A tag may contain spaces ("#Quantum Machine Learning"):
+ * it runs until the next " #" or comma. Repeated tags are kept once.
  */
-export function parseTags(summary: string): string[] | null {
-  const value = summary.trim();
-  if (!value.startsWith("#")) {
-    return null;
-  }
-  const tags = value
-    .split(/(?:^|\s+)#/)
+export function parseTags(input: string): string[] {
+  const tags = input
+    .split(/(?:^|[\s,]+)#|,/)
     .map((tag) => tag.trim())
     .filter(Boolean);
-  return tags.length ? tags : null;
+  return [...new Set(tags)];
+}
+
+/** Tags as the admin types them: ["NLP", "LLM"] -> "#NLP #LLM". */
+export function formatTags(tags: string[]): string {
+  return tags.map((tag) => `#${tag}`).join(" ");
 }

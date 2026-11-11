@@ -1,7 +1,6 @@
 "use client";
 
 import clsx from "clsx";
-import Image from "next/image";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 
 import {
@@ -13,19 +12,15 @@ import {
   saveMember,
 } from "@/actions/members";
 import { Button } from "@/components/ui/Button";
-import { displayFileName } from "@/lib/admin/files";
-import { cleanUpUploads, pickedFiles, uploadFiles } from "@/lib/admin/upload";
-import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS, MEMBER_GRADES, type Generation, type Member } from "@/lib/types";
 
 import { AdminItem, EmptyAdminText, ItemButton, ItemText, ListHead } from "./AdminList";
 import { AdminPanel } from "./AdminPanel";
 import { SortableList } from "./SortableList";
-import { failure, fromError, fromResult, info, scrollToForm } from "./status";
+import { failure, fromResult, info, scrollToForm } from "./status";
 import {
   AdminActions,
   adminFormClassName,
-  FileNote,
   FormGrid,
   Checkbox,
   SelectField,
@@ -40,13 +35,11 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
   const [generationFormKey, setGenerationFormKey] = useState(0);
   const [editing, setEditing] = useState<Member | null>(null);
   const [memberFormKey, setMemberFormKey] = useState(0);
-  const [removePhoto, setRemovePhoto] = useState(false);
   const [pending, startTransition] = useTransition();
   const memberFormRef = useRef<HTMLFormElement>(null);
 
   const resetMemberForm = () => {
     setEditing(null);
-    setRemovePhoto(false);
     setMemberFormKey((key) => key + 1);
   };
 
@@ -78,26 +71,11 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
     }
 
     const form = new FormData(event.currentTarget);
-    const id = editing?.id ?? crypto.randomUUID();
-    const photo = pickedFiles(form, "photo")[0];
 
     setMemberStatus(info("저장 중입니다."));
     startTransition(async () => {
-      let uploaded: string[];
-      try {
-        uploaded = await uploadFiles(
-          "members",
-          id,
-          photo ? [{ file: photo, kind: "image" }] : [],
-          (done, total) => setMemberStatus(info(`파일을 업로드하는 중입니다. (${done}/${total})`)),
-        );
-      } catch (error) {
-        setMemberStatus(fromError(error));
-        return;
-      }
-
       const result = await saveMember({
-        id,
+        id: editing?.id ?? crypto.randomUUID(),
         isNew: !editing,
         generationId: form.get("generationId") ?? "",
         name: form.get("name"),
@@ -105,33 +83,23 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
         grade: form.get("grade"),
         gradePinned: form.get("gradePinned") === "on",
         position: form.get("position"),
-        summary: form.get("summary"),
-        email: form.get("email"),
-        githubUrl: form.get("githubUrl"),
-        linkedinUrl: form.get("linkedinUrl"),
-        websiteUrl: form.get("websiteUrl"),
-        photo: uploaded[0] ?? null,
-        removePhoto,
       });
-      if (!result.ok) {
-        await cleanUpUploads("members", id, uploaded);
-      } else {
-        resetMemberForm();
-      }
+      if (result.ok) resetMemberForm();
       setMemberStatus(fromResult(result));
     });
   };
 
   const editMember = (member: Member) => {
     setEditing(member);
-    setRemovePhoto(false);
     setMemberFormKey((key) => key + 1);
     setMemberStatus(info("수정할 멤버 프로필을 불러왔습니다."));
     scrollToForm(memberFormRef.current);
   };
 
   const removeMember = (member: Member) => {
-    if (!window.confirm("이 멤버 프로필을 삭제할까요? 업로드한 프로필 사진도 함께 삭제됩니다.")) {
+    if (
+      !window.confirm("이 멤버 프로필을 삭제할까요? 멤버가 올린 프로필 사진도 함께 삭제됩니다.")
+    ) {
       return;
     }
     startTransition(async () => {
@@ -214,60 +182,9 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
         <TextField
           label="직책"
           name="position"
-          placeholder="예: 8기 회장 (없으면 비워두세요)"
+          placeholder="예: 8기 회장 (여러 개는 쉼표로 구분, 없으면 비워두세요)"
           defaultValue={editing?.position}
         />
-        <TextField label="프로필 사진" name="photo" type="file" accept="image/*" />
-        <TextField
-          label="한 줄 소개"
-          name="summary"
-          placeholder="예: Multimodal learning과 AI safety에 관심이 있습니다."
-          defaultValue={editing?.summary}
-        />
-        <FormGrid>
-          <TextField
-            label="메일주소"
-            name="email"
-            type="email"
-            placeholder="name@example.com"
-            defaultValue={editing?.email ?? ""}
-          />
-          <TextField
-            label="GitHub"
-            name="githubUrl"
-            type="url"
-            placeholder="https://github.com/..."
-            defaultValue={editing?.githubUrl ?? ""}
-          />
-        </FormGrid>
-        <FormGrid>
-          <TextField
-            label="LinkedIn"
-            name="linkedinUrl"
-            type="url"
-            placeholder="https://www.linkedin.com/in/..."
-            defaultValue={editing?.linkedinUrl ?? ""}
-          />
-          <TextField
-            label="개인 웹사이트"
-            name="websiteUrl"
-            type="url"
-            placeholder="https://..."
-            defaultValue={editing?.websiteUrl ?? ""}
-          />
-        </FormGrid>
-        {editing?.photoPath ? (
-          <FileNote>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={clsx("wrap-anywhere", removePhoto && "line-through")}>
-                현재 프로필 사진: {displayFileName(editing.photoPath)}
-              </span>
-              <ItemButton danger={!removePhoto} onClick={() => setRemovePhoto((value) => !value)}>
-                {removePhoto ? "삭제 취소" : "사진 삭제"}
-              </ItemButton>
-            </div>
-          </FileNote>
-        ) : null}
         <StatusMessage status={memberStatus} />
         <AdminActions>
           <Button type="submit" variant="dark" disabled={pending}>
@@ -372,36 +289,15 @@ export function MembersPanel({ generations }: { generations: Generation[] }) {
 }
 
 function MemberSummary({ member, index }: { member: Member; index: number }) {
-  const links = [member.email, member.githubUrl, member.linkedinUrl, member.websiteUrl].filter(
-    Boolean,
-  );
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 max-sm:grid-cols-1">
-      {member.photoPath ? (
-        <Image
-          src={storagePublicUrl(member.photoPath)}
-          alt={`${member.name} 프로필`}
-          width={48}
-          height={48}
-          className="size-12 rounded-full border border-soft-line bg-surface-soft object-cover"
-        />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="block size-12 rounded-full border border-soft-line bg-[linear-gradient(135deg,rgb(33_208_129/0.2),rgb(33_208_129/0.12)),var(--color-surface-soft)]"
-        />
-      )}
-      <ItemText
-        label={index + 1}
-        title={member.name}
-        details={[
-          [MEMBER_GRADE_LABELS[member.grade], member.department, member.position]
-            .filter(Boolean)
-            .join(" · "),
-          member.summary || "한 줄 소개가 없습니다.",
-          links.join(" · ") || "연결 정보가 없습니다.",
-        ]}
-      />
-    </div>
+    <ItemText
+      label={index + 1}
+      title={member.name}
+      details={[
+        [MEMBER_GRADE_LABELS[member.grade], member.department, member.position]
+          .filter(Boolean)
+          .join(" · "),
+      ]}
+    />
   );
 }

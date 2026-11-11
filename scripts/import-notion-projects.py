@@ -174,8 +174,8 @@ def main():
         markdown = open(final).read().strip() + "\n" if os.path.exists(final) else ""
         # Tags from Notion; for pages without any, the ones chosen from the write-up.
         fields = meta.get("fields") or tag_overrides.get(meta["notion_id"], [])
-        tags = " ".join("#" + t for t in dict.fromkeys(TAG_SPELLING.get(f, f) for f in fields))
-        row = {"season_id": seasons.get(p["season"]), "title": p["title"], "summary": tags, "markdown": markdown,
+        tags = list(dict.fromkeys(TAG_SPELLING.get(f, f) for f in fields))
+        row = {"season_id": seasons.get(p["season"]), "title": p["title"], "tags": tags, "markdown": markdown,
                "github_url": p["github"], "one_line": p["one_line"], "award_rank": p["rank"], "notion_page_id": meta["notion_id"], "sort_order": order}
         entry = {"title": p["title"], "season": p["season"], "award_rank": p["rank"], "award_text": p["award_text"],
                  "images": len(meta["images"]), "chars": len(markdown)}

@@ -8,7 +8,6 @@ import { ProjectResources } from "@/components/projects/ProjectResources";
 import { getProjectArchive } from "@/lib/data/public";
 import { composeProjectMarkdown } from "@/lib/markdown/compose";
 import { getProjectSeasonList } from "@/lib/projects/filter";
-import { parseTags } from "@/lib/projects/tags";
 
 export const metadata: Metadata = {
   title: "프로젝트",
@@ -25,13 +24,13 @@ export default async function ProjectsPage() {
     id: project.id,
     period: project.period,
     awardRank: project.awardRank,
-    tags: parseTags(project.summary) ?? [],
+    tags: project.tags,
     node: (
       <ProjectEntry
         id={project.id}
         period={project.period}
         title={project.title}
-        summary={project.summary}
+        tags={project.tags}
         oneLine={project.oneLine}
         awardRank={project.awardRank}
         people={project.people}

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { POSITION_SELECT } from "@/lib/members/positions";
 import { createPublicClient } from "@/lib/supabase/public-client";
 import type { Generation, NewsItem, Project, Season } from "@/lib/types";
 
@@ -30,15 +31,28 @@ export type ProjectArchive = {
   projects: Project[];
 };
 
+const PROJECT_SELECT =
+  `*, seasons(name), project_members(name, role, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT}))` as const;
+
+/** One project with its season name, or null when there is none with this id. */
+export async function getProject(id: string): Promise<Project | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data, error } = await createPublicClient()
+    .from("projects")
+    .select(PROJECT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) fail("프로젝트", error.message);
+  return data ? mapProject(data, data.seasons?.name ?? "") : null;
+}
+
 export async function getProjectArchive(): Promise<ProjectArchive> {
   const supabase = createPublicClient();
   const [seasonResult, projectResult] = await Promise.all([
     supabase.from("seasons").select("id, name").order("sort_order").order("created_at"),
     supabase
       .from("projects")
-      .select(
-        "*, project_members(name, role, sort_order, members(id, name, department, grade, position, generations(name), member_profiles(is_public, avatar_path)))",
-      )
+      .select(PROJECT_SELECT)
       .order("sort_order")
       .order("created_at", { ascending: false }),
   ]);
@@ -66,7 +80,7 @@ export async function getGenerations(): Promise<Generation[]> {
   const { data, error } = await createPublicClient()
     .from("generations")
     .select(
-      "id, name, members(*, member_profiles(is_public, avatar_path, contact_email, github_url, instagram_url, linkedin_url, website_url))",
+      `id, name, members(*, member_profiles(is_public, avatar_path), ${POSITION_SELECT})`,
     )
     .order("sort_order")
     .order("created_at")

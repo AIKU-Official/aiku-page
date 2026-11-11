@@ -79,6 +79,8 @@ export async function adminAction<S extends z.ZodType, T = undefined>(
         revalidatePath(path);
       }
     }
+    // Each project also has its own page.
+    if (revalidate.includes("projects")) revalidatePath("/projects/[id]", "page");
     // Re-render the admin page itself in the same response.
     revalidatePath("/admin");
     return { ok: true, message: result.message, data: result.data as T };

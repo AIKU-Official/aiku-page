@@ -202,7 +202,7 @@ export function ProfileContent({
               {projects.map((project) => (
                 <li key={project.id}>
                   <Link
-                    href={`/projects#project-${project.id}`}
+                    href={`/projects/${project.id}`}
                     className="group flex flex-wrap items-center gap-x-3 gap-y-1 py-4"
                   >
                     <span className="w-14 shrink-0 text-small text-muted tabular-nums">

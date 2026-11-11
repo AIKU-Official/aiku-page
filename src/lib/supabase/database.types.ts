@@ -96,6 +96,45 @@ export type Database = {
           },
         ];
       };
+      member_positions: {
+        Row: {
+          created_at: string;
+          generation_id: string;
+          id: string;
+          member_id: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          generation_id: string;
+          id?: string;
+          member_id: string;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          generation_id?: string;
+          id?: string;
+          member_id?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_positions_generation_id_fkey";
+            columns: ["generation_id"];
+            isOneToOne: false;
+            referencedRelation: "generations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "member_positions_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       member_profiles: {
         Row: {
           avatar_path: string | null;
@@ -227,56 +266,35 @@ export type Database = {
         Row: {
           created_at: string;
           department: string;
-          email: string | null;
           generation_id: string;
-          github_url: string | null;
           grade: string;
           grade_pinned: boolean;
           id: string;
-          linkedin_url: string | null;
           name: string;
-          photo_path: string | null;
-          position: string;
           sort_order: number;
-          summary: string;
           updated_at: string;
-          website_url: string | null;
         };
         Insert: {
           created_at?: string;
           department?: string;
-          email?: string | null;
           generation_id: string;
-          github_url?: string | null;
           grade?: string;
           grade_pinned?: boolean;
           id?: string;
-          linkedin_url?: string | null;
           name: string;
-          photo_path?: string | null;
-          position?: string;
           sort_order?: number;
-          summary?: string;
           updated_at?: string;
-          website_url?: string | null;
         };
         Update: {
           created_at?: string;
           department?: string;
-          email?: string | null;
           generation_id?: string;
-          github_url?: string | null;
           grade?: string;
           grade_pinned?: boolean;
           id?: string;
-          linkedin_url?: string | null;
           name?: string;
-          photo_path?: string | null;
-          position?: string;
           sort_order?: number;
-          summary?: string;
           updated_at?: string;
-          website_url?: string | null;
         };
         Relationships: [
           {
@@ -383,7 +401,7 @@ export type Database = {
           presentation_path: string | null;
           season_id: string;
           sort_order: number;
-          summary: string;
+          tags: string[];
           title: string;
           updated_at: string;
         };
@@ -400,7 +418,7 @@ export type Database = {
           presentation_path?: string | null;
           season_id: string;
           sort_order?: number;
-          summary?: string;
+          tags?: string[];
           title: string;
           updated_at?: string;
         };
@@ -417,7 +435,7 @@ export type Database = {
           presentation_path?: string | null;
           season_id?: string;
           sort_order?: number;
-          summary?: string;
+          tags?: string[];
           title?: string;
           updated_at?: string;
         };

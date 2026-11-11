@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { useEffect, useSyncExternalStore } from "react";
 
 import { emailToLoginId } from "@/lib/auth/login-id";
+import { formatPositions, POSITION_SELECT } from "@/lib/members/positions";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import type { MemberGrade } from "@/lib/types";
 import { hasStoredMemberSession } from "@/lib/supabase/auth-client";
@@ -60,7 +61,7 @@ export async function loadMembership(): Promise<Pick<MemberAccount, "member" | "
     db
       .from("member_accounts")
       .select(
-        "members(id, name, department, grade, position, generations(name), member_profiles(avatar_path))",
+        `members(id, name, department, grade, generations(name), member_profiles(avatar_path), ${POSITION_SELECT})`,
       )
       .maybeSingle(),
     db.from("member_signup_requests").select("user_id").maybeSingle(),
@@ -74,7 +75,7 @@ export async function loadMembership(): Promise<Pick<MemberAccount, "member" | "
           generation: member.generations.name,
           department: member.department ?? "",
           grade: member.grade as MemberGrade,
-          position: member.position ?? "",
+          position: formatPositions(member.member_positions),
           avatarPath: member.member_profiles?.avatar_path ?? null,
         }
       : null,

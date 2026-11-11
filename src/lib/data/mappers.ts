@@ -1,3 +1,4 @@
+import { formatPositions, type PositionRow } from "@/lib/members/positions";
 import type { Tables } from "@/lib/supabase/database.types";
 import {
   MEMBER_GRADES,
@@ -15,8 +16,9 @@ export const mapSeason = (row: Pick<Tables<"seasons">, "id" | "name">): Season =
 
 type ProjectPersonRow = Pick<Tables<"project_members">, "name" | "role" | "sort_order"> & {
   members:
-    | (Pick<Tables<"members">, "id" | "name" | "department" | "grade" | "position"> & {
+    | (Pick<Tables<"members">, "id" | "name" | "department" | "grade"> & {
         generations: { name: string };
+        member_positions: PositionRow[];
         member_profiles: Pick<Tables<"member_profiles">, "is_public" | "avatar_path"> | null;
       })
     | null;
@@ -34,7 +36,7 @@ export const mapProject = (
   seasonId: row.season_id,
   period,
   title: row.title,
-  summary: row.summary,
+  tags: row.tags,
   markdown: row.markdown,
   githubUrl: row.github_url,
   presentationPath: row.presentation_path,
@@ -61,7 +63,7 @@ export const mapProject = (
               generation: member.generations.name,
               department: member.department,
               grade: toGrade(member.grade),
-              position: member.position,
+              position: formatPositions(member.member_positions),
               avatarPath: profile?.avatar_path ?? null,
               hasPublicProfile: Boolean(profile),
             }
@@ -79,17 +81,17 @@ export const mapNews = (row: Tables<"news">): NewsItem => ({
   linkLabel: row.link_label,
 });
 
-type PublicProfileLinks = Pick<
-  Tables<"member_profiles">,
-  "is_public" | "avatar_path" | "contact_email" | "github_url" | "instagram_url" | "linkedin_url" | "website_url"
->;
+type PublicProfile = Pick<Tables<"member_profiles">, "is_public" | "avatar_path">;
 
 /**
- * `member_profiles` is present only when the query joined it. Visitors can
- * read public profiles only, so their links take the place of the roster's.
+ * `member_profiles` and `member_positions` are present only when the query
+ * joined them. Visitors can read public profiles only.
  */
 export const mapMember = (
-  row: Tables<"members"> & { member_profiles?: PublicProfileLinks | null },
+  row: Tables<"members"> & {
+    member_profiles?: PublicProfile | null;
+    member_positions?: PositionRow[];
+  },
 ): Member => {
   const profile = row.member_profiles?.is_public ? row.member_profiles : null;
   return {
@@ -100,14 +102,7 @@ export const mapMember = (
     // The column has a check constraint; the fallback only guards the type.
     grade: MEMBER_GRADES.includes(row.grade as MemberGrade) ? (row.grade as MemberGrade) : "ob",
     gradePinned: row.grade_pinned,
-    position: row.position,
-    summary: row.summary,
-    email: profile?.contact_email ?? row.email,
-    githubUrl: profile?.github_url ?? row.github_url,
-    instagramUrl: profile?.instagram_url ?? null,
-    linkedinUrl: profile?.linkedin_url ?? row.linkedin_url,
-    websiteUrl: profile?.website_url ?? row.website_url,
-    photoPath: row.photo_path,
+    position: formatPositions(row.member_positions),
     avatarPath: profile?.avatar_path ?? null,
     hasPublicProfile: Boolean(profile),
   };

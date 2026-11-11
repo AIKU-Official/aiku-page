@@ -1,11 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Fragment, useCallback, useRef, useState, type ReactNode } from "react";
 
 import { CenterPeek } from "@/components/ui/CenterPeek";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import { parseTags } from "@/lib/projects/tags";
 import type { ProjectPerson } from "@/lib/types";
 
 import { PersonName } from "./PersonName";
@@ -14,7 +14,7 @@ type ProjectEntryProps = {
   id: string;
   period: string;
   title: string;
-  summary: string;
+  tags: string[];
   oneLine: string;
   awardRank: 1 | 2 | 3 | null;
   people: ProjectPerson[];
@@ -62,9 +62,8 @@ function Heading({ period, awardRank }: Pick<ProjectEntryProps, "period" | "awar
   );
 }
 
-function Tags({ summary }: { summary: string }) {
-  const tags = parseTags(summary);
-  if (!tags) return summary ? <p className="mt-3 max-w-[640px] text-muted">{summary}</p> : null;
+function Tags({ tags }: { tags: string[] }) {
+  if (!tags.length) return null;
   return (
     <ul className="mt-4 flex flex-wrap gap-1.5 max-sm:mt-3" aria-label="관련 분야">
       {tags.map((tag) => (
@@ -110,10 +109,10 @@ const cardPadding = "p-8 max-sm:p-5";
  * What a project shows at a glance. The card and the top of the opened panel
  * both render this, at the same padding, so one can turn into the other.
  */
-function Face({
+export function ProjectFace({
   period,
   title,
-  summary,
+  tags,
   oneLine,
   awardRank,
   people,
@@ -139,14 +138,14 @@ function Face({
               title
             )}
           </h2>
-          <Tags summary={summary} />
+          <Tags tags={tags} />
           <People people={people} />
         </div>
-        {/* Phones: icons in the top corner, clear of the panel's close button when open. */}
         <div
           className={clsx(
-            "relative z-10 shrink-0 max-sm:absolute max-sm:top-4",
-            onOpen ? "max-sm:right-4" : "max-sm:right-14",
+            "relative z-10 shrink-0",
+            // On a phone's card the links are icons in the top corner; on the page they sit under the title.
+            onOpen && "max-sm:absolute max-sm:top-4 max-sm:right-4",
           )}
         >
           {resources}
@@ -166,19 +165,15 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
   const card = useRef<HTMLElement>(null);
   const cardRect = useCallback(() => card.current?.getBoundingClientRect(), []);
 
-  // A link to #project-<id> (from a member's profile) opens the project.
-  useEffect(() => {
-    const openFromHash = () => {
-      if (window.location.hash === `#project-${id}`) setOpen(true);
-    };
-    openFromHash();
-    window.addEventListener("hashchange", openFromHash);
-    return () => window.removeEventListener("hashchange", openFromHash);
-  }, [id]);
-
   // Size of the card when it was opened: the tint in the panel covers exactly that.
   const [tintSize, setTintSize] = useState<{ width: number; height: number } | null>(null);
+  const router = useRouter();
   const openPanel = () => {
+    // Phones get the project's own page: a panel over a small screen is just a page without an address.
+    if (window.matchMedia("(width < 561px)").matches) {
+      router.push(`/projects/${id}`);
+      return;
+    }
     const rect = card.current?.getBoundingClientRect();
     setTintSize(rect ? { width: rect.width, height: rect.height } : null);
     setOpen(true);
@@ -197,7 +192,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
           open && "invisible",
         )}
       >
-        <Face {...face} onOpen={openPanel} />
+        <ProjectFace {...face} onOpen={openPanel} />
       </article>
 
       {open ? (
@@ -205,6 +200,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
           label={title}
           onClose={close}
           origin={cardRect}
+          expandHref={`/projects/${id}`}
           className={clsx("relative isolate border border-line", cardPadding)}
         >
           {/* A prize card's tint: there at the start so the panel matches the card, then faded out. */}
@@ -219,7 +215,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
               )}
             />
           ) : null}
-          <Face {...face} />
+          <ProjectFace {...face} />
           {/* Here the write-up uses the panel's full width, and its pictures share one height. */}
           <div className="peek-body mt-7 border-t border-soft-line max-sm:mt-5 [&_.markdown-body]:max-w-none">
             {body}

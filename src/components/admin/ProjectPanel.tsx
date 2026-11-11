@@ -7,6 +7,7 @@ import { deleteProject, reorderProjects, saveProject } from "@/actions/projects"
 import { addSeason, deleteSeason, reorderSeasons } from "@/actions/seasons";
 import { Button } from "@/components/ui/Button";
 import { displayFileName } from "@/lib/admin/files";
+import { formatTags } from "@/lib/projects/tags";
 import { cleanUpUploads, pickedFiles, uploadFiles, type PendingFile } from "@/lib/admin/upload";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import type { Project, Season } from "@/lib/types";
@@ -131,7 +132,7 @@ export function ProjectPanel({ seasons, projects }: { seasons: Season[]; project
                     handle={handle}
                     label={index + 1}
                     title={project.title}
-                    details={[project.summary || "관련 분야 태그가 없습니다."]}
+                    details={[formatTags(project.tags) || "관련 분야 태그가 없습니다."]}
                     actions={
                       <>
                         <ItemButton onClick={() => edit(project)}>프로젝트 수정</ItemButton>
@@ -322,7 +323,9 @@ function ProjectForm({
         isNew: !project,
         seasonId,
         title: form.get("title"),
-        summary: form.get("summary"),
+        tags: form.get("tags"),
+        oneLine: form.get("oneLine"),
+        awardRank: form.get("awardRank") ?? "",
         githubUrl: form.get("githubUrl"),
         markdown: form.get("markdown"),
         presentation: presentation ? { path: uploaded[0], name: presentation.name } : null,
@@ -372,10 +375,23 @@ function ProjectForm({
       </FormGrid>
       <TextField
         label="관련 분야 태그"
-        name="summary"
-        placeholder="#NLP #RL #LLM"
-        defaultValue={project?.summary}
+        name="tags"
+        placeholder="#NLP #RL #LLM 또는 NLP, RL, LLM"
+        defaultValue={project ? formatTags(project.tags) : ""}
       />
+      <TextField
+        label="한 줄 요약"
+        name="oneLine"
+        maxLength={300}
+        placeholder="카드에 보이는 한 문장으로 프로젝트를 소개하세요."
+        defaultValue={project?.oneLine}
+      />
+      <SelectField label="수상" name="awardRank" defaultValue={String(project?.awardRank ?? "")}>
+        <option value="">없음</option>
+        <option value="1">1등</option>
+        <option value="2">2등</option>
+        <option value="3">3등</option>
+      </SelectField>
       <TextField
         label="GitHub 링크"
         name="githubUrl"

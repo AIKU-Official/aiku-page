@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { POSITION_FORMAT_MESSAGE } from "@/lib/members/positions";
+
 import { memberSchema, newsSchema, projectSchema, seasonNameSchema } from "./validators";
 
 const firstMessage = (result: { success: boolean; error?: { issues: { message: string }[] } }) =>
@@ -46,7 +48,9 @@ describe("projectSchema", () => {
     isNew: true,
     seasonId: "6e7700a5-5006-4a9c-8206-c91051af0010",
     title: "RICE",
-    summary: "#LLM",
+    tags: "#LLM",
+    oneLine: "",
+    awardRank: "",
     githubUrl: "",
     markdown: "",
     presentation: null,
@@ -64,6 +68,21 @@ describe("projectSchema", () => {
     );
   });
 
+  it("turns the tag input into a list", () => {
+    expect(projectSchema.parse({ ...base, tags: "#NLP #Speech Recognition" }).tags).toEqual([
+      "NLP",
+      "Speech Recognition",
+    ]);
+    expect(projectSchema.parse({ ...base, tags: "NLP, LLM" }).tags).toEqual(["NLP", "LLM"]);
+    expect(projectSchema.parse({ ...base, tags: "" }).tags).toEqual([]);
+  });
+
+  it("reads the award rank", () => {
+    expect(projectSchema.parse(base).awardRank).toBeNull();
+    expect(projectSchema.parse({ ...base, awardRank: "2" }).awardRank).toBe(2);
+    expect(projectSchema.safeParse({ ...base, awardRank: "4" }).success).toBe(false);
+  });
+
   it("rejects non-http GitHub links", () => {
     expect(projectSchema.parse(base).githubUrl).toBeNull();
     expect(projectSchema.safeParse({ ...base, githubUrl: "github.com/x" }).success).toBe(false);
@@ -71,46 +90,30 @@ describe("projectSchema", () => {
 });
 
 describe("memberSchema", () => {
-  it("validates the e-mail address", () => {
-    const base = {
-      id: "8d5f5842-c0ab-4c63-b31a-361b043bc39a",
-      isNew: true,
-      generationId: "6e7700a5-5006-4a9c-8206-c91051af0010",
-      name: "홍길동",
-      department: "",
-      grade: "junior",
-      gradePinned: false,
-      position: "",
-      summary: "",
-      email: "not-an-email",
-      githubUrl: "",
-      linkedinUrl: "",
-      websiteUrl: "",
-      photo: null,
-      removePhoto: false,
-    };
-    expect(firstMessage(memberSchema.safeParse(base))).toBe("메일주소 형식이 올바르지 않습니다.");
-    expect(memberSchema.parse({ ...base, email: "a@b.co" }).email).toBe("a@b.co");
+  const base = {
+    id: "8d5f5842-c0ab-4c63-b31a-361b043bc39a",
+    isNew: true,
+    generationId: "6e7700a5-5006-4a9c-8206-c91051af0010",
+    name: "홍길동",
+    department: " 컴퓨터학과 ",
+    grade: "junior",
+    gradePinned: false,
+    position: "",
+  };
+
+  it("parses the officer titles", () => {
+    expect(memberSchema.parse(base).position).toEqual([]);
+    expect(memberSchema.parse({ ...base, position: "7기 부회장, 8기 회장" }).position).toEqual([
+      { generation: "7기", title: "부회장" },
+      { generation: "8기", title: "회장" },
+    ]);
+    expect(firstMessage(memberSchema.safeParse({ ...base, position: "8기 총무" }))).toBe(
+      POSITION_FORMAT_MESSAGE,
+    );
   });
 
   it("accepts only known grades", () => {
-    const result = memberSchema.safeParse({
-      id: "8d5f5842-c0ab-4c63-b31a-361b043bc39a",
-      isNew: true,
-      generationId: "6e7700a5-5006-4a9c-8206-c91051af0010",
-      name: "홍길동",
-      department: " 컴퓨터학과 ",
-      grade: "honorary",
-      gradePinned: false,
-      position: "",
-      summary: "",
-      email: "",
-      githubUrl: "",
-      linkedinUrl: "",
-      websiteUrl: "",
-      photo: null,
-      removePhoto: false,
-    });
+    const result = memberSchema.safeParse({ ...base, grade: "honorary" });
     expect(firstMessage(result)).toBe("등급을 선택하세요.");
   });
 });

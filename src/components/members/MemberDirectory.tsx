@@ -17,7 +17,7 @@ import {
   matchesFilter,
   type DirectoryFilter,
 } from "@/lib/members/directory";
-import { MEMBER_GRADE_LABELS, MEMBER_GRADES, type Generation } from "@/lib/types";
+import { MEMBER_GRADE_LABELS, MEMBER_GRADES, type Generation, type Member } from "@/lib/types";
 
 import { MemberCard } from "./MemberCard";
 import { gradeBorderClassName, gradeDotClassName, gradeToneClassName } from "./tones";
@@ -50,8 +50,23 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
   // open the public profile here, when there is one.
   const router = useRouter();
   const ownMemberId = useMemberAccount()?.member?.id;
-  const [openProfile, setOpenProfile] = useState<string | null>(null);
-  const closeProfile = useCallback(() => setOpenProfile(null), []);
+  const [openProfile, setOpenProfile] = useState<{
+    member: Member;
+    card: HTMLElement;
+    size: { width: number; height: number };
+  } | null>(null);
+  const openFrom = (member: Member, card: HTMLElement) => {
+    const rect = card.getBoundingClientRect();
+    // The panel takes the card's place, so the card itself steps out of view.
+    card.style.visibility = "hidden";
+    setOpenProfile({ member, card, size: { width: rect.width, height: rect.height } });
+  };
+  const closeProfile = useCallback(() => {
+    setOpenProfile((current) => {
+      if (current) current.card.style.visibility = "";
+      return null;
+    });
+  }, []);
 
   useEffect(() => {
     const onHashChange = () => setSelectedGeneration(null);
@@ -217,7 +232,7 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
                       member.id === ownMemberId
                         ? () => router.push("/profile")
                         : member.hasPublicProfile
-                          ? () => setOpenProfile(member.id)
+                          ? (card) => openFrom(member, card)
                           : undefined
                     }
                   />
@@ -231,7 +246,14 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
           {allMembers.length === 0 ? <EmptyNotice>아직 공개된 멤버가 없습니다.</EmptyNotice> : null}
         </div>
       </Section>
-      {openProfile ? <ProfileModal memberId={openProfile} onClose={closeProfile} /> : null}
+      {openProfile ? (
+        <ProfileModal
+          memberId={openProfile.member.id}
+          onClose={closeProfile}
+          origin={() => openProfile.card.getBoundingClientRect()}
+          face={<MemberCard member={openProfile.member} style={openProfile.size} />}
+        />
+      ) : null}
     </>
   );
 }

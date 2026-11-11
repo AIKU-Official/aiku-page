@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 import { LOGIN_ID_PATTERN, MIN_PASSWORD_LENGTH, normalizeLoginId } from "@/lib/auth/login-id";
+import { parsePositions, POSITION_FORMAT_MESSAGE } from "@/lib/members/positions";
 import { normalizeLink, PROFILE_LIMITS, type LinkKind } from "@/lib/members/profile";
+import { parseTags } from "@/lib/projects/tags";
 import { UPLOAD_SCOPES } from "@/lib/storage/keys";
 import { MEMBER_GRADES } from "@/lib/types";
 
@@ -70,7 +72,19 @@ export const projectSchema = z.object({
   isNew: z.boolean(),
   seasonId: z.uuid("시즌을 먼저 추가하고 선택하세요."),
   title: required("프로젝트명을 입력하세요."),
-  summary: text(200),
+  /** Typed as "#NLP #LLM" or "NLP, LLM"; stored as a list. */
+  tags: text(300)
+    .transform(parseTags)
+    .pipe(
+      z
+        .array(z.string().max(40, "태그는 40자 이하로 입력하세요."))
+        .max(12, "태그는 12개까지 넣을 수 있습니다."),
+    ),
+  oneLine: text(300),
+  /** "" for none, else the place at the AIKU Conference. */
+  awardRank: z
+    .enum(["", "1", "2", "3"], "수상 등수를 선택하세요.")
+    .transform((value) => (value ? (Number(value) as 1 | 2 | 3) : null)),
   githubUrl: optionalHttpUrl("GitHub 링크"),
   markdown: z.string().max(100_000, "프로젝트 설명이 너무 깁니다."),
   /** New deck to attach (replaces the current one). */
@@ -92,20 +106,15 @@ export const memberSchema = z.object({
   department: text(60),
   grade: z.enum(MEMBER_GRADES, "등급을 선택하세요."),
   gradePinned: z.boolean(),
-  position: text(60),
-  summary: text(200),
-  email: text(200)
-    .refine(
-      (value) => value === "" || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value),
-      "메일주소 형식이 올바르지 않습니다.",
-    )
-    .transform((value) => value || null),
-  githubUrl: optionalHttpUrl("GitHub 링크"),
-  linkedinUrl: optionalHttpUrl("LinkedIn 링크"),
-  websiteUrl: optionalHttpUrl("웹사이트 링크"),
-  /** New photo (replaces the current one). */
-  photo: z.string().min(1).nullable(),
-  removePhoto: z.boolean(),
+  /** Typed as "8기 회장", several separated by commas; parsed into titles. */
+  position: text(200).transform((value, context) => {
+    const positions = parsePositions(value);
+    if (!positions) {
+      context.addIssue({ code: "custom", message: POSITION_FORMAT_MESSAGE });
+      return z.NEVER;
+    }
+    return positions;
+  }),
 });
 
 // Member sign-up ------------------------------------------------------------

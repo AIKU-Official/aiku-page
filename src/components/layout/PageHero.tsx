@@ -13,12 +13,13 @@ type PageHeroProps = {
 
 export function PageHero({ eyebrow, title, lead, aside }: PageHeroProps) {
   return (
-    // The minimum height fits a two-line title with a two-line lead, so the
-    // line under the hero sits at the same place on every page.
-    <section className="page-hero-watermark relative min-h-[412px] overflow-hidden border-b border-soft-line bg-linear-to-b from-white to-surface-soft max-lg:min-h-[335px] max-sm:min-h-[19.5rem]">
+    // On wider screens the minimum height fits a two-line title with a two-line
+    // lead, so the line under the hero sits at the same place on every page.
+    // On phones the hero is as tall as its text plus the padding.
+    <section className="page-hero-watermark relative min-h-[412px] overflow-hidden border-b border-soft-line bg-linear-to-b from-white to-surface-soft max-lg:min-h-[335px] max-sm:min-h-0">
       <div
         className={clsx(
-          "relative z-1 site-container pt-28 pb-20 max-lg:pt-20 max-lg:pb-14 max-sm:pt-11 max-sm:pb-8",
+          "relative z-1 site-container pt-28 pb-20 max-lg:pt-20 max-lg:pb-14 max-sm:pt-10 max-sm:pb-10",
           aside && "grid grid-cols-[minmax(0,1fr)_auto] items-end gap-8 max-lg:grid-cols-1",
         )}
       >

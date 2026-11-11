@@ -13,8 +13,8 @@ export type Project = {
   /** Season name, e.g. "26-1" (legacy `period`). */
   period: string;
   title: string;
-  /** Field tags such as "#NLP #LLM". */
-  summary: string;
+  /** Field tags without the "#", e.g. ["NLP", "LLM"]. */
+  tags: string[];
   markdown: string;
   githubUrl: string | null;
   presentationPath: string | null;
@@ -43,6 +43,7 @@ export type ProjectPersonMember = {
   generation: string;
   department: string;
   grade: MemberGrade;
+  /** Officer titles such as "8기 회장"; empty without one. */
   position: string;
   avatarPath: string | null;
   hasPublicProfile: boolean;
@@ -79,15 +80,11 @@ export type Member = {
    * newest become OB in the database).
    */
   gradePinned: boolean;
-  /** Officer title such as "8기 회장"; empty for members without one. */
+  /**
+   * Officer titles for display, such as "8기 회장" (several joined with ", ");
+   * empty for members without one. Derived from `member_positions`.
+   */
   position: string;
-  summary: string;
-  email: string | null;
-  githubUrl: string | null;
-  instagramUrl: string | null;
-  linkedinUrl: string | null;
-  websiteUrl: string | null;
-  photoPath: string | null;
   /** Picture uploaded on a public profile (storage object key). */
   avatarPath: string | null;
   /** The member wrote a profile and made it public; the card opens it. */
