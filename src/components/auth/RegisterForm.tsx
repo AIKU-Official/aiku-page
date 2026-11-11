@@ -93,7 +93,7 @@ export function RegisterForm({ generations }: { generations: string[] }) {
         <p className="mt-1 text-small text-muted">
           {providerName ? `${providerName} 계정으로는` : "이 계정으로는"} 처음 로그인하셨습니다.
           아래 정보로 한 번 확인하면 이미 쓰던 계정과 같은 회원으로 연결됩니다. 학번은 본인 확인에만
-          쓰이고 공개되지 않습니다. 이미 가입한 계정으로 로그인해 프로필 수정의 "로그인 방법"에서
+          쓰이고 공개되지 않습니다. 이미 가입한 계정으로 로그인해 프로필 수정의 로그인 방법 항목에서
           바로 연결할 수도 있습니다.
         </p>
       </div>
