@@ -56,6 +56,11 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
     size: { width: number; height: number };
   } | null>(null);
   const openFrom = (member: Member, card: HTMLElement) => {
+    // Phones open the profile's own page, as project cards do.
+    if (window.matchMedia("(width < 561px)").matches) {
+      router.push(`/members/${member.id}`);
+      return;
+    }
     const rect = card.getBoundingClientRect();
     // The panel takes the card's place, so the card itself steps out of view.
     card.style.visibility = "hidden";

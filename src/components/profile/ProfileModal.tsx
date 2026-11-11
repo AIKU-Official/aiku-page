@@ -48,6 +48,7 @@ export function ProfileModal({
       label="회원 프로필"
       onClose={onClose}
       origin={origin}
+      expandHref={`/members/${memberId}`}
       className="relative p-12 max-lg:p-8 max-sm:p-5 max-sm:pt-14"
     >
       {face ? (

@@ -223,6 +223,7 @@ export async function saveMyProfile(input: unknown): Promise<ActionResult<Profil
     }
     // The member page shows public profiles' links and opens them from the cards.
     revalidatePath("/members");
+    revalidatePath(`/members/${memberId}`);
 
     const page = await loadPage(db, memberId);
     return page ? { ok: true, message: "프로필을 저장했습니다.", data: page } : FAILED;
