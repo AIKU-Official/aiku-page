@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 
-import { getStudioHome } from "@/actions/studio";
+import { getStudioHome, type StudioHome as StudioHomeData } from "@/actions/studio";
 import { MyActivity } from "@/components/profile/MyActivity";
-import { Notice } from "@/components/ui/Notice";
-import { StudioTimeline } from "./StudioTimeline";
-import { useMemberAccount } from "@/lib/auth/member";
-import { useSignedInData } from "@/lib/auth/signed-in-data";
 import { hashForFilter } from "@/lib/projects/filter";
+import { programHref, PROGRAMS } from "@/lib/studio/programs";
+
+import { StudioGate } from "./StudioGate";
+import { StudioTimeline } from "./StudioTimeline";
 
 /** Today in Korea as "2026-11-13", the same on every device. */
 const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
@@ -19,57 +19,43 @@ const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" })
  * and 활동 OB get past the notices.
  */
 export function StudioHome() {
-  const account = useMemberAccount({ eager: true });
-  const member = account?.member?.studio ? account.member : null;
-  const [state] = useSignedInData(member?.id, getStudioHome);
+  return (
+    <StudioGate load={getStudioHome} loading="Studio를 불러오는 중입니다…">
+      {(data, member) => <Dashboard data={data} memberId={member.id} />}
+    </StudioGate>
+  );
+}
 
-  if (account === undefined) {
-    return (
-      <p role="status" className="text-muted">
-        계정을 확인하는 중입니다…
-      </p>
-    );
-  }
-  if (account === null) {
-    return (
-      <Notice action={{ href: "/login", label: "로그인하러 가기" }}>
-        AIKU Studio는 로그인한 학회원을 위한 공간입니다.
-      </Notice>
-    );
-  }
-  if (!member) {
-    return (
-      <Notice action={{ href: "/", label: "홈으로 가기" }}>
-        AIKU Studio는 주니어, 시니어, 활동 OB 학회원만 이용할 수 있습니다.
-      </Notice>
-    );
-  }
-  if (state.status === "loading") {
-    return (
-      <p role="status" className="text-muted">
-        Studio를 불러오는 중입니다…
-      </p>
-    );
-  }
-  if (state.status === "error") {
-    return (
-      <p role="alert" className="text-danger">
-        {state.message}
-      </p>
-    );
-  }
-
-  const { semester, season, events, counts } = state.data;
+function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string }) {
+  const { semester, season, events, counts } = data;
   const programs = [
-    { label: "DeepIntoDeep", value: counts.deepintodeep, unit: "회" },
+    {
+      label: "DeepIntoDeep",
+      value: counts.deepintodeep,
+      unit: "회",
+      href: programHref("deepintodeep", semester),
+      accent: PROGRAMS.deepintodeep.tone.accent,
+    },
     {
       label: "Projects",
       value: counts.projects,
       unit: "개",
       href: `/projects${hashForFilter(season)}`,
+      accent: "bg-ink",
     },
-    { label: "Momentum", value: counts.momentum, unit: "회" },
-    { label: "Seminar", value: counts.seminar, unit: "회" },
+    {
+      label: "Momentum",
+      value: counts.momentum,
+      unit: "회",
+      href: programHref("momentum", semester),
+    },
+    {
+      label: "Seminar",
+      value: counts.seminar,
+      unit: "회",
+      href: programHref("seminar", semester),
+      accent: PROGRAMS.seminar.tone.accent,
+    },
   ];
 
   return (
@@ -84,6 +70,7 @@ export function StudioHome() {
           {programs.map((program) => {
             const body = (
               <>
+                <span className={`h-1 w-8 rounded-full ${program.accent}`} aria-hidden="true" />
                 <span className="text-label font-semibold tracking-[0.04em] text-muted uppercase">
                   {program.label}
                 </span>
@@ -112,7 +99,7 @@ export function StudioHome() {
         </ul>
       </section>
 
-      <MyActivity memberId={member.id} />
+      <MyActivity memberId={memberId} />
     </div>
   );
 }

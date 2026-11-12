@@ -6,6 +6,7 @@ import { semesterOf, type SeasonTerm, type SessionKind } from "@/lib/activity/ca
 import { signedInMember } from "@/lib/members/signed-in";
 import { canUseStudio } from "@/lib/members/studio";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { isProgram, PROGRAMS } from "@/lib/studio/programs";
 
 export type StudioEvent = {
   /** ISO date. */
@@ -27,6 +28,17 @@ export type StudioHome = {
   counts: Record<"deepintodeep" | "momentum" | "seminar" | "projects", number>;
 };
 
+const NOT_ALLOWED = "AIKU Studio는 주니어, 시니어, 활동 OB만 볼 수 있습니다.";
+
+/** Whether the access token belongs to a member who may use Studio. Never trusts the request. */
+async function isStudioMember(db: ReturnType<typeof createAdminClient>, accessToken: unknown) {
+  const memberId = await signedInMember(db, String(accessToken ?? ""));
+  const member = memberId
+    ? unwrap(await db.from("members").select("grade").eq("id", memberId).maybeSingle())
+    : null;
+  return Boolean(member && canUseStudio(member.grade));
+}
+
 const TERM_ORDER: Record<SeasonTerm, number> = { winter: 0, "1": 1, summer: 2, "2": 3 };
 
 /**
@@ -37,13 +49,7 @@ const TERM_ORDER: Record<SeasonTerm, number> = { winter: 0, "1": 1, summer: 2, "
 export async function getStudioHome(accessToken: unknown): Promise<ActionResult<StudioHome>> {
   try {
     const db = createAdminClient();
-    const memberId = await signedInMember(db, String(accessToken ?? ""));
-    const member = memberId
-      ? unwrap(await db.from("members").select("grade").eq("id", memberId).maybeSingle())
-      : null;
-    if (!member || !canUseStudio(member.grade)) {
-      return { ok: false, message: "AIKU Studio는 주니어, 시니어, 활동 OB만 볼 수 있습니다." };
-    }
+    if (!(await isStudioMember(db, accessToken))) return { ok: false, message: NOT_ALLOWED };
 
     const seasons = (unwrap(await db.from("seasons").select("id, name, year, term")) ?? []).sort(
       (a, b) =>
@@ -102,5 +108,47 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
   } catch (error) {
     console.error("[studio]", error);
     return { ok: false, message: "Studio를 불러오지 못했습니다. 잠시 후 다시 시도하세요." };
+  }
+}
+
+export type ProgramSession = {
+  date: string;
+  until: string | null;
+  title: string;
+  /** "26-2". */
+  semester: string;
+};
+
+/** Every session of one program, newest first, for its Studio page. Studio members only. */
+export async function getProgramSessions(
+  accessToken: unknown,
+  slug: unknown,
+): Promise<ActionResult<ProgramSession[]>> {
+  try {
+    if (typeof slug !== "string" || !isProgram(slug))
+      return { ok: false, message: "없는 프로그램입니다." };
+    const db = createAdminClient();
+    if (!(await isStudioMember(db, accessToken))) return { ok: false, message: NOT_ALLOWED };
+    const rows =
+      unwrap(
+        await db
+          .from("activity_sessions")
+          .select("title, held_on, ends_on, seasons(year, term)")
+          .eq("kind", PROGRAMS[slug].kind)
+          .order("held_on", { ascending: false }),
+      ) ?? [];
+    return {
+      ok: true,
+      message: "",
+      data: rows.map((row) => ({
+        date: row.held_on,
+        until: row.ends_on,
+        title: row.title,
+        semester: semesterOf(row.seasons.year, row.seasons.term as SeasonTerm),
+      })),
+    };
+  } catch (error) {
+    console.error("[studio program]", error);
+    return { ok: false, message: "일정을 불러오지 못했습니다. 잠시 후 다시 시도하세요." };
   }
 }

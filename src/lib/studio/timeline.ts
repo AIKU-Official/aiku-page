@@ -24,7 +24,12 @@ export function timelineDays(start: string, count = TIMELINE_DAYS): TimelineDay[
   return Array.from({ length: count }, (_, index) => {
     const iso = addDays(start, index);
     const date = toDate(iso);
-    return { iso, day: date.getUTCDate(), weekday: date.getUTCDay(), monthStart: date.getUTCDate() === 1 };
+    return {
+      iso,
+      day: date.getUTCDate(),
+      weekday: date.getUTCDay(),
+      monthStart: date.getUTCDate() === 1,
+    };
   });
 }
 

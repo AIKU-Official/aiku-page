@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { useMemberAccount } from "@/lib/auth/member";
 import { startTrail } from "@/lib/navigation/trail";
-import { navItems, studioNavItem, type NavItem } from "@/lib/site";
+import { navItems, studioNavItems, type NavItem } from "@/lib/site";
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`);
@@ -53,7 +53,11 @@ export function SiteHeader() {
       href={item.href}
       prefetch={item.prefetch}
       aria-current={
-        [item.href, ...(item.alsoActiveOn ?? [])].some((href) => isActive(pathname, href))
+        (
+          item.exact
+            ? pathname === item.href
+            : [item.href, ...(item.alsoActiveOn ?? [])].some((href) => isActive(pathname, href))
+        )
           ? "page"
           : undefined
       }
@@ -118,10 +122,9 @@ export function SiteHeader() {
           isOpen ? "max-lg:flex max-lg:motion-safe:animate-menu" : "max-lg:hidden",
         )}
       >
-        {navItems
-          .filter((item) => !item.utility)
-          .map((item) => (item.href === "/about" && account?.member?.studio ? studioNavItem : item))
-          .map(renderLink)}
+        {(account?.member?.studio ? studioNavItems : navItems.filter((item) => !item.utility)).map(
+          renderLink,
+        )}
         <span
           aria-hidden="true"
           className="mx-2 h-4 w-px bg-line max-lg:mx-0 max-lg:my-2 max-lg:h-px max-lg:w-full"

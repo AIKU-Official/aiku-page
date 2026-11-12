@@ -13,6 +13,8 @@ export type NavItem = {
   utility?: boolean;
   /** Extra paths on which this item is shown as the current page. */
   alsoActiveOn?: string[];
+  /** Current only on this exact path, not on the pages under it. */
+  exact?: boolean;
 };
 
 export const navItems: NavItem[] = [
@@ -25,8 +27,21 @@ export const navItems: NavItem[] = [
   { href: "/login", label: "Login", prefetch: false, utility: true, alsoActiveOn: ["/admin"] },
 ];
 
-/** For a member who may use AIKU Studio, Studio takes About's place in the menu. */
-export const studioNavItem: NavItem = { href: "/studio", label: "Studio", prefetch: false };
+/**
+ * The menu for a member who may use AIKU Studio (주니어, 시니어, 활동 OB): the
+ * society's own programs first, then the shared pages. Replaces the public
+ * menu as soon as such a member is signed in.
+ */
+export const studioNavItems: NavItem[] = [
+  { href: "/studio", label: "Studio", prefetch: false, exact: true },
+  { href: "/studio/deepintodeep", label: "DeepIntoDeep", prefetch: false },
+  { href: "/studio/momentum", label: "Momentum", prefetch: false },
+  { href: "/studio/seminar", label: "Seminar", prefetch: false },
+  { href: "/projects", label: "Projects" },
+  { href: "/aikuthon", label: "AIKUTHON" },
+  { href: "/members", label: "Members" },
+  { href: "/contact", label: "Contact" },
+];
 
 export const instagramUrl = "https://www.instagram.com/aiku__official/";
 

@@ -5,36 +5,35 @@ import { useState } from "react";
 
 import type { StudioEvent } from "@/actions/studio";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
+import { PROGRAMS } from "@/lib/studio/programs";
 import { addDays, rangeLabel, TIMELINE_DAYS, timelineDays, weekStart } from "@/lib/studio/timeline";
 
 // One lane per program, in the order a week runs; each with its own colour.
-const LANES: { kinds: StudioEvent["kind"][]; label: string; tone: string }[] = [
+const LANES: { kinds: StudioEvent["kind"][]; label: string; tone: string; accent: string }[] = [
+  ...(["deepintodeep", "momentum", "seminar"] as const).map((slug) => ({
+    kinds: [PROGRAMS[slug].kind] as StudioEvent["kind"][],
+    label: PROGRAMS[slug].label,
+    tone: PROGRAMS[slug].tone.chip,
+    accent: PROGRAMS[slug].tone.accent,
+  })),
   {
-    kinds: ["deepintodeep"],
-    label: "DeepIntoDeep",
-    tone: "bg-sky-100 text-sky-800 border-sky-200",
-  },
-  {
-    kinds: ["momentum"],
-    label: "Momentum",
-    tone: "bg-violet-100 text-violet-800 border-violet-200",
-  },
-  {
-    kinds: ["seminar"],
-    label: "Seminar",
-    tone: "bg-green-100 text-green-800 border-green-200",
-  },
-  {
-    kinds: ["event", "aikuthon"],
+    kinds: ["event", "conference", "exchange", "aikuthon"],
     label: "Events",
-    tone: "bg-amber-100 text-amber-800 border-amber-200",
+    tone: "bg-violet-100 text-violet-800 border-violet-800/20",
+    accent: "bg-violet-800/60",
   },
   {
     kinds: ["academic", "holiday"],
     label: "Academic",
     tone: "bg-danger-soft text-danger border-danger/20",
+    accent: "bg-danger/60",
   },
-  { kinds: ["notice"], label: "Notice", tone: "bg-surface-soft text-body border-line" },
+  {
+    kinds: ["notice"],
+    label: "Notice",
+    tone: "bg-surface-soft text-body border-line",
+    accent: "bg-line-strong",
+  },
 ];
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -131,6 +130,10 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
                 className="flex items-center border-b border-soft-line px-4 py-3 text-label font-semibold text-body last:border-b-0"
                 style={{ gridRow: row + 2, gridColumn: 1 }}
               >
+                <span
+                  className={clsx("mr-2 size-2 shrink-0 rounded-full", lane.accent)}
+                  aria-hidden="true"
+                />
                 {lane.label}
               </div>
               {/* Week dividers and today's column, behind the bars. */}
