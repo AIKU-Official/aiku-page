@@ -249,7 +249,7 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   const openTableSchema = open ? byName.get(open) : undefined;
 
   return (
-    <section className="site-container py-10 max-sm:py-6">
+    <section className="site-container py-10 max-sm:hidden">
       <div className="relative overflow-hidden rounded-[20px] border border-line bg-white">
         <div
           ref={canvas}

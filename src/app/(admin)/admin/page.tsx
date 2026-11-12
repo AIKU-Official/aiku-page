@@ -22,6 +22,12 @@ export default async function AdminPage() {
         lead="표를 눌러 행을 추가하고 고치고 지웁니다. 바꾼 내용은 DB 업데이트를 눌러야 실제로 저장되고, 사이트에 바로 반영됩니다."
       />
       <SchemaCanvas schema={schema} />
+      {/* The canvas needs a pointer and a wide screen; phones get a note instead. */}
+      <section className="site-container hidden py-10 max-sm:block">
+        <p className="rounded-[20px] border border-line bg-surface-soft px-5 py-6 text-center text-body text-muted">
+          데이터 관리는 PC에서만 할 수 있습니다.
+        </p>
+      </section>
     </>
   );
 }
