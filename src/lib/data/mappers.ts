@@ -113,7 +113,9 @@ export const mapMember = (
 };
 
 type AikuthonRow = Tables<"aikuthons"> & {
-  aikuthon_awards: (Pick<Tables<"aikuthon_awards">, "rank" | "label" | "team_name" | "sort_order"> & {
+  aikuthon_partners: Pick<Tables<"aikuthon_partners">, "name" | "role" | "sort_order">[];
+  aikuthon_tracks: Pick<Tables<"aikuthon_tracks">, "name" | "sort_order">[];
+  aikuthon_awards: (Pick<Tables<"aikuthon_awards">, "rank" | "team_name"> & {
     aikuthon_award_members: (Pick<Tables<"aikuthon_award_members">, "name" | "sort_order"> & {
       members: PersonMemberRow | null;
     })[];
@@ -124,23 +126,36 @@ export const mapAikuthon = (row: AikuthonRow): Aikuthon => ({
   id: row.id,
   edition: row.edition,
   kind: row.kind === "joint" ? "joint" : "edition",
+  format: row.format === "hackathon" ? "hackathon" : "datathon",
   name: row.name,
   startsOn: row.starts_on,
   datePrecision: row.date_precision === "month" ? "month" : "day",
   endsOn: row.ends_on,
   venue: row.venue,
-  format: row.format,
-  partners: row.partners,
+  mode: row.mode === "online" ? "online" : "offline",
+  overnight: row.overnight,
+  teamSize:
+    row.team_size_min === null
+      ? null
+      : { min: row.team_size_min, max: row.team_size_max ?? row.team_size_min },
+  platform: row.platform,
+  partners: [...row.aikuthon_partners]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((partner) => ({
+      name: partner.name,
+      role: partner.role === "sponsor" ? "sponsor" : "co_host",
+    })),
+  tracks: [...row.aikuthon_tracks].sort((a, b) => a.sort_order - b.sort_order).map((track) => track.name),
   taskTitle: row.task_title,
   taskDescription: row.task_description,
   metric: row.metric,
-  participants: row.participants,
+  tags: row.tags,
   competitionUrl: row.competition_url,
   awards: [...row.aikuthon_awards]
-    .sort((a, b) => a.sort_order - b.sort_order)
+    .filter((award) => award.rank === 1 || award.rank === 2 || award.rank === 3)
+    .sort((a, b) => a.rank - b.rank)
     .map((award) => ({
-      rank: award.rank === 1 || award.rank === 2 || award.rank === 3 ? award.rank : null,
-      label: award.label,
+      rank: award.rank as 1 | 2 | 3,
       teamName: award.team_name,
       people: [...award.aikuthon_award_members]
         .sort((a, b) => a.sort_order - b.sort_order)

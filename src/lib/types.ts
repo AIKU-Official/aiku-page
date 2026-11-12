@@ -103,6 +103,7 @@ export type Aikuthon = {
   /** Edition number; null for a joint datathon without one. */
   edition: number | null;
   kind: "edition" | "joint";
+  format: "datathon" | "hackathon";
   name: string;
   /** ISO dates. */
   startsOn: string;
@@ -110,20 +111,31 @@ export type Aikuthon = {
   datePrecision: "day" | "month";
   endsOn: string | null;
   venue: string;
-  format: string[];
-  partners: string[];
+  mode: "offline" | "online";
+  /** Run through the night; null when not known. */
+  overnight: boolean | null;
+  /** People per team; both 1 for an individual contest; null when not known. */
+  teamSize: { min: number; max: number } | null;
+  /** Where submissions were scored, e.g. "Kaggle"; "" when not known. */
+  platform: string;
+  partners: AikuthonPartner[];
+  tracks: string[];
   taskTitle: string;
   taskDescription: string;
   metric: string;
-  participants: string;
+  /** Fields of the task, in the project tag vocabulary. */
+  tags: string[];
   competitionUrl: string | null;
   awards: AikuthonAward[];
 };
 
+export type AikuthonPartner = {
+  name: string;
+  role: "co_host" | "sponsor";
+};
+
 export type AikuthonAward = {
-  /** 1, 2 or 3 for placings; null for other prizes. */
-  rank: 1 | 2 | 3 | null;
-  label: string;
+  rank: 1 | 2 | 3;
   teamName: string;
   people: ProjectPerson[];
 };

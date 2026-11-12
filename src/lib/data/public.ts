@@ -100,7 +100,7 @@ export async function getAikuthons(): Promise<Aikuthon[]> {
   const { data, error } = await createPublicClient()
     .from("aikuthons")
     .select(
-      `*, aikuthon_awards(rank, label, team_name, sort_order, aikuthon_award_members(name, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT})))`,
+      `*, aikuthon_partners(name, role, sort_order), aikuthon_tracks(name, sort_order), aikuthon_awards(rank, team_name, aikuthon_award_members(name, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT})))`,
     )
     .order("starts_on", { ascending: false });
   if (error) fail("AIKUTHON", error.message);

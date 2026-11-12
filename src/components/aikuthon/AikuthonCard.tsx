@@ -3,17 +3,37 @@ import { Fragment } from "react";
 
 import { PersonName } from "@/components/projects/PersonName";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { FieldTags } from "@/components/ui/FieldTags";
 import { ArrowUpRightIcon } from "@/components/ui/icons";
 import type { Aikuthon } from "@/lib/types";
 
 const pill = "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
 
-// Medal colours, as on prize-winning projects.
-const RANK_TONES = {
-  1: "bg-amber-100 text-amber-800",
-  2: "bg-silver-100 text-silver-800",
-  3: "bg-bronze-100 text-bronze-800",
+// Medal colours and labels, as on prize-winning projects.
+const RANKS = {
+  1: { label: "1등", tone: "bg-amber-100 text-amber-800" },
+  2: { label: "2등", tone: "bg-silver-100 text-silver-800" },
+  3: { label: "3등", tone: "bg-bronze-100 text-bronze-800" },
 } as const;
+
+/** "데이터톤 · 무박 2일 · Kaggle". */
+function formatRun(event: Aikuthon): string {
+  return [
+    event.format === "hackathon" ? "해커톤" : "데이터톤",
+    event.mode === "online" ? "온라인" : null,
+    event.overnight ? "무박 2일" : null,
+    event.platform || null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** "2인 1팀", "2~3인 1팀" or "개인전". */
+function formatTeam(size: Aikuthon["teamSize"]): string {
+  if (!size) return "";
+  if (size.max === 1) return "개인전";
+  return size.min === size.max ? `${size.min}인 1팀` : `${size.min}~${size.max}인 1팀`;
+}
 
 /** "2026.08.28 – 08.29", or one date when the event fits in a day. */
 export function formatDates(
@@ -29,13 +49,25 @@ export function formatDates(
   return y2 === y ? `${start} – ${m2}.${d2}` : `${start} – ${y2}.${m2}.${d2}`;
 }
 
-/** One AIKUTHON: when and where, the task, and who won. */
+/**
+ * One AIKUTHON. Every card has the same parts in the same order: date (and,
+ * for a joint event held in an edition's place, which edition it replaced),
+ * name, task and its field tags, a fixed list of facts, then the 1st to 3rd
+ * places. Facts that were not recorded show a dash rather than disappearing.
+ */
 export function AikuthonCard({ event }: { event: Aikuthon }) {
+  const names = (role: "co_host" | "sponsor") =>
+    event.partners.filter((partner) => partner.role === role).map((partner) => partner.name).join(", ");
   const facts = [
-    event.venue && { label: "장소", value: event.venue },
-    event.participants && { label: "참가", value: event.participants },
-    event.metric && { label: "평가", value: event.metric },
-  ].filter((fact): fact is { label: string; value: string } => Boolean(fact));
+    { label: "진행", value: formatRun(event) },
+    { label: "장소", value: event.venue },
+    { label: "팀", value: formatTeam(event.teamSize) },
+    { label: "평가", value: event.metric },
+    ...(names("co_host") ? [{ label: "공동 주최", value: names("co_host") }] : []),
+    ...(names("sponsor") ? [{ label: "후원", value: names("sponsor") }] : []),
+    ...(event.tracks.length ? [{ label: "트랙", value: event.tracks.join(", ") }] : []),
+  ];
+  const replaces = event.kind === "joint" && event.edition !== null;
 
   return (
     <article id={`aikuthon-${event.edition ?? event.id}`} className="card p-8 max-sm:p-5">
@@ -45,8 +77,8 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
             <Eyebrow spacing="none">
               {formatDates(event.startsOn, event.endsOn, event.datePrecision)}
             </Eyebrow>
-            {event.kind === "joint" ? (
-              <span className={clsx(pill, "bg-surface-soft text-body")}>연합 데이터톤</span>
+            {replaces ? (
+              <span className={clsx(pill, "bg-surface-soft text-body")}>제{event.edition}회 대체</span>
             ) : null}
           </div>
           <h3 className="mt-2 text-[1.5rem] leading-[1.3] font-extrabold tracking-[-0.025em] max-sm:text-[1.1875rem]">
@@ -77,51 +109,26 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
         </div>
       ) : null}
 
-      {event.format.length || event.partners.length ? (
-        <ul className="mt-4 flex flex-wrap gap-1.5 max-sm:mt-3" aria-label="대회 정보">
-          {event.partners.map((partner) => (
-            <li
-              key={partner}
-              className="inline-flex h-7 items-center rounded-full bg-green-50 px-3 text-label text-green-800 ring-1 ring-green-200 ring-inset"
-            >
-              with {partner}
-            </li>
-          ))}
-          {event.format.map((item) => (
-            <li
-              key={item}
-              className="inline-flex h-7 items-center rounded-full bg-surface-soft px-3 text-label text-body"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <FieldTags tags={event.tags} className="mt-4 max-sm:mt-3" />
 
-      {facts.length ? (
-        <dl className="mt-4 grid gap-1 text-small max-sm:mt-3">
-          {facts.map((fact) => (
-            <div key={fact.label} className="flex gap-3">
-              <dt className="w-9 shrink-0 text-muted">{fact.label}</dt>
-              <dd className="min-w-0 text-body">{fact.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
+      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-small max-sm:mt-3">
+        {facts.map((fact) => (
+          <Fragment key={fact.label}>
+            <dt className="text-muted">{fact.label}</dt>
+            <dd className={clsx("min-w-0", fact.value ? "text-body" : "text-muted")}>
+              {fact.value || "—"}
+            </dd>
+          </Fragment>
+        ))}
+      </dl>
 
       <div className="mt-6 border-t border-soft-line pt-5 max-sm:mt-4 max-sm:pt-4">
         {event.awards.length ? (
           <ul className="grid gap-2.5" aria-label="수상">
-            {event.awards.map((award, index) => (
-              <li key={index} className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                <span
-                  className={clsx(
-                    pill,
-                    "self-center",
-                    award.rank ? RANK_TONES[award.rank] : "bg-surface-soft text-body",
-                  )}
-                >
-                  {award.label}
+            {event.awards.map((award) => (
+              <li key={award.rank} className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                <span className={clsx(pill, "self-center", RANKS[award.rank].tone)}>
+                  {RANKS[award.rank].label}
                 </span>
                 {award.teamName ? (
                   <span className="font-semibold text-ink">{award.teamName}</span>

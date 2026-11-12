@@ -6,7 +6,7 @@
 
 Each event is keyed by its `key` (stored as aikuthons.source_key), so running
 this again updates the events and replaces their awards rather than adding
-copies. Winners are linked to roster members by exact name when the roster has
+copies; partners, tracks and awards are replaced each time. Winners are linked to roster members by exact name when the roster has
 exactly one member of that name; others stay as names and are reported.
 """
 import json, sys, urllib.request, urllib.error, urllib.parse
@@ -37,8 +37,11 @@ for m in call("GET", "/rest/v1/members?select=id,name"):
 unmatched, linked = set(), 0
 
 for event in events:
-    row = {k: event[k] for k in ("edition", "kind", "name", "starts_on", "date_precision", "ends_on", "venue", "format", "partners",
-                                 "task_title", "task_description", "metric", "participants", "competition_url")}
+    row = {k: event[k] for k in ("edition", "kind", "format", "name", "starts_on", "date_precision", "ends_on", "venue",
+                                 "mode", "overnight", "team_size_min", "team_size_max", "platform",
+                                 "task_title", "task_description", "metric", "tags", "competition_url")}
+    partners = [{"name": p["name"], "role": p["role"], "sort_order": i} for i, p in enumerate(event["partners"])]
+    tracks = [{"name": name, "sort_order": i} for i, name in enumerate(event["tracks"])]
     row["source_key"] = event["key"]
     awards = []
     for i, award in enumerate(event["awards"]):
@@ -50,11 +53,15 @@ for event in events:
             if member_id is None:
                 unmatched.add(name)
             people.append({"name": name, "member_id": member_id, "sort_order": j})
-        awards.append(({"rank": award["rank"], "label": award["label"], "team_name": award["team"], "sort_order": i}, people))
+        awards.append(({"rank": award["rank"], "team_name": award["team"]}, people))
 
     if apply:
         saved = call("POST", "/rest/v1/aikuthons?on_conflict=source_key", row,
                      "resolution=merge-duplicates,return=representation")[0]
+        for table, children in (("aikuthon_partners", partners), ("aikuthon_tracks", tracks)):
+            call("DELETE", f"/rest/v1/{table}?aikuthon_id=eq.{saved['id']}")
+            if children:
+                call("POST", f"/rest/v1/{table}", [{**c, "aikuthon_id": saved["id"]} for c in children])
         call("DELETE", f"/rest/v1/aikuthon_awards?aikuthon_id=eq.{saved['id']}")
         for award, people in awards:
             created = call("POST", "/rest/v1/aikuthon_awards", {**award, "aikuthon_id": saved["id"]},

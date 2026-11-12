@@ -6,6 +6,7 @@ import { Fragment, useCallback, useRef, useState, type ReactNode } from "react";
 
 import { CenterPeek } from "@/components/ui/CenterPeek";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { FieldTags } from "@/components/ui/FieldTags";
 import type { ProjectPerson } from "@/lib/types";
 
 import { PersonName } from "./PersonName";
@@ -59,22 +60,6 @@ function Heading({ period, awardRank }: Pick<ProjectEntryProps, "period" | "awar
         </span>
       ) : null}
     </div>
-  );
-}
-
-function Tags({ tags }: { tags: string[] }) {
-  if (!tags.length) return null;
-  return (
-    <ul className="mt-4 flex flex-wrap gap-1.5 max-sm:mt-3" aria-label="관련 분야">
-      {tags.map((tag) => (
-        <li
-          key={tag}
-          className="inline-flex h-7 items-center rounded-full bg-green-50 px-3 text-label text-green-800 ring-1 ring-green-200 ring-inset"
-        >
-          {tag}
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -138,7 +123,7 @@ export function ProjectFace({
               title
             )}
           </h2>
-          <Tags tags={tags} />
+          <FieldTags tags={tags} className="mt-4 max-sm:mt-3" />
           <People people={people} />
         </div>
         <div

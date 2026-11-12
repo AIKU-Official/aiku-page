@@ -16,7 +16,7 @@ The site is AIKU's public homepage and its internal management tool. The owner i
 ## Data
 
 - **Nothing that is content lives in the source.** Projects, members, profiles, seasons and news are rows in Supabase, in one uniform shape. Page copy that explains the society (About, Activity, Curriculum) is the exception.
-- **Keep the schema hierarchical.** `seasons → projects → project_members → members → generations`; each member owns `member_profiles`, `member_student_ids`, `member_accounts`, `member_positions`; `aikuthons → aikuthon_awards → aikuthon_award_members → members`. New data gets its own table with foreign keys rather than a text column to parse. Every migration starts with a comment that draws where the table sits and says who may read and write it.
+- **Keep the schema hierarchical.** `seasons → projects → project_members → members → generations`; each member owns `member_profiles`, `member_student_ids`, `member_accounts`, `member_positions`; `aikuthons` owns `aikuthon_partners`, `aikuthon_tracks` and `aikuthon_awards → aikuthon_award_members → members`. New data gets its own table with foreign keys rather than a text column to parse. Every migration starts with a comment that draws where the table sits and says who may read and write it.
 - **After a migration:** apply it locally, regenerate `src/lib/supabase/database.types.ts`, and state in the commit what it adds.
 - **Independence from Notion is the point of this site.** No Notion links, no Notion-hosted files. Images and slides live in Supabase Storage; slides are offered as PDF only.
 - **Imports are scripts, not manual edits.** They are keyed so that running them again updates rather than duplicates, start with a dry run, and write a report of what could not be matched.
