@@ -81,6 +81,11 @@ export async function adminAction<S extends z.ZodType, T = undefined>(
     }
     // Each project also has its own page.
     if (revalidate.includes("projects")) revalidatePath("/projects/[id]", "page");
+    // Profiles list a member's projects (with their summaries) and their
+    // roster facts, read live from those tables, so their pages refresh too.
+    if (revalidate.includes("projects") || revalidate.includes("members")) {
+      revalidatePath("/members/[id]", "page");
+    }
     // Re-render the admin page itself in the same response.
     revalidatePath("/admin");
     return { ok: true, message: result.message, data: result.data as T };
