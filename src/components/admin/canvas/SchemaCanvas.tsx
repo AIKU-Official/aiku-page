@@ -390,7 +390,7 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   );
 
   return (
-    <section className="site-container grid gap-6 py-10 max-sm:hidden">
+    <section className="site-container grid gap-6 py-10">
       <ol className="grid grid-cols-4 gap-3 max-lg:grid-cols-2">
         {HOW_TO.map((step, index) => (
           <li

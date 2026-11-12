@@ -1048,7 +1048,6 @@ export type Database = {
         Args: { p_changes: Json; p_member: string }
         Returns: Json
       }
-      admin_apply_changes: { Args: { p_changes: Json }; Returns: number }
       admin_key_condition: {
         Args: { p_row: Json; p_table: string }
         Returns: string
@@ -1058,6 +1057,10 @@ export type Database = {
         Returns: Json
       }
       admin_track: { Args: { p_table: string }; Returns: undefined }
+      admin_undo_entry: {
+        Args: { entry: Database["public"]["Tables"]["admin_change_log"]["Row"] }
+        Returns: undefined
+      }
       generation_number: { Args: { p_name: string }; Returns: number }
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string }
