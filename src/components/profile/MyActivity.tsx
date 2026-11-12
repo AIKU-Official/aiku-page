@@ -209,6 +209,7 @@ function PointsButton({ activity }: { activity: Activity }) {
           origin={() => button.current?.getBoundingClientRect()}
           originRadius="10px"
           onClose={() => setOpen(false)}
+          blend="fade"
           expandable={false}
           width="max-w-[44rem]"
           className="p-10 max-lg:p-8 max-sm:p-5 max-sm:pt-14"

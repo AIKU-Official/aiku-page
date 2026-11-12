@@ -1,6 +1,12 @@
-// The one motion every centre peek uses (project cards, member profiles, the
-// points panel): the panel unfolds from the element it opens from and folds
-// back into it, fading in at the start and out at the end so it never pops.
+// The one motion every centre peek uses: the panel unfolds from the element it
+// opens from and folds back into it. How it meets that element is the blend:
+//
+//   "morph"  The panel takes the element's place (a project or member card,
+//            which looks just like the panel's top): it lands exactly on it
+//            and is swapped for it, with no fade, so the card never vanishes.
+//   "fade"   The element stays where it is (a button): the panel fades in as
+//            it leaves it and fades out as it returns, so nothing pops.
+//
 // Kept apart from the component so the motion has a single definition.
 
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -9,6 +15,8 @@ export const CLOSE_MS = 420;
 
 /** Returns the current rectangle of the element the panel opens from. */
 export type PeekOrigin = () => DOMRect | null | undefined;
+
+export type PeekBlend = "morph" | "fade";
 
 type Pose = { shell: Keyframe; panel: Keyframe };
 
@@ -27,6 +35,7 @@ export class PeekMotion {
     private readonly parts: PeekParts,
     private readonly origin: PeekOrigin | undefined,
     private readonly originRadius: string,
+    private readonly blend: PeekBlend = "morph",
   ) {}
 
   static prefersReducedMotion(): boolean {
@@ -44,7 +53,9 @@ export class PeekMotion {
     const from = this.atOrigin();
     if (from) {
       this.parts.shell.animate(
-        [{ ...from.shell, opacity: 0 }, { opacity: 1, offset: 0.2 }, { transform: "none", opacity: 1 }],
+        this.blend === "fade"
+          ? [{ ...from.shell, opacity: 0 }, { opacity: 1, offset: 0.2 }, { transform: "none", opacity: 1 }]
+          : [from.shell, { transform: "none" }],
         timing,
       );
       this.parts.panel.animate([from.panel, { clipPath: this.fullClip() }], timing);
@@ -74,7 +85,9 @@ export class PeekMotion {
     const to = this.atOrigin();
     const shell = to
       ? this.parts.shell.animate(
-          [{ transform: "none", opacity: 1 }, { opacity: 1, offset: 0.45 }, { ...to.shell, opacity: 0 }],
+          this.blend === "fade"
+            ? [{ transform: "none", opacity: 1 }, { opacity: 1, offset: 0.45 }, { ...to.shell, opacity: 0 }]
+            : [{ transform: "none" }, to.shell],
           timing,
         )
       : this.parts.shell.animate(

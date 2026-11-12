@@ -14,7 +14,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 
 import { CloseIcon, CollapseIcon, ExpandIcon } from "@/components/ui/icons";
-import { PeekMotion, type PeekOrigin } from "@/components/ui/peek-motion";
+import { type PeekBlend, PeekMotion, type PeekOrigin } from "@/components/ui/peek-motion";
 
 const subscribeNothing = () => () => {};
 
@@ -38,6 +38,7 @@ export function CenterPeek({
   origin,
   originRadius = "14px",
   expandHref,
+  blend = "morph",
   expandable = true,
   width = "max-w-[1120px]",
   children,
@@ -53,6 +54,11 @@ export function CenterPeek({
   originRadius?: string;
   /** When set, the expand control opens this page instead of filling the window. */
   expandHref?: string;
+  /**
+   * How the panel meets its origin: "morph" when it takes the origin's place
+   * (a card), "fade" when the origin stays visible (a button).
+   */
+  blend?: PeekBlend;
   /** False hides the full-screen control (a short panel gains nothing from it). */
   expandable?: boolean;
   /** Largest width of the floating panel, as a class; it stays centred. */
@@ -82,6 +88,7 @@ export function CenterPeek({
           { shell: shell.current, panel: panel.current, backdrop: backdrop.current, controls: controls.current },
           origin,
           originRadius,
+          blend,
         )
       : null;
 
@@ -99,7 +106,7 @@ export function CenterPeek({
     if (current) current.close(onClose);
     else onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- motion() reads refs, not state
-  }, [onClose, origin, originRadius]);
+  }, [onClose, origin, originRadius, blend]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
