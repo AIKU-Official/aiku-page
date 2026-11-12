@@ -28,17 +28,23 @@ export type PointEntry = {
   points: number;
 };
 
-/** One member's attendance and points for their latest semester. */
-export type MyActivity = {
+/** One member's attendance and points for one semester. */
+export type ActivitySemester = {
   /** "26-2". */
   semester: string;
-  /** Every session the member was marked for, in the order they were held. */
+  /**
+   * The sessions shown on the calendar, in the order they were held. After-
+   * parties are left off the calendar; their points still count.
+   */
   sessions: ActivitySession[];
   entries: PointEntry[];
   total: number;
   /** At or below -5, the threshold for repeating the semester. */
   atRisk: boolean;
 };
+
+/** Every semester the member has a record in, newest first. */
+export type MyActivity = ActivitySemester[];
 
 const RETAKE_THRESHOLD = -5;
 // Order within one day, as the sessions run: lectures, paper reviews, the
@@ -54,10 +60,10 @@ const DAY_ORDER: Record<SessionKind, number> = {
 /**
  * The signed-in member's own attendance and points. The member is taken from
  * the access token, never from the request, so nobody can read another
- * member's records; there is no public variant. Null when there is nothing
- * to show yet.
+ * member's records; there is no public variant. Empty when there is
+ * nothing to show yet.
  */
-export async function getMyActivity(accessToken: unknown): Promise<ActionResult<MyActivity | null>> {
+export async function getMyActivity(accessToken: unknown): Promise<ActionResult<MyActivity>> {
   try {
     const db = createAdminClient();
     const memberId = await signedInMember(db, String(accessToken ?? ""));
@@ -80,49 +86,49 @@ export async function getMyActivity(accessToken: unknown): Promise<ActionResult<
     const attended = unwrap(marks) ?? [];
     const earned = unwrap(entryRows) ?? [];
 
-    // The latest semester the member has any record in; totals reset each semester.
+    const semesterOfSeason = (seasonId: string | null) =>
+      seasonId ? semesterBySeason.get(seasonId) : undefined;
+    // Totals reset each semester, so every semester is its own page.
     const semesters = [
-      ...attended.map((mark) => semesterBySeason.get(mark.activity_sessions.season_id)),
-      ...earned.map((entry) => (entry.season_id ? semesterBySeason.get(entry.season_id) : undefined)),
-    ].filter((value): value is string => Boolean(value));
-    if (!semesters.length) return { ok: true, message: "", data: null };
-    const semester = semesters.sort().at(-1)!;
+      ...new Set(
+        [
+          ...attended.map((mark) => semesterOfSeason(mark.activity_sessions.season_id)),
+          ...earned.map((entry) => semesterOfSeason(entry.season_id)),
+        ].filter((value): value is string => Boolean(value)),
+      ),
+    ].sort((a, b) => b.localeCompare(a));
 
-    const sessions = attended
-      .filter((mark) => semesterBySeason.get(mark.activity_sessions.season_id) === semester)
-      .map(
-        (mark): ActivitySession => ({
-          date: mark.activity_sessions.held_on,
-          title: mark.activity_sessions.title,
-          kind: mark.activity_sessions.kind as SessionKind,
-          status: mark.status as AttendanceStatus,
-          reason: mark.reason,
-        }),
-      )
-      .sort((a, b) => a.date.localeCompare(b.date) || DAY_ORDER[a.kind] - DAY_ORDER[b.kind]);
+    const data = semesters.map((semester): ActivitySemester => {
+      const sessions = attended
+        .filter(
+          (mark) =>
+            semesterOfSeason(mark.activity_sessions.season_id) === semester &&
+            mark.activity_sessions.kind !== "afterparty",
+        )
+        .map(
+          (mark): ActivitySession => ({
+            date: mark.activity_sessions.held_on,
+            title: mark.activity_sessions.title,
+            kind: mark.activity_sessions.kind as SessionKind,
+            status: mark.status as AttendanceStatus,
+            reason: mark.reason,
+          }),
+        )
+        .sort((a, b) => a.date.localeCompare(b.date) || DAY_ORDER[a.kind] - DAY_ORDER[b.kind]);
+      const entries = earned
+        .filter((entry) => semesterOfSeason(entry.season_id) === semester)
+        .map((entry) => ({
+          date: entry.held_on,
+          title: entry.title ?? "",
+          label: entry.label ?? "",
+          points: Number(entry.points ?? 0),
+        }))
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+      const total = Math.round(entries.reduce((sum, entry) => sum + entry.points, 0) * 10) / 10;
+      return { semester, sessions, entries, total, atRisk: total <= RETAKE_THRESHOLD };
+    });
 
-    const entries = earned
-      .filter((entry) => entry.season_id && semesterBySeason.get(entry.season_id) === semester)
-      .map((entry) => ({
-        date: entry.held_on,
-        title: entry.title ?? "",
-        label: entry.label ?? "",
-        points: Number(entry.points ?? 0),
-      }))
-      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
-    const total = Math.round(entries.reduce((sum, entry) => sum + entry.points, 0) * 10) / 10;
-
-    return {
-      ok: true,
-      message: "",
-      data: {
-        semester,
-        sessions,
-        entries,
-        total,
-        atRisk: total <= RETAKE_THRESHOLD,
-      },
-    };
+    return { ok: true, message: "", data };
   } catch (error) {
     console.error("[activity]", error);
     return { ok: false, message: "기록을 불러오지 못했습니다. 잠시 후 다시 시도하세요." };

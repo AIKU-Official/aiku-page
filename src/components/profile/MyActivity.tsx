@@ -5,8 +5,8 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 
 
 import {
   getMyActivity,
+  type ActivitySemester as Activity,
   type ActivitySession,
-  type MyActivity as Activity,
 } from "@/actions/activity";
 import { currentAccessToken } from "@/components/profile/useMyProfile";
 import { CenterPeek } from "@/components/ui/CenterPeek";
@@ -38,32 +38,90 @@ type Tip = { x: number; y: number; index: number };
 export function MyActivity({ memberId }: { memberId: string }) {
   const account = useMemberAccount();
   const isMe = Boolean(account?.member && account.member.id === memberId);
-  const [activity, setActivity] = useState<Activity | null>(null);
+  const [semesters, setSemesters] = useState<Activity[]>([]);
+  // 0 is the newest semester; ">" moves towards it, "<" back in time.
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     if (!isMe) return;
     let cancelled = false;
     void (async () => {
       const result = await getMyActivity(await currentAccessToken());
-      if (!cancelled && result.ok) setActivity(result.data);
+      if (!cancelled && result.ok) setSemesters(result.data);
     })();
     return () => {
       cancelled = true;
     };
   }, [isMe]);
 
+  const activity = semesters[page];
   if (!isMe || !activity) return null;
   return (
     <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-label font-semibold tracking-[0.08em] text-muted uppercase">
-          출결 · {activity.semester}학기
-        </h3>
-        <span className="text-label text-muted">본인에게만 보입니다</span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          <PageButton
+            label="이전 학기"
+            disabled={page >= semesters.length - 1}
+            onClick={() => setPage((value) => value + 1)}
+            path="M10 3.5 5.5 8l4.5 4.5"
+          />
+          <h3 className="min-w-[6.5rem] text-center text-label font-semibold tracking-[0.08em] text-muted uppercase">
+            출결 · {activity.semester}학기
+          </h3>
+          <PageButton
+            label="다음 학기"
+            disabled={page === 0}
+            onClick={() => setPage((value) => value - 1)}
+            path="M6 3.5 10.5 8 6 12.5"
+          />
+        </div>
+        <span className="text-label text-muted/60">본인에게만 보입니다</span>
       </div>
-      {activity.sessions.length ? <AttendanceCalendar sessions={activity.sessions} /> : null}
+      {activity.sessions.length ? (
+        <AttendanceCalendar key={activity.semester} sessions={activity.sessions} />
+      ) : (
+        <p className="text-small text-muted">이 학기의 출결 기록이 없습니다.</p>
+      )}
       <PointsButton activity={activity} />
     </section>
+  );
+}
+
+/** "<" or ">" beside the semester; the same size and states on both sides. */
+function PageButton({
+  label,
+  disabled,
+  onClick,
+  path,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  path: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex size-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-30"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={path} />
+      </svg>
+    </button>
   );
 }
 
@@ -175,7 +233,9 @@ function PointsButton({ activity }: { activity: Activity }) {
 
 function PointsPanel({ activity }: { activity: Activity }) {
   return (
-    <div className="grid gap-5">
+    // Fades out early as the panel shrinks back into the button, and in once
+    // it has room, so nothing is cut off at the end of the motion.
+    <div data-peek-panel-only className="grid gap-5">
       <div>
         <p className="text-label font-semibold tracking-[0.08em] text-muted uppercase">
           {activity.semester}학기 상벌점
