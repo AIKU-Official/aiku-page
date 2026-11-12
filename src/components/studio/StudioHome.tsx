@@ -8,7 +8,6 @@ import {
   type StudioEvent,
   type StudioHome as StudioHomeData,
 } from "@/actions/studio";
-import { MyActivity } from "@/components/profile/MyActivity";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
 import { hashForFilter } from "@/lib/projects/filter";
@@ -19,19 +18,19 @@ import { StudioGate } from "./StudioGate";
 import { StudioTimeline } from "./StudioTimeline";
 
 /**
- * The first page of AIKU Studio: what is coming up, the current season's
- * programs, and the member's own attendance. Only 주니어, 시니어
+ * The first page of AIKU Studio: what is coming up and the current season's
+ * programs. Only 주니어, 시니어
  * and 활동 OB get past the notices.
  */
 export function StudioHome() {
   return (
     <StudioGate load={getStudioHome} loading="Studio를 불러오는 중입니다…">
-      {(data, member) => <Dashboard data={data} memberId={member.id} />}
+      {(data) => <Dashboard data={data} />}
     </StudioGate>
   );
 }
 
-function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string }) {
+function Dashboard({ data }: { data: StudioHomeData }) {
   const { season, events, counts } = data;
   const today = todayInKorea();
   // The next session of a program from today on, for "다음" on its card.
@@ -101,7 +100,6 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
         </ul>
       </section>
 
-      <MyActivity memberId={memberId} />
     </div>
   );
 }
