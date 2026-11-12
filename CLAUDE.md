@@ -33,7 +33,8 @@ The site is AIKU's public homepage and its internal management tool. The owner i
 
 - One person, one member: an AIKU ID, Google and GitHub all link to the same roster member. Identity is checked with name, joining generation (`가입 기수`) and student ID; replies never say which field was wrong.
 - Members two or more generations behind the newest are OB automatically (database trigger) unless pinned.
-- Project participants are matched to roster members by name and shown under their roster name. A match that is a guess is reported to the owner, not applied silently.
+- Project participants and AIKUTHON winners are matched to roster members by name and shown under their roster name. A match that is a guess is reported to the owner, not applied silently.
+- People who are not on the roster stay as plain names with no member link: participants from other societies (e.g. YBIGTA at a joint datathon) and members who withdrew (탈회). Withdrawn members are not added to the roster.
 
 ## Design
 
