@@ -66,6 +66,8 @@ export function CenterPeek({
   origin,
   originRadius = "14px",
   expandHref,
+  expandable = true,
+  width = "max-w-[1120px]",
   children,
   className,
 }: {
@@ -79,6 +81,10 @@ export function CenterPeek({
   originRadius?: string;
   /** When set, the expand control opens this page instead of filling the window. */
   expandHref?: string;
+  /** False hides the full-screen control (a short panel gains nothing from it). */
+  expandable?: boolean;
+  /** Largest width of the floating panel, as a class; it stays centred. */
+  width?: string;
   children: ReactNode;
   /** Size, padding and surface of the panel. */
   className?: string;
@@ -243,7 +249,7 @@ export function CenterPeek({
         ref={shell}
         className={clsx(
           "relative w-full will-change-transform max-sm:drop-shadow-none",
-          expanded ? "max-w-none" : "max-w-[1120px] drop-shadow-[0_24px_60px_rgb(29_29_29/0.2)]",
+          expanded ? "max-w-none" : clsx(width, "drop-shadow-[0_24px_60px_rgb(29_29_29/0.2)]"),
         )}
       >
         {/* Beside the panel on wide screens, so they never cover the panel's own controls. */}
@@ -274,7 +280,7 @@ export function CenterPeek({
                 <path d="M9.5 2.5h4v4m-7 7h-4v-4" />
               </svg>
             </Link>
-          ) : (
+          ) : expandable ? (
             <button
               type="button"
               onClick={() => setExpanded((value) => !value)}
@@ -299,7 +305,7 @@ export function CenterPeek({
                 )}
               </svg>
             </button>
-          )}
+          ) : null}
           <button
             ref={closeButton}
             type="button"

@@ -12,6 +12,8 @@ import { signedInMember } from "@/lib/members/signed-in";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export type ActivitySession = {
+  /** ISO date. */
+  date: string;
   title: string;
   kind: SessionKind;
   status: AttendanceStatus;
@@ -30,11 +32,8 @@ export type PointEntry = {
 export type MyActivity = {
   /** "26-2". */
   semester: string;
-  /** Sessions the member was marked for, by date. */
-  days: { date: string; sessions: ActivitySession[] }[];
-  /** First and last session day of the semester, for the calendar. */
-  first: string;
-  last: string;
+  /** Every session the member was marked for, in the order they were held. */
+  sessions: ActivitySession[];
   entries: PointEntry[];
   total: number;
   /** At or below -5, the threshold for repeating the semester. */
@@ -42,6 +41,15 @@ export type MyActivity = {
 };
 
 const RETAKE_THRESHOLD = -5;
+// Order within one day, as the sessions run: lectures, paper reviews, the
+// Seminar, then its after-party.
+const DAY_ORDER: Record<SessionKind, number> = {
+  deepintodeep: 0,
+  momentum: 1,
+  event: 2,
+  seminar: 3,
+  afterparty: 4,
+};
 
 /**
  * The signed-in member's own attendance and points. The member is taken from
@@ -80,22 +88,18 @@ export async function getMyActivity(accessToken: unknown): Promise<ActionResult<
     if (!semesters.length) return { ok: true, message: "", data: null };
     const semester = semesters.sort().at(-1)!;
 
-    const byDay = new Map<string, ActivitySession[]>();
-    for (const mark of attended) {
-      const session = mark.activity_sessions;
-      if (semesterBySeason.get(session.season_id) !== semester) continue;
-      const list = byDay.get(session.held_on) ?? [];
-      list.push({
-        title: session.title,
-        kind: session.kind as SessionKind,
-        status: mark.status as AttendanceStatus,
-        reason: mark.reason,
-      });
-      byDay.set(session.held_on, list);
-    }
-    const days = [...byDay.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, sessions]) => ({ date, sessions }));
+    const sessions = attended
+      .filter((mark) => semesterBySeason.get(mark.activity_sessions.season_id) === semester)
+      .map(
+        (mark): ActivitySession => ({
+          date: mark.activity_sessions.held_on,
+          title: mark.activity_sessions.title,
+          kind: mark.activity_sessions.kind as SessionKind,
+          status: mark.status as AttendanceStatus,
+          reason: mark.reason,
+        }),
+      )
+      .sort((a, b) => a.date.localeCompare(b.date) || DAY_ORDER[a.kind] - DAY_ORDER[b.kind]);
 
     const entries = earned
       .filter((entry) => entry.season_id && semesterBySeason.get(entry.season_id) === semester)
@@ -113,9 +117,7 @@ export async function getMyActivity(accessToken: unknown): Promise<ActionResult<
       message: "",
       data: {
         semester,
-        days,
-        first: days[0]?.date ?? "",
-        last: days.at(-1)?.date ?? "",
+        sessions,
         entries,
         total,
         atRisk: total <= RETAKE_THRESHOLD,

@@ -3,16 +3,18 @@
 import clsx from "clsx";
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 
-import { getMyActivity, type MyActivity as Activity } from "@/actions/activity";
+import {
+  getMyActivity,
+  type ActivitySession,
+  type MyActivity as Activity,
+} from "@/actions/activity";
 import { currentAccessToken } from "@/components/profile/useMyProfile";
 import { CenterPeek } from "@/components/ui/CenterPeek";
 import {
   ATTENDANCE_LABELS,
-  ATTENDANCE_ORDER,
-  calendarWeeks,
   formatDay,
   formatPoints,
-  worstStatus,
+  SESSION_KIND_LABELS,
   type AttendanceStatus,
 } from "@/lib/activity/calendar";
 import { useMemberAccount } from "@/lib/auth/member";
@@ -25,7 +27,7 @@ const TONES: Record<AttendanceStatus, string> = {
   excused_absent: "bg-attend-excused",
 };
 
-type Tip = { x: number; y: number; date: string };
+type Tip = { x: number; y: number; index: number };
 
 /**
  * The member's own attendance calendar and points, at the foot of their
@@ -59,77 +61,47 @@ export function MyActivity({ memberId }: { memberId: string }) {
         </h3>
         <span className="text-label text-muted">본인에게만 보입니다</span>
       </div>
-      {activity.days.length ? <AttendanceCalendar activity={activity} /> : null}
+      {activity.sessions.length ? <AttendanceCalendar sessions={activity.sessions} /> : null}
       <PointsButton activity={activity} />
     </section>
   );
 }
 
-function AttendanceCalendar({ activity }: { activity: Activity }) {
+/**
+ * One square per session, in the order they were held: two sessions on the
+ * same day are two squares, and days without a session have none.
+ */
+function AttendanceCalendar({ sessions }: { sessions: ActivitySession[] }) {
   const [tip, setTip] = useState<Tip | null>(null);
-  const byDay = new Map(activity.days.map((day) => [day.date, day.sessions]));
-  const weeks = calendarWeeks(activity.first, activity.last);
-
-  const show = (event: ReactMouseEvent<HTMLElement>, date: string) =>
-    setTip({ x: event.clientX, y: event.clientY, date });
+  const show = (event: ReactMouseEvent<HTMLElement>, index: number) =>
+    setTip({ x: event.clientX, y: event.clientY, index });
 
   return (
-    <div className="grid gap-3">
-      <div
-        className="flex gap-[3px] overflow-x-auto pb-1"
-        onMouseLeave={() => setTip(null)}
-        role="grid"
-        aria-label="출결 달력"
-      >
-        {weeks.map((week, w) => (
-          <div key={w} className="grid shrink-0 grid-rows-7 gap-[3px]" role="row">
-            {week.map((date, d) => {
-              const sessions = date ? byDay.get(date) : undefined;
-              const status = sessions ? worstStatus(sessions.map((s) => s.status)) : null;
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  role="gridcell"
-                  disabled={!sessions}
-                  aria-label={
-                    sessions && date
-                      ? `${formatDay(date)}: ${sessions.map((s) => `${s.title} ${ATTENDANCE_LABELS[s.status]}`).join(", ")}`
-                      : undefined
-                  }
-                  onMouseEnter={sessions && date ? (event) => show(event, date) : undefined}
-                  onMouseMove={sessions && date ? (event) => show(event, date) : undefined}
-                  onClick={
-                    sessions && date
-                      ? (event) => (tip?.date === date ? setTip(null) : show(event, date))
-                      : undefined
-                  }
-                  className={clsx(
-                    "size-3 rounded-[3px]",
-                    status ? TONES[status] : date ? "bg-surface-soft" : "bg-transparent",
-                    sessions && "cursor-default outline-offset-1 hover:outline hover:outline-ink/40",
-                  )}
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      <ul className="flex flex-wrap gap-x-3 gap-y-1.5 text-label text-muted" aria-label="범례">
-        {ATTENDANCE_ORDER.map((status) => (
-          <li key={status} className="inline-flex items-center gap-1.5">
-            <span className={clsx("size-2.5 rounded-[3px]", TONES[status])} aria-hidden="true" />
-            {ATTENDANCE_LABELS[status]}
+    <div onMouseLeave={() => setTip(null)}>
+      <ul className="flex flex-wrap gap-1" aria-label="출결 기록">
+        {sessions.map((session, index) => (
+          <li key={index}>
+            <button
+              type="button"
+              aria-label={`${formatDay(session.date)} ${session.title}: ${ATTENDANCE_LABELS[session.status]}${session.reason ? `, ${session.reason}` : ""}`}
+              onMouseEnter={(event) => show(event, index)}
+              onMouseMove={(event) => show(event, index)}
+              onClick={(event) => (tip?.index === index ? setTip(null) : show(event, index))}
+              className={clsx(
+                "block size-4 cursor-default rounded-[4px] outline-offset-1 hover:outline hover:outline-ink/40",
+                TONES[session.status],
+              )}
+            />
           </li>
         ))}
       </ul>
-      {tip ? <DayTip tip={tip} sessions={byDay.get(tip.date) ?? []} /> : null}
+      {tip ? <SessionTip tip={tip} session={sessions[tip.index]} /> : null}
     </div>
   );
 }
 
-/** The little box beside the cursor: which sessions that day, and why one was missed. */
-function DayTip({ tip, sessions }: { tip: Tip; sessions: Activity["days"][number]["sessions"] }) {
+/** The little box beside the cursor: what the session was, how it went, and why. */
+function SessionTip({ tip, session }: { tip: Tip; session: ActivitySession }) {
   const box = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: tip.x + 14, top: tip.y + 14 });
 
@@ -137,7 +109,7 @@ function DayTip({ tip, sessions }: { tip: Tip; sessions: Activity["days"][number
     const width = box.current?.offsetWidth ?? 220;
     const height = box.current?.offsetHeight ?? 80;
     setPosition({
-      left: Math.min(tip.x + 14, window.innerWidth - width - 8),
+      left: Math.max(8, Math.min(tip.x + 14, window.innerWidth - width - 8)),
       top: tip.y + 14 + height > window.innerHeight ? tip.y - height - 10 : tip.y + 14,
     });
   }, [tip]);
@@ -147,23 +119,17 @@ function DayTip({ tip, sessions }: { tip: Tip; sessions: Activity["days"][number
       ref={box}
       role="tooltip"
       style={position}
-      className="pointer-events-none fixed z-50 grid max-w-64 gap-1.5 rounded-control border border-line bg-surface px-3 py-2.5 text-small shadow-lg"
+      className="pointer-events-none fixed z-50 grid max-w-64 gap-1 rounded-control border border-line bg-surface px-3 py-2.5 text-small shadow-lg"
     >
-      <p className="font-semibold text-ink">{formatDay(tip.date)}</p>
-      <ul className="grid gap-1">
-        {sessions.map((session, index) => (
-          <li key={index} className="flex items-start gap-2">
-            <span
-              className={clsx("mt-1.5 size-2 shrink-0 rounded-[2px]", TONES[session.status])}
-              aria-hidden="true"
-            />
-            <span className="text-body">
-              {session.title} · {ATTENDANCE_LABELS[session.status]}
-              {session.reason ? <span className="text-muted"> · {session.reason}</span> : null}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <p className="text-label text-muted">
+        {formatDay(session.date)} · {SESSION_KIND_LABELS[session.kind]}
+      </p>
+      <p className="font-semibold text-ink">{session.title}</p>
+      <p className="flex items-center gap-1.5 text-body">
+        <span className={clsx("size-2 shrink-0 rounded-[2px]", TONES[session.status])} aria-hidden="true" />
+        {ATTENDANCE_LABELS[session.status]}
+        {session.reason ? <span className="text-muted">· {session.reason}</span> : null}
+      </p>
     </div>
   );
 }
@@ -196,7 +162,9 @@ function PointsButton({ activity }: { activity: Activity }) {
           origin={() => button.current?.getBoundingClientRect()}
           originRadius="10px"
           onClose={() => setOpen(false)}
-          className="w-[min(36rem,calc(100vw-2rem))] p-8 max-sm:p-5 max-sm:pt-14"
+          expandable={false}
+          width="max-w-[44rem]"
+          className="p-10 max-lg:p-8 max-sm:p-5 max-sm:pt-14"
         >
           <PointsPanel activity={activity} />
         </CenterPeek>
