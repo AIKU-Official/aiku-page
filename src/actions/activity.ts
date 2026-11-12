@@ -44,8 +44,15 @@ export type ActivitySemester = {
   atRisk: boolean;
 };
 
-/** Every semester the member has a record in, newest first. */
-export type MyActivity = ActivitySemester[];
+export type MyActivity = {
+  /**
+   * OB members are outside attendance and points: nothing is sent for them
+   * and their points show as "-".
+   */
+  ob: boolean;
+  /** Every semester the member has a record in, newest first. */
+  semesters: ActivitySemester[];
+};
 
 const RETAKE_THRESHOLD = -5;
 // Order within one day, as the sessions run: lectures, paper reviews, the
@@ -62,7 +69,7 @@ const DAY_ORDER: Record<SessionKind, number> = {
  * A member's attendance and points, for that member or an admin only. The
  * viewer is taken from the access token, never from the request; an admin is
  * a current officer with an admin session. There is no public variant.
- * Empty when there is nothing to show yet.
+ * No semesters when there is nothing to show yet, and none for OB members.
  */
 export async function getActivity(
   accessToken: unknown,
@@ -76,6 +83,10 @@ export async function getActivity(
     if (!allowed || typeof memberId !== "string") {
       return { ok: false, message: "본인 또는 관리자만 볼 수 있습니다." };
     }
+
+    const member = unwrap(await db.from("members").select("grade").eq("id", memberId).maybeSingle());
+    if (!member) return { ok: false, message: "회원을 찾을 수 없습니다." };
+    if (member.grade === "ob") return { ok: true, message: "", data: { ob: true, semesters: [] } };
 
     const [seasonRows, marks, entryRows] = await Promise.all([
       db.from("seasons").select("id, year, term"),
@@ -136,7 +147,7 @@ export async function getActivity(
       return { semester, sessions, entries, total, atRisk: total <= RETAKE_THRESHOLD };
     });
 
-    return { ok: true, message: "", data };
+    return { ok: true, message: "", data: { ob: false, semesters: data } };
   } catch (error) {
     console.error("[activity]", error);
     return { ok: false, message: "기록을 불러오지 못했습니다. 잠시 후 다시 시도하세요." };

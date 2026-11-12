@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
 import {
   getActivity,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/activity/calendar";
 import { useMemberAccount } from "@/lib/auth/member";
 import { useSignedInData } from "@/lib/auth/signed-in-data";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 
 const TONES: Record<AttendanceStatus, string> = {
   present: "bg-attend-present",
@@ -41,12 +42,31 @@ export function MyActivity({ memberId }: { memberId: string }) {
   // The member themselves, or an admin (a current officer) looking at anyone.
   const allowed = isMe || Boolean(account?.admin);
   const [state] = useSignedInData(allowed ? memberId : null, (token) => getActivity(token, memberId));
-  const semesters = state.status === "ready" ? state.data : [];
+  const ob = state.status === "ready" && state.data.ob;
+  const semesters = state.status === "ready" ? state.data.semesters : [];
   // 0 is the newest semester; ">" moves towards it, "<" back in time.
   const [page, setPage] = useState(0);
 
   const activity = semesters[page];
-  if (!allowed || !activity) return null;
+  const visibility = (
+    <span className="text-label text-muted/60">
+      {isMe ? "본인에게만 보입니다" : "관리자에게만 보입니다"}
+    </span>
+  );
+  if (!allowed) return null;
+  // OB members are outside attendance and points: no calendar, points "-".
+  if (ob) {
+    return (
+      <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-label font-semibold tracking-[0.08em] text-muted uppercase">상벌점</h3>
+          {visibility}
+        </div>
+        <PointsButton activity={null} />
+      </section>
+    );
+  }
+  if (!activity) return null;
   return (
     <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
       <div className="flex items-center justify-between gap-3">
@@ -55,7 +75,7 @@ export function MyActivity({ memberId }: { memberId: string }) {
             label="이전 학기"
             disabled={page >= semesters.length - 1}
             onClick={() => setPage((value) => value + 1)}
-            path="M10 3.5 5.5 8l4.5 4.5"
+            icon={<ChevronLeftIcon className="size-4" />}
           />
           <h3 className="min-w-[6.5rem] text-center text-label font-semibold tracking-[0.08em] text-muted uppercase">
             출결 · {activity.semester}학기
@@ -64,12 +84,10 @@ export function MyActivity({ memberId }: { memberId: string }) {
             label="다음 학기"
             disabled={page === 0}
             onClick={() => setPage((value) => value - 1)}
-            path="M6 3.5 10.5 8 6 12.5"
+            icon={<ChevronRightIcon className="size-4" />}
           />
         </div>
-        <span className="text-label text-muted/60">
-          {isMe ? "본인에게만 보입니다" : "관리자에게만 보입니다"}
-        </span>
+        {visibility}
       </div>
       {activity.sessions.length ? (
         <AttendanceCalendar key={activity.semester} sessions={activity.sessions} />
@@ -86,12 +104,12 @@ function PageButton({
   label,
   disabled,
   onClick,
-  path,
+  icon,
 }: {
   label: string;
   disabled: boolean;
   onClick: () => void;
-  path: string;
+  icon: ReactNode;
 }) {
   return (
     <button
@@ -102,18 +120,7 @@ function PageButton({
       onClick={onClick}
       className="inline-flex size-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-30"
     >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 16 16"
-        className="size-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d={path} />
-      </svg>
+      {icon}
     </button>
   );
 }
@@ -185,7 +192,8 @@ function SessionTip({ tip, session }: { tip: Tip; session: ActivitySession }) {
   );
 }
 
-function PointsButton({ activity }: { activity: Activity }) {
+/** The total on a button that opens the entries; "-" and inert for OB members (no activity). */
+function PointsButton({ activity }: { activity: Activity | null }) {
   const button = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -194,20 +202,25 @@ function PointsButton({ activity }: { activity: Activity }) {
       <button
         ref={button}
         type="button"
+        disabled={!activity}
         onClick={() => setOpen(true)}
-        className="flex h-11 items-center justify-between rounded-control border border-line bg-surface px-4 text-small font-semibold text-ink transition-colors hover:border-line-strong hover:bg-surface-soft"
+        className="flex h-11 items-center justify-between rounded-control border border-line bg-surface px-4 text-small font-semibold text-ink transition-colors hover:border-line-strong hover:bg-surface-soft disabled:pointer-events-none"
       >
         상벌점 내역
         <span
           className={clsx(
             "tabular-nums",
-            activity.total < 0 ? "text-danger" : activity.total > 0 ? "text-green-800" : "text-muted",
+            !activity || activity.total === 0
+              ? "text-muted"
+              : activity.total < 0
+                ? "text-danger"
+                : "text-green-800",
           )}
         >
-          {formatPoints(activity.total)}점
+          {activity ? `${formatPoints(activity.total)}점` : "-"}
         </span>
       </button>
-      {open ? (
+      {open && activity ? (
         <CenterPeek
           label="상벌점 내역"
           origin={() => button.current?.getBoundingClientRect()}
