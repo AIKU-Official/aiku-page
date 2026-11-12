@@ -28,7 +28,10 @@ export async function getTableRows(input: unknown): Promise<ActionResult<Row[]>>
   return adminAction({ schema: tableSchema, input }, async (name, db) => {
     const table = await knownTable(name);
     if (table.rowsHidden) return { message: "", data: [] };
-    let query = db.from(name as never).select("*").limit(MAX_ROWS);
+    let query = db
+      .from(name as never)
+      .select("*")
+      .limit(MAX_ROWS);
     for (const column of table.primaryKey) query = query.order(column as never);
     const rows = unwrap(await query) as Row[] | null;
     return { message: "", data: rows ?? [] };
@@ -44,11 +47,21 @@ export async function getRowOptions(input: unknown): Promise<ActionResult<RowOpt
     async ({ table: name, column }, db) => {
       const table = await knownTable(name);
       if (table.rowsHidden) return { message: "", data: [] };
-      const label = LABEL_COLUMNS.find((candidate) => table.columns.some((c) => c.name === candidate));
+      const label = LABEL_COLUMNS.find((candidate) =>
+        table.columns.some((c) => c.name === candidate),
+      );
       const columns = [...new Set([column, ...(label ? [label] : [])])].join(", ");
-      const rows = (unwrap(await db.from(name as never).select(columns).limit(MAX_ROWS)) ?? []) as Row[];
+      const rows = (unwrap(
+        await db
+          .from(name as never)
+          .select(columns)
+          .limit(MAX_ROWS),
+      ) ?? []) as Row[];
       const options = rows
-        .map((row) => ({ value: row[column] ?? null, label: label ? String(row[label] ?? "") : String(row[column]) }))
+        .map((row) => ({
+          value: row[column] ?? null,
+          label: label ? String(row[label] ?? "") : String(row[column]),
+        }))
         .sort((a, b) => a.label.localeCompare(b.label, "ko"));
       return { message: "", data: options };
     },
@@ -69,15 +82,44 @@ const changesSchema = z
 
 // Messages for the database's refusals, shown to the admin as they are.
 const DB_MESSAGES: { match: RegExp; message: (detail: string) => string }[] = [
-  { match: /ADMIN_ROW_NOT_FOUND/, message: () => "그사이 바뀌었거나 지워진 행이 있습니다. 새로고침한 뒤 다시 시도하세요." },
+  {
+    match: /ADMIN_ROW_NOT_FOUND/,
+    message: () => "그사이 바뀌었거나 지워진 행이 있습니다. 새로고침한 뒤 다시 시도하세요.",
+  },
   { match: /ADMIN_TABLE_NOT_ALLOWED/, message: () => "이 표는 직접 고칠 수 없습니다." },
-  { match: /violates foreign key constraint/, message: (d) => `다른 표가 이 행을 가리키고 있거나, 가리키는 행이 없습니다. (${d})` },
+  {
+    match: /violates foreign key constraint/,
+    message: (d) => `다른 표가 이 행을 가리키고 있거나, 가리키는 행이 없습니다. (${d})`,
+  },
   { match: /duplicate key value/, message: (d) => `같은 값을 가진 행이 이미 있습니다. (${d})` },
-  { match: /null value in column "([^"]+)"/, message: (d) => `필수 칸이 비어 있습니다: ${/column "([^"]+)"/.exec(d)?.[1] ?? ""}` },
+  {
+    match: /null value in column "([^"]+)"/,
+    message: (d) => `필수 칸이 비어 있습니다: ${/column "([^"]+)"/.exec(d)?.[1] ?? ""}`,
+  },
   { match: /violates check constraint/, message: (d) => `허용되지 않는 값이 있습니다. (${d})` },
-  { match: /invalid input syntax|invalid input value/, message: (d) => `값의 형식이 맞지 않습니다. (${d})` },
-  { match: /SEASON_NAME_FORMAT/, message: () => "분기 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요." },
+  {
+    match: /invalid input syntax|invalid input value/,
+    message: (d) => `값의 형식이 맞지 않습니다. (${d})`,
+  },
+  {
+    match: /ADMIN_REVERT_STALE/,
+    message: () =>
+      "그 뒤에 다시 바뀐 행이 있어 되돌릴 수 없습니다. 그 변경을 먼저 되돌리거나 캔버스에서 직접 고치세요.",
+  },
+  { match: /ADMIN_ALREADY_REVERTED/, message: () => "이미 되돌린 변경입니다." },
+  {
+    match: /SEASON_NAME_FORMAT/,
+    message: () => "분기 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요.",
+  },
 ];
+
+/** Throws the database's refusal as a message for the admin when it is a known one. */
+function throwDbError(error: { message: string; details?: string | null }): never {
+  const detail = [error.message, error.details].filter(Boolean).join(" ");
+  const known = DB_MESSAGES.find(({ match }) => match.test(detail));
+  if (known) throw new ActionError(known.message(detail));
+  throw error;
+}
 
 /**
  * Applies the canvas's pending changes in one database transaction: all of
@@ -88,7 +130,7 @@ const DB_MESSAGES: { match: RegExp; message: (detail: string) => string }[] = [
 export async function commitChanges(input: unknown): Promise<ActionResult<{ applied: number }>> {
   return adminAction(
     { schema: changesSchema, input, revalidate: [...CONTENT_KINDS] },
-    async (changes, db) => {
+    async (changes, db, session) => {
       if (changes.some((change) => rowsHidden(change.table))) {
         throw new ActionError("이 표는 직접 고칠 수 없습니다.");
       }
@@ -97,22 +139,39 @@ export async function commitChanges(input: unknown): Promise<ActionResult<{ appl
         .map((change) => String((change as { key: Row }).key.user_id ?? ""));
       const rejectedLogins = rejected.length
         ? ((unwrap(
-            await db.from("member_signup_requests").select("user_id, email").in("user_id", rejected),
+            await db
+              .from("member_signup_requests")
+              .select("user_id, email")
+              .in("user_id", rejected),
           ) ?? []) as { user_id: string; email: string }[])
         : [];
 
-      const { data, error } = await db.rpc("admin_apply_changes", { p_changes: changes as Json });
-      if (error) {
-        const detail = [error.message, error.details].filter(Boolean).join(" ");
-        const known = DB_MESSAGES.find(({ match }) => match.test(detail));
-        if (known) throw new ActionError(known.message(detail));
-        throw error;
-      }
+      const { data, error } = await db.rpc("admin_apply_batch", {
+        p_changes: changes as Json,
+        p_member: session.memberId,
+      });
+      if (error) throwDbError(error);
 
       for (const row of rejectedLogins) {
         if (emailToLoginId(row.email)) await db.auth.admin.deleteUser(row.user_id);
       }
-      return { message: `${data}건을 DB에 반영했습니다.`, data: { applied: Number(data) } };
+      const applied = Number((data as { applied: number }).applied);
+      return { message: `${applied}건을 DB에 반영했습니다.`, data: { applied } };
+    },
+  );
+}
+
+/** Undoes one save: every row it wrote goes back as it was, all or nothing. */
+export async function revertBatch(input: unknown): Promise<ActionResult> {
+  return adminAction(
+    { schema: z.string().uuid(), input, revalidate: [...CONTENT_KINDS] },
+    async (batch, db, session) => {
+      const { data, error } = await db.rpc("admin_revert_batch", {
+        p_batch: batch,
+        p_member: session.memberId,
+      });
+      if (error) throwDbError(error);
+      return { message: `${(data as { undone: number }).undone}건을 되돌렸습니다.` };
     },
   );
 }

@@ -4,7 +4,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
-import { getAdminSession } from "@/lib/auth/session";
+import { type AdminSession, getAdminSession } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
 import type { ActionResult } from "./result";
@@ -55,9 +55,14 @@ type AdminActionOptions<S extends z.ZodType> = {
  */
 export async function adminAction<S extends z.ZodType, T = undefined>(
   { schema, input, revalidate = [] }: AdminActionOptions<S>,
-  run: (data: z.output<S>, db: AdminDb) => Promise<{ message: string; data?: T }>,
+  run: (
+    data: z.output<S>,
+    db: AdminDb,
+    session: AdminSession,
+  ) => Promise<{ message: string; data?: T }>,
 ): Promise<ActionResult<T>> {
-  if (!(await getAdminSession())) {
+  const session = await getAdminSession();
+  if (!session) {
     return { ok: false, message: "로그인이 필요합니다." };
   }
 
@@ -67,7 +72,7 @@ export async function adminAction<S extends z.ZodType, T = undefined>(
   }
 
   try {
-    const result = await run(parsed.data, createAdminClient());
+    const result = await run(parsed.data, createAdminClient(), session);
     revalidateContent(revalidate);
     // Re-render the admin page itself in the same response.
     revalidatePath("/admin");

@@ -5,6 +5,12 @@
 /** Tables whose rows hold secrets: drawn on the canvas, rows never sent to the browser. */
 export const HIDDEN_ROW_TABLES = ["login_attempts", "member_student_ids"] as const;
 
+/**
+ * The canvas's own change history: never drawn on the canvas or edited from
+ * it (the database refuses too). It is read in the 변경 기록 list instead.
+ */
+export const OFF_CANVAS_TABLES = ["admin_change_batches", "admin_change_log"] as const;
+
 /** Columns uploaded to Storage rather than typed in: one file, or a list of files. */
 export const STORAGE_COLUMNS: Record<
   string,

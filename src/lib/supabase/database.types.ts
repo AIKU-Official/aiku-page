@@ -72,6 +72,77 @@ export type Database = {
           },
         ]
       }
+      admin_change_batches: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string | null
+          reverts: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          reverts?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          reverts?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_change_batches_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_change_batches_reverts_fkey"
+            columns: ["reverts"]
+            isOneToOne: true
+            referencedRelation: "admin_change_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_change_log: {
+        Row: {
+          batch_id: string
+          id: number
+          new_row: Json | null
+          old_row: Json | null
+          op: string
+          table_name: string
+        }
+        Insert: {
+          batch_id: string
+          id?: never
+          new_row?: Json | null
+          old_row?: Json | null
+          op: string
+          table_name: string
+        }
+        Update: {
+          batch_id?: string
+          id?: never
+          new_row?: Json | null
+          old_row?: Json | null
+          op?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_change_log_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "admin_change_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aikuthon_award_members: {
         Row: {
           award_id: string
@@ -973,7 +1044,20 @@ export type Database = {
       }
     }
     Functions: {
+      admin_apply_batch: {
+        Args: { p_changes: Json; p_member: string }
+        Returns: Json
+      }
       admin_apply_changes: { Args: { p_changes: Json }; Returns: number }
+      admin_key_condition: {
+        Args: { p_row: Json; p_table: string }
+        Returns: string
+      }
+      admin_revert_batch: {
+        Args: { p_batch: string; p_member: string }
+        Returns: Json
+      }
+      admin_track: { Args: { p_table: string }; Returns: undefined }
       generation_number: { Args: { p_name: string }; Returns: number }
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string }

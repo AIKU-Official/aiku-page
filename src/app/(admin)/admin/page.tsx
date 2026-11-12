@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 
 import { SchemaCanvas } from "@/components/admin/canvas/SchemaCanvas";
+import { ChangeHistory } from "@/components/admin/ChangeHistory";
 import { PageHero } from "@/components/layout/PageHero";
+import { loadHistory } from "@/lib/admin/history.server";
 import { loadSchema } from "@/lib/admin/schema";
 import { requireAdmin } from "@/lib/auth/session";
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export const metadata: Metadata = {
   title: "관리자",
@@ -12,7 +15,7 @@ export const metadata: Metadata = {
 
 export default async function AdminPage() {
   await requireAdmin();
-  const schema = await loadSchema();
+  const [schema, history] = await Promise.all([loadSchema(), loadHistory(createAdminClient())]);
 
   return (
     <>
@@ -25,9 +28,10 @@ export default async function AdminPage() {
       {/* The canvas needs a pointer and a wide screen; phones get a note instead. */}
       <section className="site-container hidden py-10 max-sm:block">
         <p className="rounded-[20px] border border-line bg-surface-soft px-5 py-6 text-center text-body text-muted">
-          데이터 관리는 PC에서만 할 수 있습니다.
+          표를 고치는 캔버스는 PC에서만 열립니다. 변경 기록은 아래에서 보고 되돌릴 수 있습니다.
         </p>
       </section>
+      <ChangeHistory batches={history} />
     </>
   );
 }
