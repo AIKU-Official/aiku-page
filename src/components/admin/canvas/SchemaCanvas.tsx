@@ -52,7 +52,7 @@ const STAGE_HEIGHT = "h-[calc(100dvh-var(--header-height)-5rem)] min-h-[32rem]";
 const HOW_TO = [
   {
     title: "둘러보기",
-    body: "빈 곳을 끌어 옮기고, ⌘ 또는 Ctrl을 누른 채 스크롤하거나 왼쪽 아래 +, − 로 확대·축소하고, 맨 아래 버튼으로 캔버스를 크게 띄웁니다. 표를 끌면 자리를 옮길 수 있습니다.",
+    body: "빈 곳을 끌어 옮기고, ⌘ 또는 Ctrl을 누른 채 스크롤하거나 오른쪽 위 +, − 로 확대·축소하고, 그 아래 마지막 버튼으로 캔버스를 크게 띄웁니다. 표를 끌면 자리를 옮길 수 있습니다.",
   },
   {
     title: "표 열기",
@@ -347,8 +347,8 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
         </div>
       </div>
 
-      {/* Zoom controls, outside the faded layer so they stay crisp. */}
-      <div className="absolute bottom-6 left-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)] max-sm:bottom-24 max-sm:left-4">
+      {/* Zoom controls, top right. */}
+      <div className="absolute top-6 right-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)]">
         {[
           { label: "확대", icon: <PlusIcon className="size-4" />, onClick: () => zoomBy(1.2) },
           {
