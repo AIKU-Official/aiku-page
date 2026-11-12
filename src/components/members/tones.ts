@@ -39,3 +39,12 @@ export function positionCardClassName(position: string): string | null {
   }
   return null;
 }
+
+/** Border of a clickable card on hover and focus: gold or silver for officers, green otherwise. */
+export function cardHoverBorderClassName(position: string): string {
+  if (position.includes("부회장"))
+    return "hover:border-silver-800/45 focus-within:border-silver-800/45";
+  if (position.includes("회장"))
+    return "hover:border-amber-800/40 focus-within:border-amber-800/40";
+  return "hover:border-green-200 focus-within:border-green-200";
+}

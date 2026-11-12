@@ -5,7 +5,12 @@ import { Avatar } from "@/components/ui/Avatar";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS, type Member } from "@/lib/types";
 
-import { gradeToneClassName, positionCardClassName, positionToneClassName } from "./tones";
+import {
+  cardHoverBorderClassName,
+  gradeToneClassName,
+  positionCardClassName,
+  positionToneClassName,
+} from "./tones";
 
 /** Directory entry laid out like a name card: picture on the left, name and tags beside it. */
 export function MemberCard({
@@ -26,8 +31,10 @@ export function MemberCard({
       className={clsx(
         "relative flex items-center gap-3 card px-4 py-3.5 max-sm:gap-2.5 max-sm:p-3",
         member.position && positionCardClassName(member.position),
-        onOpen &&
-          "transition-[border-color,box-shadow] focus-within:border-green-200 hover:border-green-200 hover:shadow-[0_6px_20px_rgb(29_29_29/0.06)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-green-500",
+        onOpen && [
+          "transition-[border-color,box-shadow] hover:shadow-[0_6px_20px_rgb(29_29_29/0.06)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-green-500",
+          cardHoverBorderClassName(member.position),
+        ],
       )}
     >
       <Avatar
