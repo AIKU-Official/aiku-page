@@ -19,6 +19,7 @@ export const navItems: NavItem[] = [
   { href: "/about", label: "About" },
   { href: "/activities", label: "Activity" },
   { href: "/projects", label: "Projects" },
+  { href: "/aikuthon", label: "AIKUTHON" },
   { href: "/members", label: "Members" },
   { href: "/contact", label: "Contact" },
   { href: "/login", label: "Login", prefetch: false, utility: true, alsoActiveOn: ["/admin"] },

@@ -17,10 +17,10 @@ const homeLinks = [
     description: "배운 것을 공유하고 실제 결과물로 연결합니다.",
   },
   {
-    href: "/about#curriculum",
-    label: "Curriculum",
-    title: "주니어와 시니어 트랙",
-    description: "방학과 학기 중 활동 흐름을 한눈에 확인합니다.",
+    href: "/aikuthon",
+    label: "AIKUTHON",
+    title: "AIKU가 직접 만드는 데이터톤",
+    description: "역대 대회의 문제와 수상팀을 살펴봅니다.",
   },
   {
     href: "/projects",

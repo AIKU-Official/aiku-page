@@ -96,3 +96,32 @@ export type Generation = {
   name: string;
   members: Member[];
 };
+
+/** One AIKUTHON, or a joint datathon held with another society. */
+export type Aikuthon = {
+  id: string;
+  /** Edition number; null for a joint datathon without one. */
+  edition: number | null;
+  kind: "edition" | "joint";
+  name: string;
+  /** ISO dates. */
+  startsOn: string;
+  endsOn: string | null;
+  venue: string;
+  format: string[];
+  partners: string[];
+  taskTitle: string;
+  taskDescription: string;
+  metric: string;
+  participants: string;
+  competitionUrl: string | null;
+  awards: AikuthonAward[];
+};
+
+export type AikuthonAward = {
+  /** 1, 2 or 3 for placings; null for other prizes. */
+  rank: 1 | 2 | 3 | null;
+  label: string;
+  teamName: string;
+  people: ProjectPerson[];
+};

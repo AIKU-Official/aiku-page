@@ -2,9 +2,9 @@ import "server-only";
 
 import { POSITION_SELECT } from "@/lib/members/positions";
 import { createPublicClient } from "@/lib/supabase/public-client";
-import type { Generation, NewsItem, Project, Season } from "@/lib/types";
+import type { Aikuthon, Generation, NewsItem, Project, Season } from "@/lib/types";
 
-import { mapMember, mapNews, mapProject, mapSeason } from "./mappers";
+import { mapAikuthon, mapMember, mapNews, mapProject, mapSeason } from "./mappers";
 
 // Loaders for the public pages. They throw on failure: at build time that
 // fails the deploy, and during ISR revalidation Next.js keeps serving the last
@@ -93,4 +93,16 @@ export async function getGenerations(): Promise<Generation[]> {
     name: row.name,
     members: row.members.map(mapMember),
   }));
+}
+
+/** Every AIKUTHON with its awards, newest first. */
+export async function getAikuthons(): Promise<Aikuthon[]> {
+  const { data, error } = await createPublicClient()
+    .from("aikuthons")
+    .select(
+      `*, aikuthon_awards(rank, label, team_name, sort_order, aikuthon_award_members(name, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT})))`,
+    )
+    .order("starts_on", { ascending: false });
+  if (error) fail("AIKUTHON", error.message);
+  return (data ?? []).map(mapAikuthon);
 }

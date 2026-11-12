@@ -28,6 +28,140 @@ export type Database = {
   };
   public: {
     Tables: {
+      aikuthon_award_members: {
+        Row: {
+          award_id: string;
+          id: string;
+          member_id: string | null;
+          name: string;
+          sort_order: number;
+        };
+        Insert: {
+          award_id: string;
+          id?: string;
+          member_id?: string | null;
+          name: string;
+          sort_order?: number;
+        };
+        Update: {
+          award_id?: string;
+          id?: string;
+          member_id?: string | null;
+          name?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "aikuthon_award_members_award_id_fkey";
+            columns: ["award_id"];
+            isOneToOne: false;
+            referencedRelation: "aikuthon_awards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "aikuthon_award_members_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      aikuthon_awards: {
+        Row: {
+          aikuthon_id: string;
+          id: string;
+          label: string;
+          rank: number | null;
+          sort_order: number;
+          team_name: string;
+        };
+        Insert: {
+          aikuthon_id: string;
+          id?: string;
+          label: string;
+          rank?: number | null;
+          sort_order?: number;
+          team_name?: string;
+        };
+        Update: {
+          aikuthon_id?: string;
+          id?: string;
+          label?: string;
+          rank?: number | null;
+          sort_order?: number;
+          team_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "aikuthon_awards_aikuthon_id_fkey";
+            columns: ["aikuthon_id"];
+            isOneToOne: false;
+            referencedRelation: "aikuthons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      aikuthons: {
+        Row: {
+          competition_url: string | null;
+          created_at: string;
+          edition: number | null;
+          ends_on: string | null;
+          format: string[];
+          id: string;
+          kind: string;
+          metric: string;
+          name: string;
+          participants: string;
+          partners: string[];
+          source_key: string | null;
+          starts_on: string;
+          task_description: string;
+          task_title: string;
+          updated_at: string;
+          venue: string;
+        };
+        Insert: {
+          competition_url?: string | null;
+          created_at?: string;
+          edition?: number | null;
+          ends_on?: string | null;
+          format?: string[];
+          id?: string;
+          kind?: string;
+          metric?: string;
+          name: string;
+          participants?: string;
+          partners?: string[];
+          source_key?: string | null;
+          starts_on: string;
+          task_description?: string;
+          task_title?: string;
+          updated_at?: string;
+          venue?: string;
+        };
+        Update: {
+          competition_url?: string | null;
+          created_at?: string;
+          edition?: number | null;
+          ends_on?: string | null;
+          format?: string[];
+          id?: string;
+          kind?: string;
+          metric?: string;
+          name?: string;
+          participants?: string;
+          partners?: string[];
+          source_key?: string | null;
+          starts_on?: string;
+          task_description?: string;
+          task_title?: string;
+          updated_at?: string;
+          venue?: string;
+        };
+        Relationships: [];
+      };
       generations: {
         Row: {
           created_at: string;
