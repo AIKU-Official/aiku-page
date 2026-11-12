@@ -97,6 +97,12 @@ export function routeEdges(tables: SchemaTable[], positions: Record<string, Poin
   const free = (runs: Run[]) =>
     runs.every((r) => r.a === r.b || placed.every((other) => !clash(r, other)));
 
+  // Every line must leave its row straight for STUB, wherever it then goes,
+  // so those first steps are held before anything else is placed.
+  for (const edge of wanted) {
+    placed.push(run(false, edge.from.y, edge.from.x, edge.from.x + edge.exit * STUB, edge.group));
+  }
+
   // Trunks first, longest first: a vertical track beside each target column,
   // shared by every line into it and long enough to meet every one of them at
   // its own row. Placing them whole up front keeps one from growing into another.

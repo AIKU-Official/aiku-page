@@ -2,7 +2,8 @@
 // Pure, safe to import anywhere.
 //
 // Groups (회원, 프로젝트, AIKUTHON, …) are laid out left to right, wrapping to
-// a new band when a band gets wider than `BAND_WIDTH`. Inside a
+// a new band when a band would get too wide. The band width is the one that
+// makes the whole canvas closest to a square, tried in steps. Inside a
 // group, a table that others point at stands left of the tables pointing at
 // it, so foreign keys mostly run right to left, as in a schema diagram.
 
@@ -16,7 +17,6 @@ export const ROW_HEIGHT = 26;
 const COLUMN_GAP = 128;
 const ROW_GAP = 40;
 const GROUP_GAP = 140;
-const BAND_WIDTH = 2200;
 
 export type Point = { x: number; y: number };
 
@@ -33,6 +33,23 @@ export const columnY = (table: SchemaTable, column: string) => {
 };
 
 export function initialLayout(tables: SchemaTable[]): Record<string, Point> {
+  // Every band width from one column to everything in one row, 200px apart:
+  // keep the layout whose longer side is shortest, i.e. the most square one.
+  let best: Record<string, Point> = {};
+  let bestSide = Infinity;
+  for (let width = NODE_WIDTH; width <= 16000; width += 200) {
+    const positions = layoutInBands(tables, width);
+    const box = bounds(tables, positions);
+    const side = Math.max(box.width, box.height);
+    if (side < bestSide) {
+      best = positions;
+      bestSide = side;
+    }
+  }
+  return best;
+}
+
+function layoutInBands(tables: SchemaTable[], bandWidth: number): Record<string, Point> {
   const byName = new Map(tables.map((table) => [table.name, table]));
   const positions: Record<string, Point> = {};
   let left = 0;
@@ -67,7 +84,7 @@ export function initialLayout(tables: SchemaTable[]): Record<string, Point> {
     const columns: SchemaTable[][] = [];
     for (const table of members) (columns[depth.get(table.name)!] ??= []).push(table);
     const width = columns.length * (NODE_WIDTH + COLUMN_GAP) - COLUMN_GAP;
-    if (left > 0 && left + width > BAND_WIDTH) {
+    if (left > 0 && left + width > bandWidth) {
       left = 0;
       bandTop += bandHeight + GROUP_GAP;
       bandHeight = 0;

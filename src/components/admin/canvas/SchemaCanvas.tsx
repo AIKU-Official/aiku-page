@@ -40,8 +40,8 @@ import { TableNode } from "./TableNode";
 import { TablePeek } from "./TablePeek";
 import { useCanvasView } from "./useCanvasView";
 
-// v3: wider gaps between columns, for the lines that run through them.
-const LAYOUT_KEY = "aiku-admin-layout-v3";
+// v4: the opening layout is now as square as the groups allow.
+const LAYOUT_KEY = "aiku-admin-layout-v4";
 const CLICK_SLOP = 4;
 
 /**

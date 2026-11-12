@@ -117,6 +117,17 @@ describe("routeEdges", () => {
     expect(check(positions).clashes).toEqual([]);
   });
 
+  it("keeps a line's first step free when another line comes the other way on its row", () => {
+    // projects.season_id leaves seasons' row going right, while
+    // project_members.project_id comes left into projects on the same row.
+    const positions: Record<string, Point> = {};
+    schema.forEach((t, i) => (positions[t.name] = { x: 0, y: 4000 + i * 400 }));
+    positions.projects = { x: 0, y: 0 };
+    positions.project_members = { x: NODE_WIDTH + 128, y: 0 };
+    positions.seasons = { x: 3 * (NODE_WIDTH + 128), y: -800 };
+    expect(check(positions).clashes).toEqual([]);
+  });
+
   it("starts and ends each line at its table's edge", () => {
     const positions = initialLayout(schema);
     const route = routeEdges(schema, positions).find((r) => r.id === "members.generation_id")!;
