@@ -29,6 +29,12 @@ const LANES: { kinds: StudioEvent["kind"][]; label: string; tone: string }[] = [
     label: "Events",
     tone: "bg-amber-100 text-amber-800 border-amber-200",
   },
+  {
+    kinds: ["academic", "holiday"],
+    label: "Academic",
+    tone: "bg-danger-soft text-danger border-danger/20",
+  },
+  { kinds: ["notice"], label: "Notice", tone: "bg-surface-soft text-body border-line" },
 ];
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -41,8 +47,15 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
   const [start, setStart] = useState(() => weekStart(today));
   const days = timelineDays(start);
   const end = days.at(-1)!.iso;
-  const shown = events.filter((event) => event.date >= start && event.date <= end);
-  const column = (iso: string) => days.findIndex((day) => day.iso === iso) + 2;
+  // An entry shows when any of its days falls in the four weeks.
+  const shown = events.filter((event) => (event.until ?? event.date) >= start && event.date <= end);
+  // Grid columns of an entry, its days cut to the four weeks shown.
+  const span = (event: StudioEvent) => {
+    const first = event.date < start ? start : event.date;
+    const last = (event.until ?? event.date) > end ? end : (event.until ?? event.date);
+    const from = days.findIndex((day) => day.iso === first) + 2;
+    return `${from} / ${days.findIndex((day) => day.iso === last) + 3}`;
+  };
 
   return (
     <section className="grid gap-4" aria-labelledby="studio-timeline">
@@ -142,9 +155,9 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
                     className={clsx(
                       "z-1 mx-0.5 my-2 flex min-h-8 items-center truncate rounded-md border px-1.5 text-[0.6875rem] font-semibold",
                       lane.tone,
-                      event.date < today && "opacity-50",
+                      (event.until ?? event.date) < today && "opacity-50",
                     )}
-                    style={{ gridRow: row + 2, gridColumn: `${column(event.date)} / span 1` }}
+                    style={{ gridRow: row + 2, gridColumn: span(event) }}
                   >
                     {shortTitle(event.title)}
                   </div>

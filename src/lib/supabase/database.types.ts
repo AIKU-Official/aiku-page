@@ -37,27 +37,33 @@ export type Database = {
       activity_sessions: {
         Row: {
           created_at: string
+          ends_on: string | null
           held_on: string
           id: string
           kind: string
+          notion_page_id: string | null
           season_id: string
           source_key: string | null
           title: string
         }
         Insert: {
           created_at?: string
+          ends_on?: string | null
           held_on: string
           id?: string
           kind: string
+          notion_page_id?: string | null
           season_id: string
           source_key?: string | null
           title: string
         }
         Update: {
           created_at?: string
+          ends_on?: string | null
           held_on?: string
           id?: string
           kind?: string
+          notion_page_id?: string | null
           season_id?: string
           source_key?: string | null
           title?: string

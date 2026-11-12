@@ -2,7 +2,11 @@
 // import from client code.
 
 export type AttendanceStatus = "present" | "excused_late" | "late" | "absent" | "excused_absent";
-export type SessionKind = "deepintodeep" | "seminar" | "momentum" | "event" | "afterparty";
+/** Sessions attendance is taken for. */
+export type AttendanceKind = "deepintodeep" | "seminar" | "momentum" | "event" | "afterparty";
+/** Every kind of entry on AIKU's calendar: the sessions and the rest of the schedule. */
+export type SessionKind =
+  AttendanceKind | "conference" | "exchange" | "academic" | "holiday" | "notice";
 export type SeasonTerm = "winter" | "1" | "summer" | "2";
 
 export const SESSION_KIND_LABELS: Record<SessionKind, string> = {
@@ -11,6 +15,11 @@ export const SESSION_KIND_LABELS: Record<SessionKind, string> = {
   momentum: "모멘텀",
   event: "필수 행사",
   afterparty: "필수 뒤풀이",
+  conference: "컨퍼런스",
+  exchange: "교류",
+  academic: "학사일정",
+  holiday: "공휴일",
+  notice: "공지",
 };
 
 export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {

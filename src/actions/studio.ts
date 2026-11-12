@@ -10,6 +10,8 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 export type StudioEvent = {
   /** ISO date. */
   date: string;
+  /** Last day, for an entry over several days; null for one day. */
+  until: string | null;
   title: string;
   kind: SessionKind | "aikuthon";
 };
@@ -57,8 +59,8 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
       .map((season) => season.id);
 
     const [sessionRows, aikuthonRows, projectCount] = await Promise.all([
-      db.from("activity_sessions").select("title, kind, held_on").in("season_id", ids),
-      db.from("aikuthons").select("name, starts_on").in("season_id", ids),
+      db.from("activity_sessions").select("title, kind, held_on, ends_on").in("season_id", ids),
+      db.from("aikuthons").select("name, starts_on, ends_on").in("season_id", ids),
       db.from("projects").select("id", { count: "exact", head: true }).in("season_id", ids),
     ]);
     // After-parties belong to the Seminar before them; they are not their own event.
@@ -66,14 +68,19 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
     const events: StudioEvent[] = [
       ...sessions.map((row) => ({
         date: row.held_on,
+        until: row.ends_on,
         title: row.title,
         kind: row.kind as SessionKind,
       })),
-      ...(unwrap(aikuthonRows) ?? []).map((row) => ({
-        date: row.starts_on,
-        title: row.name,
-        kind: "aikuthon" as const,
-      })),
+      // An AIKUTHON that attendance was taken for is already a session that day.
+      ...(unwrap(aikuthonRows) ?? [])
+        .filter((row) => !sessions.some((s) => s.kind === "event" && s.held_on === row.starts_on))
+        .map((row) => ({
+          date: row.starts_on,
+          until: row.ends_on && row.ends_on > row.starts_on ? row.ends_on : null,
+          title: row.name,
+          kind: "aikuthon" as const,
+        })),
     ].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, "ko"));
 
     const count = (kind: SessionKind) => sessions.filter((row) => row.kind === kind).length;

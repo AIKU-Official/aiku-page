@@ -6,7 +6,7 @@ import {
   semesterOf,
   type AttendanceStatus,
   type SeasonTerm,
-  type SessionKind,
+  type AttendanceKind,
 } from "@/lib/activity/calendar";
 import { getAdminSession } from "@/lib/auth/session";
 import { signedInMember } from "@/lib/members/signed-in";
@@ -17,7 +17,7 @@ export type ActivitySession = {
   /** ISO date. */
   date: string;
   title: string;
-  kind: SessionKind;
+  kind: AttendanceKind;
   status: AttendanceStatus;
   /** Why an excused late or absence was excused; "" when none was recorded. */
   reason: string;
@@ -58,7 +58,7 @@ export type MyActivity = {
 const RETAKE_THRESHOLD = -5;
 // Order within one day, as the sessions run: lectures, paper reviews, the
 // Seminar, then its after-party.
-const DAY_ORDER: Record<SessionKind, number> = {
+const DAY_ORDER: Record<AttendanceKind, number> = {
   deepintodeep: 0,
   momentum: 1,
   event: 2,
@@ -130,7 +130,7 @@ export async function getActivity(
         .map((mark): ActivitySession => ({
           date: mark.activity_sessions.held_on,
           title: mark.activity_sessions.title,
-          kind: mark.activity_sessions.kind as SessionKind,
+          kind: mark.activity_sessions.kind as AttendanceKind,
           status: mark.status as AttendanceStatus,
           reason: mark.reason,
         }))
