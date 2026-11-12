@@ -28,13 +28,6 @@ function formatRun(event: Aikuthon): string {
     .join(" · ");
 }
 
-/** "2인 1팀", "2~3인 1팀" or "개인전". */
-function formatTeam(size: Aikuthon["teamSize"]): string {
-  if (!size) return "";
-  if (size.max === 1) return "개인전";
-  return size.min === size.max ? `${size.min}인 1팀` : `${size.min}~${size.max}인 1팀`;
-}
-
 /** "2026.08.28 – 08.29", or one date when the event fits in a day. */
 export function formatDates(
   startsOn: string,
@@ -52,20 +45,20 @@ export function formatDates(
 /**
  * One AIKUTHON. Every card has the same parts in the same order: date (and,
  * for a joint event held in an edition's place, which edition it replaced),
- * name, task and its field tags, a fixed list of facts, then the 1st to 3rd
- * places. Facts that were not recorded show a dash rather than disappearing.
+ * name, task and its field tags, the same two facts (진행, 평가) plus 주관
+ * and 후원 when the event had them, then the 1st to 3rd places. A fact that
+ * was not recorded shows a dash rather than disappearing.
  */
 export function AikuthonCard({ event }: { event: Aikuthon }) {
-  const names = (role: "co_host" | "sponsor") =>
+  const partners = (role: "co_host" | "sponsor") =>
     event.partners.filter((partner) => partner.role === role).map((partner) => partner.name).join(", ");
   const facts = [
     { label: "진행", value: formatRun(event) },
-    { label: "장소", value: event.venue },
-    { label: "팀", value: formatTeam(event.teamSize) },
     { label: "평가", value: event.metric },
-    ...(names("co_host") ? [{ label: "공동 주최", value: names("co_host") }] : []),
-    ...(names("sponsor") ? [{ label: "후원", value: names("sponsor") }] : []),
-    ...(event.tracks.length ? [{ label: "트랙", value: event.tracks.join(", ") }] : []),
+    // Only on events run with other societies or companies.
+    // AIKU is named first so a joint event does not read as the partner's alone.
+    ...(partners("co_host") ? [{ label: "주관", value: `AIKU, ${partners("co_host")}` }] : []),
+    ...(partners("sponsor") ? [{ label: "후원", value: partners("sponsor") }] : []),
   ];
   const replaces = event.kind === "joint" && event.edition !== null;
 
