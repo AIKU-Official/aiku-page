@@ -43,13 +43,6 @@ function gridStep(scale: number) {
   return step;
 }
 
-const EDGE_FADE = {
-  maskImage:
-    "linear-gradient(to right, transparent, #000 56px, #000 calc(100% - 56px), transparent), linear-gradient(to bottom, transparent, #000 56px, #000 calc(100% - 56px), transparent)",
-  maskComposite: "intersect",
-  WebkitMaskComposite: "source-in",
-} as const;
-
 type Drag =
   | { kind: "pan"; startX: number; startY: number; viewX: number; viewY: number; moved: boolean }
   | { kind: "node"; name: string; startX: number; startY: number; origin: Point; moved: boolean };
@@ -138,8 +131,22 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
       return;
     }
     drag.current = node
-      ? { kind: "node", name: node, startX: event.clientX, startY: event.clientY, origin: positions[node], moved: false }
-      : { kind: "pan", startX: event.clientX, startY: event.clientY, viewX: viewRef.current.x, viewY: viewRef.current.y, moved: false };
+      ? {
+          kind: "node",
+          name: node,
+          startX: event.clientX,
+          startY: event.clientY,
+          origin: positions[node],
+          moved: false,
+        }
+      : {
+          kind: "pan",
+          startX: event.clientX,
+          startY: event.clientY,
+          viewX: viewRef.current.x,
+          viewY: viewRef.current.y,
+          moved: false,
+        };
   };
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -153,7 +160,8 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
       if (before > 0) zoomAt(after / before, (c.x + d.x) / 2, (c.y + d.y) / 2);
       return;
     }
-    if (points.has(event.pointerId)) points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (points.has(event.pointerId))
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
     const current = drag.current;
     if (!current) return;
     const dx = event.clientX - current.startX;
@@ -241,112 +249,131 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   const openTableSchema = open ? byName.get(open) : undefined;
 
   return (
-    <div className="relative">
-      <div
-        ref={canvas}
-        onPointerDown={(event) => onPointerDown(event)}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        aria-label="DB 스키마 캔버스"
-        className="relative h-[calc(100dvh-var(--header-height)-2rem)] min-h-[32rem] w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing"
-        style={{
-          ...EDGE_FADE,
-          backgroundImage: "radial-gradient(circle, var(--color-line-strong) 1px, transparent 1.4px)",
-          backgroundSize: `${gridStep(view.scale)}px ${gridStep(view.scale)}px`,
-          backgroundPosition: `${view.x}px ${view.y}px`,
-        }}
-      >
+    <section className="site-container py-10 max-sm:py-6">
+      <div className="relative overflow-hidden rounded-[20px] border border-line bg-white">
         <div
-          className="absolute top-0 left-0 origin-top-left"
-          style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
+          ref={canvas}
+          onPointerDown={(event) => onPointerDown(event)}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          aria-label="DB 스키마 캔버스"
+          className="relative h-[calc(100dvh-var(--header-height)-5rem)] min-h-[32rem] w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, var(--color-line-strong) 1px, transparent 1.4px)",
+            backgroundSize: `${gridStep(view.scale)}px ${gridStep(view.scale)}px`,
+            backgroundPosition: `${view.x}px ${view.y}px`,
+          }}
         >
-          <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
-            {edges.map((edge) => {
-              const lit = hovered === edge.source || hovered === edge.target;
-              return (
-                <path
-                  key={edge.id}
-                  d={edge.d}
-                  fill="none"
-                  strokeWidth={lit ? 2 : 1.25}
-                  className={lit ? "stroke-green-500" : "stroke-line-strong"}
-                />
-              );
-            })}
-          </svg>
-          {schema.map((table) =>
-            positions[table.name] ? (
-              <TableNode
-                key={table.name}
-                table={table}
-                position={positions[table.name]}
-                pending={pendingByTable[table.name] ?? 0}
-                highlighted={hovered === table.name || open === table.name}
-                onHover={setHovered}
-                onPointerDown={onPointerDown}
-              />
-            ) : null,
-          )}
-        </div>
-      </div>
-
-      {/* Zoom controls, outside the faded layer so they stay crisp. */}
-      <div className="absolute bottom-6 left-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)] max-sm:bottom-24 max-sm:left-4">
-        {[
-          { label: "확대", icon: <PlusIcon className="size-4" />, onClick: () => zoomBy(1.2) },
-          { label: "축소", icon: <MinusIcon className="size-4" />, onClick: () => zoomBy(1 / 1.2) },
-          { label: "전체 보기", icon: <FitIcon className="size-4" />, onClick: () => fit(bounds(schema, positions)) },
-        ].map((control) => (
-          <button
-            key={control.label}
-            type="button"
-            aria-label={control.label}
-            title={control.label}
-            onClick={control.onClick}
-            className="inline-flex size-9 items-center justify-center text-body transition-colors not-last:border-b not-last:border-soft-line hover:bg-surface-soft hover:text-ink"
+          <div
+            className="absolute top-0 left-0 origin-top-left"
+            style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
           >
-            {control.icon}
-          </button>
-        ))}
-      </div>
+            <svg
+              className="pointer-events-none absolute top-0 left-0 overflow-visible"
+              width="1"
+              height="1"
+              aria-hidden="true"
+            >
+              {edges.map((edge) => {
+                const lit = hovered === edge.source || hovered === edge.target;
+                return (
+                  <path
+                    key={edge.id}
+                    d={edge.d}
+                    fill="none"
+                    strokeWidth={lit ? 2 : 1.25}
+                    className={lit ? "stroke-green-500" : "stroke-line-strong"}
+                  />
+                );
+              })}
+            </svg>
+            {schema.map((table) =>
+              positions[table.name] ? (
+                <TableNode
+                  key={table.name}
+                  table={table}
+                  position={positions[table.name]}
+                  pending={pendingByTable[table.name] ?? 0}
+                  highlighted={hovered === table.name || open === table.name}
+                  onHover={setHovered}
+                  onPointerDown={onPointerDown}
+                />
+              ) : null,
+            )}
+          </div>
+        </div>
 
-      <ChangeToolbar
-        pending={pendingCount}
-        canUndo={history.past.length > 0}
-        canRedo={history.future.length > 0}
-        busy={busy}
-        onUndo={() => setHistory(undo)}
-        onRedo={() => setHistory(redo)}
-        onDiscard={discard}
-        onCommit={commit}
-      />
+        {/* Zoom controls, outside the faded layer so they stay crisp. */}
+        <div className="absolute bottom-6 left-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)] max-sm:bottom-24 max-sm:left-4">
+          {[
+            { label: "확대", icon: <PlusIcon className="size-4" />, onClick: () => zoomBy(1.2) },
+            {
+              label: "축소",
+              icon: <MinusIcon className="size-4" />,
+              onClick: () => zoomBy(1 / 1.2),
+            },
+            {
+              label: "전체 보기",
+              icon: <FitIcon className="size-4" />,
+              onClick: () => fit(bounds(schema, positions)),
+            },
+          ].map((control) => (
+            <button
+              key={control.label}
+              type="button"
+              aria-label={control.label}
+              title={control.label}
+              onClick={control.onClick}
+              className="inline-flex size-9 items-center justify-center text-body transition-colors not-last:border-b not-last:border-soft-line hover:bg-surface-soft hover:text-ink"
+            >
+              {control.icon}
+            </button>
+          ))}
+        </div>
 
-      {notice ? (
-        <p
-          role={notice.tone === "error" ? "alert" : "status"}
-          className={clsx(
-            "absolute top-6 left-1/2 max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 rounded-control px-4 py-2.5 text-small shadow-[0_6px_18px_rgb(29_29_29/0.08)]",
-            notice.tone === "error" ? "bg-danger-soft text-danger" : "bg-surface text-body",
-          )}
-        >
-          {notice.message}
-        </p>
-      ) : null}
-
-      {openTableSchema ? (
-        <TablePeek
-          key={openTableSchema.name}
-          table={openTableSchema}
-          schema={schema}
-          rows={rows[openTableSchema.name]}
-          history={history}
-          onHistory={setHistory}
-          origin={() => canvas.current?.querySelector(`[data-node="${openTableSchema.name}"]`)?.getBoundingClientRect()}
-          onClose={() => setOpen(null)}
+        <ChangeToolbar
+          pending={pendingCount}
+          canUndo={history.past.length > 0}
+          canRedo={history.future.length > 0}
+          busy={busy}
+          onUndo={() => setHistory(undo)}
+          onRedo={() => setHistory(redo)}
+          onDiscard={discard}
+          onCommit={commit}
         />
-      ) : null}
-    </div>
+
+        {notice ? (
+          <p
+            role={notice.tone === "error" ? "alert" : "status"}
+            className={clsx(
+              "absolute top-6 left-1/2 max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 rounded-control px-4 py-2.5 text-small shadow-[0_6px_18px_rgb(29_29_29/0.08)]",
+              notice.tone === "error" ? "bg-danger-soft text-danger" : "bg-surface text-body",
+            )}
+          >
+            {notice.message}
+          </p>
+        ) : null}
+
+        {openTableSchema ? (
+          <TablePeek
+            key={openTableSchema.name}
+            table={openTableSchema}
+            schema={schema}
+            rows={rows[openTableSchema.name]}
+            history={history}
+            onHistory={setHistory}
+            origin={() =>
+              canvas.current
+                ?.querySelector(`[data-node="${openTableSchema.name}"]`)
+                ?.getBoundingClientRect()
+            }
+            onClose={() => setOpen(null)}
+          />
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -378,10 +405,24 @@ function ChangeToolbar({
       aria-label="변경 사항"
       className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-[14px] border border-line bg-surface p-1.5 shadow-[0_10px_30px_rgb(29_29_29/0.12)] max-sm:bottom-4"
     >
-      <button type="button" aria-label="되돌리기" title="되돌리기 (⌘Z)" disabled={!canUndo || busy} onClick={onUndo} className={iconButton}>
+      <button
+        type="button"
+        aria-label="되돌리기"
+        title="되돌리기 (⌘Z)"
+        disabled={!canUndo || busy}
+        onClick={onUndo}
+        className={iconButton}
+      >
         <UndoIcon className="size-[1.125rem]" />
       </button>
-      <button type="button" aria-label="다시 실행" title="다시 실행 (⇧⌘Z)" disabled={!canRedo || busy} onClick={onRedo} className={iconButton}>
+      <button
+        type="button"
+        aria-label="다시 실행"
+        title="다시 실행 (⇧⌘Z)"
+        disabled={!canRedo || busy}
+        onClick={onRedo}
+        className={iconButton}
+      >
         <RedoIcon className="size-[1.125rem]" />
       </button>
       <span className="mx-1 h-6 w-px bg-line" aria-hidden="true" />
@@ -389,7 +430,7 @@ function ChangeToolbar({
         type="button"
         disabled={!pending || busy}
         onClick={onDiscard}
-        className="inline-flex h-10 items-center rounded-control px-3.5 text-small font-semibold text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-35"
+        className="inline-flex h-10 items-center rounded-control px-3.5 text-small font-semibold whitespace-nowrap text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-35"
       >
         취소
       </button>
@@ -397,7 +438,7 @@ function ChangeToolbar({
         type="button"
         disabled={!pending || busy}
         onClick={onCommit}
-        className="inline-flex h-10 items-center gap-2 rounded-control bg-ink px-4 text-small font-semibold text-white transition-colors hover:bg-ink-hover disabled:pointer-events-none disabled:opacity-35"
+        className="inline-flex h-10 items-center gap-2 rounded-control bg-ink px-4 text-small font-semibold whitespace-nowrap text-white transition-colors hover:bg-ink-hover disabled:pointer-events-none disabled:opacity-35"
       >
         {busy ? "반영 중…" : "DB 업데이트"}
         {pending && !busy ? (
