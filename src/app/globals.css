@@ -76,6 +76,13 @@
   --color-violet-100: #eee9fd;
   --color-violet-800: #5a3ea6;
 
+  /* Attendance calendar: attended, excused late, late, absent, excused absence. */
+  --color-attend-present: #1f9d63;
+  --color-attend-excused-late: #9be3bf;
+  --color-attend-late: #f1c84b;
+  --color-attend-absent: #f08a3e;
+  --color-attend-excused: #c9c9c9;
+
   /* Admin error/delete states only (not part of the brand palette). */
   --color-danger: #9d2a2a;
   --color-danger-soft: #fff6f4;

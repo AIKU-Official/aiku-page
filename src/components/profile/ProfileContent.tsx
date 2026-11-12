@@ -11,6 +11,7 @@ import {
   LinkedInIcon,
   MailIcon,
 } from "@/components/ui/icons";
+import { MyActivity } from "@/components/profile/MyActivity";
 import type {
   MemberProfile,
   ProfileAward,
@@ -172,6 +173,8 @@ export function ProfileContent({
             </dl>
           </div>
         ) : null}
+
+        <MyActivity memberId={subject.id} />
       </aside>
 
       <div className="grid content-start gap-14 max-lg:gap-10">

@@ -34,6 +34,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_sessions: {
+        Row: {
+          created_at: string
+          held_on: string
+          id: string
+          kind: string
+          season_id: string
+          source_key: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          held_on: string
+          id?: string
+          kind: string
+          season_id: string
+          source_key?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          held_on?: string
+          id?: string
+          kind?: string
+          season_id?: string
+          source_key?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_sessions_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aikuthon_award_members: {
         Row: {
           award_id: string
@@ -275,6 +313,42 @@ export type Database = {
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance: {
+        Row: {
+          member_id: string
+          reason: string
+          session_id: string
+          status: string
+        }
+        Insert: {
+          member_id: string
+          reason?: string
+          session_id: string
+          status: string
+        }
+        Update: {
+          member_id?: string
+          reason?: string
+          session_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "activity_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -593,6 +667,111 @@ export type Database = {
         }
         Relationships: []
       }
+      point_event_members: {
+        Row: {
+          event_id: string
+          member_id: string
+        }
+        Insert: {
+          event_id: string
+          member_id: string
+        }
+        Update: {
+          event_id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_event_members_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "point_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "point_event_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_events: {
+        Row: {
+          created_at: string
+          held_on: string | null
+          id: string
+          quantity: number
+          rule_code: string
+          season_id: string
+          source_key: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          held_on?: string | null
+          id?: string
+          quantity?: number
+          rule_code: string
+          season_id: string
+          source_key?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          held_on?: string | null
+          id?: string
+          quantity?: number
+          rule_code?: string
+          season_id?: string
+          source_key?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_events_rule_code_fkey"
+            columns: ["rule_code"]
+            isOneToOne: false
+            referencedRelation: "point_rules"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "point_events_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_rules: {
+        Row: {
+          attendance_status: string | null
+          code: string
+          label: string
+          points: number
+          session_kind: string | null
+          sort_order: number
+        }
+        Insert: {
+          attendance_status?: string | null
+          code: string
+          label: string
+          points: number
+          session_kind?: string | null
+          sort_order?: number
+        }
+        Update: {
+          attendance_status?: string | null
+          code?: string
+          label?: string
+          points?: number
+          session_kind?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
       project_members: {
         Row: {
           created_at: string
@@ -780,7 +959,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      member_point_entries: {
+        Row: {
+          held_on: string | null
+          label: string | null
+          member_id: string | null
+          points: number | null
+          season_id: string | null
+          source: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generation_number: { Args: { p_name: string }; Returns: number }

@@ -24,6 +24,7 @@ import {
   isObjectKeyOf,
 } from "@/lib/storage/keys";
 import { formatPositions, POSITION_SELECT } from "@/lib/members/positions";
+import { signedInMember } from "@/lib/members/signed-in";
 import { UPLOAD_BUCKET } from "@/lib/storage/public-url";
 import { removeObjects } from "@/lib/storage/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
@@ -45,20 +46,6 @@ const FAILED: ActionResult<never> = {
   ok: false,
   message: "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요.",
 };
-
-/**
- * The roster member behind an access token. Server Actions are public
- * endpoints, so this lookup is what stops one member from touching another's
- * profile: the member id never comes from the request.
- */
-async function signedInMember(db: Db, accessToken: string): Promise<string | null> {
-  const { data } = await db.auth.getUser(accessToken);
-  if (!data.user) return null;
-  const link = unwrap(
-    await db.from("member_accounts").select("member_id").eq("user_id", data.user.id).maybeSingle(),
-  );
-  return link?.member_id ?? null;
-}
 
 async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
   const row = unwrap(

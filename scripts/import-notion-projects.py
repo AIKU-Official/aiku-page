@@ -94,6 +94,11 @@ def main():
     tag_overrides = {}
     if os.path.exists("data/notion/tag-overrides.json"):
         tag_overrides = json.load(open("data/notion/tag-overrides.json"))
+    # Team members a Notion page left out, recorded elsewhere (e.g. the points
+    # ledger lists every member of a prize-winning team). Keyed by page id.
+    member_overrides = {}
+    if os.path.exists("data/notion/member-overrides.json"):
+        member_overrides = json.load(open("data/notion/member-overrides.json"))
 
     members = call("GET", "/rest/v1/members?select=id,name,generations(name)")
     by_name = {}
@@ -184,7 +189,8 @@ def main():
 
         people = []
         seen = set()
-        for role, raws in (("leader", meta.get("leaders") or []), ("member", meta.get("members") or [])):
+        extra = member_overrides.get(meta["notion_id"], {}).get("members", [])
+        for role, raws in (("leader", meta.get("leaders") or []), ("member", (meta.get("members") or []) + extra)):
             for raw in raws:
                 if not raw or clean_name(raw) in ("AIKU", ""):
                     continue
