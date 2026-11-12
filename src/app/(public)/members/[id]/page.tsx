@@ -36,12 +36,7 @@ export default async function MemberProfilePage({ params }: PageProps<"/members/
         <BackLink fallback={{ href: "/members", label: "Members" }} />
         <div className="mt-6 max-sm:mt-5">
           {result.ok ? (
-            <ProfileContent
-              subject={result.data.subject}
-              profile={result.data.profile}
-              projects={result.data.projects}
-              awards={result.data.awards}
-            />
+            <ProfileContent {...result.data} />
           ) : (
             <PrivateProfile memberId={id} />
           )}

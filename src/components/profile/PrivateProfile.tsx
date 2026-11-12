@@ -16,13 +16,12 @@ export function PrivateProfile({ memberId }: { memberId: string }) {
   const [state] = useSignedInData(account?.admin ? memberId : null, () => getProfileForViewer(memberId));
 
   if (account?.admin && state.status === "ready") {
-    const { subject, profile, projects, awards } = state.data;
     return (
       <>
         <p className="mb-6 rounded-control bg-surface-soft px-4 py-3 text-small text-muted">
           비공개 프로필입니다. 관리자에게만 보입니다.
         </p>
-        <ProfileContent subject={subject} profile={profile} projects={projects} awards={awards} />
+        <ProfileContent {...state.data} />
       </>
     );
   }

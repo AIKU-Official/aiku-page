@@ -142,8 +142,9 @@ def read_talks(blocks, section_track, out):
             elif field == "speakers":
                 talk["speakers"] += split_names(value)
             elif field == "keywords":
-                # A keyword is a few words; a sentence under Topic is a note to the officers.
-                if len(value) > 40:
+                # A keyword is a few words; a sentence under Topic (a question, a
+                # polite Korean ending, or a very long line) is a note, not a keyword.
+                if len(value) > 60 or re.search(r"[?!]|니다|세요|해요|어요", value):
                     report["키워드로 보기엔 긴 Topic 항목 (넣지 않음)"].append(value[:50])
                 elif value.lower() != talk["title"].lower() and value not in talk["keywords"]:
                     talk["keywords"].append(value)

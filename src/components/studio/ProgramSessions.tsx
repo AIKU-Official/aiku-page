@@ -176,12 +176,15 @@ function SessionCard({
         >
           {tracks.map(([key, track]) => (
             <div key={key} className="grid content-start gap-3">
-              <span
-                className="w-fit rounded-full bg-green-100 px-2.5 py-0.5 text-label font-semibold text-green-800"
-                title={track?.name}
-              >
-                {track?.label ?? "트랙 없음"}
-              </span>
+              {/* Talks without a track (seasons before tracks began) get no label. */}
+              {track ? (
+                <span
+                  className="w-fit rounded-full bg-green-100 px-2.5 py-0.5 text-label font-semibold text-green-800"
+                  title={track.name}
+                >
+                  {track.label}
+                </span>
+              ) : null}
               <TalkList talks={session.talks.filter((talk) => (talk.track?.label ?? "") === key)} />
             </div>
           ))}

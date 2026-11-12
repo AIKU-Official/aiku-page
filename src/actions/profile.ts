@@ -13,6 +13,7 @@ import {
   MAX_AVATAR_BYTES,
   type MemberProfile,
   type ProfileAward,
+  type ProfileLecture,
   type ProfileProject,
   type ProfileSubject,
 } from "@/lib/members/profile";
@@ -29,6 +30,7 @@ import { signedInMember } from "@/lib/members/signed-in";
 import { UPLOAD_BUCKET } from "@/lib/storage/public-url";
 import { removeObjects } from "@/lib/storage/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { PROGRAMS, sessionNumber } from "@/lib/studio/programs";
 import { MEMBER_GRADES, type MemberGrade } from "@/lib/types";
 import { avatarUploadSchema, idSchema, profileSchema } from "@/lib/validators";
 import { type Rank, isRank, toRank } from "@/lib/ranks";
@@ -40,6 +42,8 @@ export type ProfilePage = {
   projects: ProfileProject[];
   /** Filled from the AIKUTHON award records, newest first. */
   awards: ProfileAward[];
+  /** Filled from the DeepIntoDeep lectures the member gave, newest first. */
+  lectures: ProfileLecture[];
 };
 
 type Db = ReturnType<typeof createAdminClient>;
@@ -103,9 +107,29 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
       }),
     );
 
+  const lectured = unwrap(
+    await db
+      .from("session_talk_speakers")
+      .select("session_talks(title, activity_sessions(title, kind, held_on, seasons(name)))")
+      .eq("member_id", memberId),
+  );
+  const lectures = (lectured ?? [])
+    .map((entry) => entry.session_talks)
+    .filter((talk) => talk.activity_sessions.kind === PROGRAMS.deepintodeep.kind)
+    .sort((a, b) => b.activity_sessions.held_on.localeCompare(a.activity_sessions.held_on))
+    .map(
+      (talk): ProfileLecture => ({
+        season: talk.activity_sessions.seasons.name,
+        number: sessionNumber(talk.activity_sessions.title),
+        topic: talk.title,
+        date: talk.activity_sessions.held_on,
+      }),
+    );
+
   return {
     projects,
     awards,
+    lectures,
     subject: {
       id: row.id,
       name: row.name,

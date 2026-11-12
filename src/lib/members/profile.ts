@@ -59,6 +59,17 @@ export type ProfileAward = {
   teamName: string;
 };
 
+/** A DeepIntoDeep lecture the member gave; comes from the session talk records. */
+export type ProfileLecture = {
+  /** The season's stored name, "26-여름". */
+  season: string;
+  /** "5회". */
+  number: string;
+  topic: string;
+  /** ISO date of the session; with season it links to the session's card. */
+  date: string;
+};
+
 export const emptyProfile: MemberProfile = {
   isPublic: false,
   headline: "",

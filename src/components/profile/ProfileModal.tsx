@@ -62,12 +62,7 @@ export function ProfileModal({
       ) : null}
       <div {...(face ? { "data-peek-panel-only": "" } : {})}>
         {state.status === "ready" ? (
-          <ProfileContent
-            subject={state.page.subject}
-            profile={state.page.profile}
-            projects={state.page.projects}
-            awards={state.page.awards}
-          />
+          <ProfileContent {...state.page} />
         ) : (
           <p role="status" className="py-16 text-center text-muted">
             {state.status === "loading" ? "프로필을 불러오는 중입니다…" : state.message}
