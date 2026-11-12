@@ -2,11 +2,12 @@
 
 import clsx from "clsx";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { getProgramSessions, type ProgramSession } from "@/actions/studio";
 import { formatDay } from "@/lib/activity/calendar";
 import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
-import { todayInKorea } from "@/lib/studio/timeline";
+import { sessionAnchor, todayInKorea } from "@/lib/studio/timeline";
 
 import { StudioGate } from "./StudioGate";
 
@@ -35,6 +36,19 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
   const selected = wanted && semesters.includes(wanted) ? wanted : null;
   const shown = selected ? [selected] : semesters;
   const now = todayInKorea();
+  // Opened from the calendar at one session (#session-<date>): bring it into
+  // view and mark it for a moment. Runs once the sessions are on the page.
+  const [marked, setMarked] = useState<string | null>(null);
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const row = id ? document.getElementById(id) : null;
+    if (!row) return;
+    row.scrollIntoView({ block: "center" });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the hash is only known in the browser
+    setMarked(id);
+    const timer = window.setTimeout(() => setMarked(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const choose = (semester: string | null) =>
     router.replace(semester ? programHref(slug, semester) : pathname, { scroll: false });
@@ -82,7 +96,10 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
               {rows.map((session) => (
                 <li
                   key={`${session.date}-${session.title}`}
+                  id={sessionAnchor(session.date)}
                   className={clsx(
+                    "transition-colors duration-700",
+                    marked === sessionAnchor(session.date) && "bg-green-100",
                     "grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-4 px-5 py-3.5 max-sm:grid-cols-1 max-sm:gap-0.5 max-sm:px-4",
                     session.date > now && "text-muted",
                   )}

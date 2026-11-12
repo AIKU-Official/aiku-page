@@ -66,7 +66,7 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
 
   return (
     <div className="grid gap-12 max-sm:gap-9">
-      <StudioTimeline events={events} today={today} />
+      <StudioTimeline events={events} today={today} semester={semester} />
 
       <section className="grid gap-4" aria-labelledby="studio-semester">
         <h2 id="studio-semester" className="text-[1.25rem] font-bold text-ink">
@@ -82,7 +82,9 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
                   card.card,
                 )}
               >
-                <span className={clsx("flex items-center gap-2 text-small font-bold", card.text)}>
+                <span
+                  className={clsx("flex items-center gap-2 text-[1.0625rem] font-bold", card.text)}
+                >
                   {card.label}
                   <ArrowRightIcon className="ml-auto size-4 opacity-60 transition-transform group-hover:translate-x-0.5" />
                 </span>

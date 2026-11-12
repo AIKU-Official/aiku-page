@@ -45,3 +45,6 @@ export function rangeLabel(start: string, count = TIMELINE_DAYS): string {
 /** Today in Korea as "2026-11-13", the same on every device. */
 export const todayInKorea = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+
+/** The id of a session's row on its program page, "session-2026-11-19", for direct links. */
+export const sessionAnchor = (iso: string) => `session-${iso}`;

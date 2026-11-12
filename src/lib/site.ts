@@ -17,7 +17,10 @@ export type NavItem = {
   alsoActiveOn?: string[];
   /** Current only on this exact path, not on the pages under it. */
   exact?: boolean;
-  /** A program's colour scope (globals.css): its selected state takes that colour. */
+  /**
+   * A program's colour scope (globals.css): its selected state takes that
+   * colour ("" for Seminar, the AIKU green). Other items select in grey.
+   */
   accent?: string;
 };
 

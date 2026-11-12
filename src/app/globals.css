@@ -428,13 +428,13 @@
   --color-green-900: #17456f;
 }
 
-/* A page hero tinted with the accent in scope, its faint wordmark white. */
+/* A page hero in a light flat tint of the accent in scope, its faint wordmark white. */
 @utility page-hero-accent {
-  background-image: linear-gradient(to bottom, var(--color-green-50), var(--color-green-200));
+  background-color: color-mix(in srgb, var(--color-green-100) 60%, white);
 
   &::after {
     background: url("/assets/aiku-logo-white.png") center / contain no-repeat;
-    opacity: 0.55;
+    opacity: 0.9;
   }
 }
 

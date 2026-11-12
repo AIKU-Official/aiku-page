@@ -66,9 +66,15 @@ export function SiteHeader() {
         closeNav();
       }}
       className={clsx(
-        "inline-flex h-9 items-center rounded-full px-3.5 font-medium transition-[background-color,color] hover:bg-surface-soft hover:text-ink aria-[current=page]:bg-green-100 aria-[current=page]:font-semibold aria-[current=page]:text-green-800 max-lg:h-12 max-lg:rounded-control max-lg:px-3 max-lg:text-[1.0625rem]",
+        "inline-flex h-9 items-center rounded-full px-3.5 font-medium transition-[background-color,color] hover:bg-surface-soft hover:text-ink aria-[current=page]:font-semibold max-lg:h-12 max-lg:rounded-control max-lg:px-3 max-lg:text-[1.0625rem]",
         item.utility ? "text-small text-muted" : "text-[0.9375rem] text-body",
-        item.accent,
+        // Selected: neutral grey, except a program's own item, which takes its colour.
+        item.accent === undefined
+          ? "aria-[current=page]:bg-surface-soft aria-[current=page]:text-ink"
+          : clsx(
+              item.accent,
+              "aria-[current=page]:bg-green-100 aria-[current=page]:text-green-800",
+            ),
       )}
     >
       {item.label}
