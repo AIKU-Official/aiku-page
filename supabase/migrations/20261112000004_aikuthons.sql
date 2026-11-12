@@ -18,6 +18,9 @@ create table public.aikuthons (
   -- Full name as announced, e.g. "제1회 AIKUTHON", "AIKU X YBIGTA 연합 데이터톤".
   name text not null constraint aikuthons_name_present check (btrim(name) <> ''),
   starts_on date not null,
+  -- 'month' when only the month is known: starts_on is then the 1st and is shown as "2026.05".
+  date_precision text not null default 'day'
+    constraint aikuthons_date_precision_valid check (date_precision in ('day', 'month')),
   ends_on date,
   venue text not null default '',
   -- Short facts shown as tags, e.g. {"무박 2일", "2인 1팀", "Kaggle"}.

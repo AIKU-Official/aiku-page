@@ -106,6 +106,8 @@ export type Aikuthon = {
   name: string;
   /** ISO dates. */
   startsOn: string;
+  /** "month" when only the month is known. */
+  datePrecision: "day" | "month";
   endsOn: string | null;
   venue: string;
   format: string[];

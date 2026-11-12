@@ -126,6 +126,7 @@ export const mapAikuthon = (row: AikuthonRow): Aikuthon => ({
   kind: row.kind === "joint" ? "joint" : "edition",
   name: row.name,
   startsOn: row.starts_on,
+  datePrecision: row.date_precision === "month" ? "month" : "day",
   endsOn: row.ends_on,
   venue: row.venue,
   format: row.format,

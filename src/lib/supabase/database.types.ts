@@ -106,6 +106,7 @@ export type Database = {
         Row: {
           competition_url: string | null;
           created_at: string;
+          date_precision: string;
           edition: number | null;
           ends_on: string | null;
           format: string[];
@@ -125,6 +126,7 @@ export type Database = {
         Insert: {
           competition_url?: string | null;
           created_at?: string;
+          date_precision?: string;
           edition?: number | null;
           ends_on?: string | null;
           format?: string[];
@@ -144,6 +146,7 @@ export type Database = {
         Update: {
           competition_url?: string | null;
           created_at?: string;
+          date_precision?: string;
           edition?: number | null;
           ends_on?: string | null;
           format?: string[];

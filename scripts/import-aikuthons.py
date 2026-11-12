@@ -37,7 +37,7 @@ for m in call("GET", "/rest/v1/members?select=id,name"):
 unmatched, linked = set(), 0
 
 for event in events:
-    row = {k: event[k] for k in ("edition", "kind", "name", "starts_on", "ends_on", "venue", "format", "partners",
+    row = {k: event[k] for k in ("edition", "kind", "name", "starts_on", "date_precision", "ends_on", "venue", "format", "partners",
                                  "task_title", "task_description", "metric", "participants", "competition_url")}
     row["source_key"] = event["key"]
     awards = []

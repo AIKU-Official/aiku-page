@@ -16,8 +16,13 @@ const RANK_TONES = {
 } as const;
 
 /** "2026.08.28 – 08.29", or one date when the event fits in a day. */
-export function formatDates(startsOn: string, endsOn: string | null): string {
+export function formatDates(
+  startsOn: string,
+  endsOn: string | null,
+  precision: "day" | "month" = "day",
+): string {
   const [y, m, d] = startsOn.split("-");
+  if (precision === "month") return `${y}.${m}`;
   const start = `${y}.${m}.${d}`;
   if (!endsOn || endsOn === startsOn) return start;
   const [y2, m2, d2] = endsOn.split("-");
@@ -37,7 +42,9 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-            <Eyebrow spacing="none">{formatDates(event.startsOn, event.endsOn)}</Eyebrow>
+            <Eyebrow spacing="none">
+              {formatDates(event.startsOn, event.endsOn, event.datePrecision)}
+            </Eyebrow>
             {event.kind === "joint" ? (
               <span className={clsx(pill, "bg-surface-soft text-body")}>연합 데이터톤</span>
             ) : null}
