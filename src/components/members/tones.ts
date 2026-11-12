@@ -28,3 +28,14 @@ export function positionToneClassName(position: string): string {
   if (position.includes("회장")) return "bg-amber-100 text-amber-800";
   return "bg-violet-100 text-violet-800";
 }
+
+/** A faint diagonal wash for the cards of officers, like the one on prize-winning projects. */
+export function positionCardClassName(position: string): string | null {
+  if (position.includes("부회장")) {
+    return "border-silver-800/10 bg-linear-to-bl from-silver-100/55 to-white to-70%";
+  }
+  if (position.includes("회장")) {
+    return "border-amber-800/10 bg-linear-to-bl from-amber-100/45 to-white to-70%";
+  }
+  return null;
+}
