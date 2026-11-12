@@ -39,7 +39,9 @@ export function TableNode({
       style={{ left: position.x, top: position.y, width: NODE_WIDTH }}
       className={clsx(
         "absolute cursor-pointer touch-none overflow-hidden rounded-[12px] border bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.07)] transition-[border-color,box-shadow] select-none",
-        highlighted ? "border-green-400 shadow-[0_8px_26px_rgb(31_157_99/0.18)]" : "border-line hover:border-line-strong",
+        highlighted
+          ? "border-green-400 shadow-[0_8px_26px_rgb(31_157_99/0.18)]"
+          : "border-line hover:border-line-strong",
       )}
     >
       <header
@@ -49,7 +51,9 @@ export function TableNode({
         <div className="min-w-0">
           <p className="truncate font-mono text-[0.8125rem] font-semibold text-ink">{table.name}</p>
           <p className="truncate text-label text-muted">
-            <span className={clsx("mr-1.5 rounded-full px-1.5 py-px", group.tone)}>{group.label}</span>
+            <span className={clsx("mr-1.5 rounded-full px-1.5 py-px", group.tone)}>
+              {group.label}
+            </span>
             {tableCaption(table.name)}
           </p>
         </div>
@@ -78,7 +82,12 @@ export function TableNode({
                 <LinkIcon className="size-3.5 text-green-700" />
               ) : null}
             </span>
-            <span className={clsx("min-w-0 flex-1 truncate", column.required ? "text-ink" : "text-body")}>
+            <span
+              className={clsx(
+                "min-w-0 flex-1 truncate",
+                column.required ? "text-ink" : "text-body",
+              )}
+            >
               {column.name}
             </span>
             <span className="max-w-24 shrink-0 truncate text-muted">{column.format}</span>

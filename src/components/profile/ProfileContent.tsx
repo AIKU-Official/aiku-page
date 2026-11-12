@@ -11,9 +11,8 @@ import {
   LinkedInIcon,
   MailIcon,
 } from "@/components/ui/icons";
+import { LectureList } from "@/components/profile/LectureList";
 import { MyActivity } from "@/components/profile/MyActivity";
-import { programHref } from "@/lib/studio/programs";
-import { sessionAnchor } from "@/lib/studio/timeline";
 import type {
   MemberProfile,
   ProfileAward,
@@ -223,7 +222,9 @@ export function ProfileContent({
                         {project.title}
                       </span>
                       {project.oneLine ? (
-                        <span className="mt-0.5 block text-small text-muted">{project.oneLine}</span>
+                        <span className="mt-0.5 block text-small text-muted">
+                          {project.oneLine}
+                        </span>
                       ) : null}
                     </span>
                     {project.awardRank ? <RankPill rank={project.awardRank} /> : null}
@@ -267,26 +268,7 @@ export function ProfileContent({
 
         {lectures.length ? (
           <MainSection title="DeepIntoDeep">
-            <ul className="divide-y divide-soft-line border-y border-soft-line">
-              {lectures.map((lecture) => (
-                <li key={`${lecture.season}-${lecture.number}`}>
-                  <Link
-                    href={`${programHref("deepintodeep", lecture.season)}#${sessionAnchor(lecture.date)}`}
-                    className="group flex flex-wrap items-baseline gap-x-3 gap-y-1 py-4"
-                  >
-                    <span className="w-16 shrink-0 text-small text-muted tabular-nums">
-                      {lecture.season}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-semibold text-ink underline-offset-4 group-hover:underline">
-                        {lecture.topic}
-                      </span>
-                      <span className="mt-0.5 block text-small text-muted">{lecture.number} 강의</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <LectureList lectures={lectures} />
           </MainSection>
         ) : null}
 

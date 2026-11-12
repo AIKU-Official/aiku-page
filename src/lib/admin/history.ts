@@ -26,7 +26,7 @@ export type Batch = {
 export const OP_WORDS = { insert: "추가", update: "수정", delete: "삭제" } as const;
 
 /** "projects 삭제 1 · project_tags 삭제 3", in the order they happened. */
-export function summarize(entries: LogEntry[]): string {
+export function summarize(entries: Pick<LogEntry, "table_name" | "op">[]): string {
   const counts = new Map<string, number>();
   for (const entry of entries) {
     const label = `${entry.table_name} ${OP_WORDS[entry.op]}`;

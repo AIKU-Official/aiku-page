@@ -149,11 +149,7 @@ function AttendanceCalendar({ sessions }: { sessions: ActivitySession[] }) {
         ))}
       </ul>
       {point && shown !== null ? (
-        <CursorTip
-          point={point}
-          role="tooltip"
-          className="grid max-w-64 gap-1 rounded-control border border-line bg-surface px-3 py-2.5 text-small shadow-lg"
-        >
+        <CursorTip point={point} role="tooltip" className="grid max-w-64 gap-1 text-small">
           <SessionDetail session={sessions[shown]} />
         </CursorTip>
       ) : null}

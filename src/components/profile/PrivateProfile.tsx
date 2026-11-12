@@ -13,7 +13,9 @@ import { ProfileContent } from "./ProfileContent";
  */
 export function PrivateProfile({ memberId }: { memberId: string }) {
   const account = useMemberAccount();
-  const [state] = useSignedInData(account?.admin ? memberId : null, () => getProfileForViewer(memberId));
+  const [state] = useSignedInData(account?.admin ? memberId : null, () =>
+    getProfileForViewer(memberId),
+  );
 
   if (account?.admin && state.status === "ready") {
     return (
@@ -26,7 +28,11 @@ export function PrivateProfile({ memberId }: { memberId: string }) {
     );
   }
   if (account?.admin && state.status === "loading") {
-    return <p role="status" className="py-16 text-center text-muted">프로필을 불러오는 중입니다.</p>;
+    return (
+      <p role="status" className="py-16 text-center text-muted">
+        프로필을 불러오는 중입니다.
+      </p>
+    );
   }
   return <p className="py-16 text-center text-muted">공개된 프로필이 없습니다.</p>;
 }

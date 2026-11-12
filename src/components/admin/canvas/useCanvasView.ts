@@ -44,7 +44,11 @@ export function useCanvasView(container: RefObject<HTMLElement | null>) {
       if (event.ctrlKey || event.metaKey) {
         zoomAt(Math.exp(-event.deltaY * 0.01), event.clientX, event.clientY);
       } else {
-        setView((current) => ({ ...current, x: current.x - event.deltaX, y: current.y - event.deltaY }));
+        setView((current) => ({
+          ...current,
+          x: current.x - event.deltaX,
+          y: current.y - event.deltaY,
+        }));
       }
     };
     element.addEventListener("wheel", onWheel, { passive: false });
@@ -62,7 +66,10 @@ export function useCanvasView(container: RefObject<HTMLElement | null>) {
    * With `minScale`, a box too big to read whole is shown from its top-left
    * corner at that scale instead.
    */
-  const fit = (box: { x: number; y: number; width: number; height: number }, minScale = MIN_SCALE) => {
+  const fit = (
+    box: { x: number; y: number; width: number; height: number },
+    minScale = MIN_SCALE,
+  ) => {
     const element = container.current;
     if (!element) return;
     const padding = 72;
@@ -74,7 +81,11 @@ export function useCanvasView(container: RefObject<HTMLElement | null>) {
       ),
     );
     if (scale < minScale) {
-      setView({ scale: minScale, x: padding / 2 - box.x * minScale, y: padding / 2 - box.y * minScale });
+      setView({
+        scale: minScale,
+        x: padding / 2 - box.x * minScale,
+        y: padding / 2 - box.y * minScale,
+      });
       return;
     }
     setView({

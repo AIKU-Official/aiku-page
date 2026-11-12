@@ -2,13 +2,15 @@
 
 import clsx from "clsx";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import { getProgramSessions, type ProgramSession, type ProgramTalk } from "@/actions/studio";
 import { PersonName } from "@/components/projects/PersonName";
+import { EmptyNotice } from "@/components/ui/EmptyNotice";
+import { Pill } from "@/components/ui/Pill";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
-import { parseSeasonName, seasonName } from "@/lib/seasons/name";
+import { newestFirst, parseSeasonName, seasonName } from "@/lib/seasons/name";
 import { programHref, type ProgramSlug } from "@/lib/studio/programs";
 import { sessionAnchor, todayInKorea } from "@/lib/studio/timeline";
 
@@ -43,8 +45,17 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
   const wanted = params.get("season");
   const parsed = wanted ? parseSeasonName(wanted) : null;
   const wantedName = parsed ? seasonName(parsed.year, parsed.term) : null;
-  // One season at a time: the one asked for, else the program's newest.
-  const season = wantedName && seasons.includes(wantedName) ? wantedName : seasons[0];
+  // One season at a time: the one asked for (even with nothing in it yet, so
+  // the address and the heading agree), else the program's newest.
+  if (wantedName && !seasons.includes(wantedName) && parsed) {
+    seasons.push(wantedName);
+    seasons.sort((a, b) => {
+      const x = parseSeasonName(a)!;
+      const y = parseSeasonName(b)!;
+      return newestFirst(x, y);
+    });
+  }
+  const season = wantedName && parsed ? wantedName : seasons[0];
   const at = seasons.indexOf(season);
   const older = seasons[at + 1];
   const newer = seasons[at - 1];
@@ -65,14 +76,21 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
 
   const choose = (name: string) => router.replace(programHref(slug, name), { scroll: false });
 
-  if (!sessions.length) {
-    return <p className="text-muted">아직 등록된 일정이 없습니다.</p>;
+  if (!season) {
+    return <EmptyNotice>아직 등록된 일정이 없습니다.</EmptyNotice>;
   }
 
   return (
     <div className="grid gap-8">
       {[season].map((season) => {
         const rows = sessions.filter((session) => session.season === season);
+        // Momentum's tracks in one order for the whole season, so CV, NLP and RL
+        // keep their columns from session to session.
+        const tracks = [
+          ...new Map(
+            rows.flatMap((row) => row.talks).map((talk) => [talk.track?.label ?? "", talk.track]),
+          ).entries(),
+        ].sort(([a], [b]) => (a === "" ? 1 : b === "" ? -1 : a.localeCompare(b)));
         return (
           <section key={season} className="grid gap-3" aria-label={season}>
             {/* The season's name between arrows in the program's colour (the page's
@@ -97,6 +115,9 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
                 />
               }
             />
+            {rows.length === 0 ? (
+              <EmptyNotice>이 시즌에는 아직 일정이 없습니다.</EmptyNotice>
+            ) : null}
             {/* Cards as in a gallery: a Momentum session is wide, one column per track. */}
             <ol
               className={clsx(
@@ -111,6 +132,7 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
                   key={`${session.date}-${session.title}`}
                   slug={slug}
                   session={session}
+                  tracks={tracks}
                   now={now}
                   marked={marked === sessionAnchor(session.date)}
                 />
@@ -132,35 +154,42 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
 function SessionCard({
   slug,
   session,
+  tracks,
   now,
   marked,
 }: {
   slug: ProgramSlug;
   session: ProgramSession;
+  /** The season's tracks in their fixed order (Momentum). */
+  tracks: [string, ProgramTalk["track"]][];
   now: string;
   marked: boolean;
 }) {
   const upcoming = session.date > now;
-  const tracks = [
-    ...new Map(session.talks.map((talk) => [talk.track?.label ?? "", talk.track])).entries(),
+  // The season's tracks, plus a column for this session's talks without one.
+  const columns = [
+    ...tracks.filter(([key]) => key !== ""),
+    ...(session.talks.some((talk) => !talk.track) ? [["", null] as [string, null]] : []),
   ];
 
   return (
     <li
       id={sessionAnchor(session.date)}
       className={clsx(
-        "grid content-start gap-4 rounded-[20px] border bg-surface p-5 transition-[background-color,border-color] duration-700 max-sm:p-4",
+        "grid content-start gap-4 rounded-card border bg-surface p-5 transition-[background-color,border-color] duration-700 max-sm:p-4",
         marked ? "border-green-400 bg-green-50" : "border-line",
       )}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[1.375rem] font-bold text-ink tabular-nums">
+        <span className="text-subheading font-bold text-ink tabular-nums">
           {session.number ? `${session.number}회` : session.title}
         </span>
         <span className={clsx("text-small tabular-nums", upcoming ? "text-muted" : "text-body")}>
           {formatDay(session.date)}
           {session.date === now ? (
-            <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-label text-white">오늘</span>
+            <Pill tone="bg-ink text-white" className="ml-2">
+              오늘
+            </Pill>
           ) : null}
         </span>
       </div>
@@ -169,25 +198,32 @@ function SessionCard({
         <p className="text-small text-muted">
           {upcoming ? "아직 발표가 정해지지 않았습니다." : "발표 기록이 없습니다."}
         </p>
-      ) : slug === "momentum" ? (
+      ) : slug === "momentum" && session.talks.some((talk) => talk.track) ? (
+        // One column per track of the season, in the season's order, side by
+        // side; stacked on narrower screens (an inline grid template would
+        // override the stacking class, so a variable). Talks this session left
+        // without a track get a last, unlabelled column; an empty track keeps
+        // its place without a label.
         <div
-          className="grid gap-5 max-lg:grid-cols-1"
-          style={{ gridTemplateColumns: `repeat(${tracks.length}, minmax(0, 1fr))` }}
+          className="grid grid-cols-[repeat(var(--tracks),minmax(0,1fr))] gap-5 max-lg:grid-cols-1"
+          style={{ "--tracks": columns.length } as CSSProperties}
         >
-          {tracks.map(([key, track]) => (
-            <div key={key} className="grid content-start gap-3">
-              {/* Talks without a track (seasons before tracks began) get no label. */}
-              {track ? (
-                <span
-                  className="w-fit rounded-full bg-green-100 px-2.5 py-0.5 text-label font-semibold text-green-800"
-                  title={track.name}
-                >
-                  {track.label}
-                </span>
-              ) : null}
-              <TalkList talks={session.talks.filter((talk) => (talk.track?.label ?? "") === key)} />
-            </div>
-          ))}
+          {columns.map(([key, track]) => {
+            const talks = session.talks.filter((talk) => (talk.track?.label ?? "") === key);
+            return (
+              <div
+                key={key}
+                className={clsx("grid content-start gap-3", !talks.length && "max-lg:hidden")}
+              >
+                {track && talks.length ? (
+                  <Pill tone="bg-green-100 text-green-800" className="w-fit font-semibold">
+                    <span title={track.name}>{track.label}</span>
+                  </Pill>
+                ) : null}
+                <TalkList talks={talks} />
+              </div>
+            );
+          })}
         </div>
       ) : (
         <TalkList talks={session.talks} lecture={slug === "deepintodeep"} />
@@ -217,7 +253,7 @@ function TalkList({ talks, lecture = false }: { talks: ProgramTalk[]; lecture?: 
             {lecture ? (
               // A lecture: its topic, then who gave it.
               <>
-                <p className="text-[1.0625rem] leading-snug font-semibold text-ink">{title}</p>
+                <p className="text-subheading leading-snug font-semibold text-ink">{title}</p>
                 {speakers ? <p className="text-small text-muted">강의자 · {speakers}</p> : null}
               </>
             ) : (
@@ -230,12 +266,7 @@ function TalkList({ talks, lecture = false }: { talks: ProgramTalk[]; lecture?: 
             {talk.keywords.length ? (
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {talk.keywords.map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="rounded-full bg-surface-soft px-2 py-0.5 text-label text-body"
-                  >
-                    {keyword}
-                  </span>
+                  <Pill key={keyword}>{keyword}</Pill>
                 ))}
               </div>
             ) : null}

@@ -29,7 +29,8 @@ export function useCursorPoint() {
 }
 
 /**
- * A small box beside the cursor (hover cards, attendance details). Rendered at
+ * A small box beside the cursor (hover cards, attendance details), with one
+ * surface for all of them: a card with the raised shadow. Callers set layout. Rendered at
  * the end of <body>, so a transformed ancestor such as an open centre peek
  * cannot move it, and kept inside the window: it flips to the left of the
  * cursor near the right edge and above it near the bottom.
@@ -71,7 +72,7 @@ export function CursorTip({
       role={role}
       aria-hidden={role ? undefined : true}
       style={position}
-      className={clsx("pointer-events-none fixed z-[60]", className)}
+      className={clsx("pointer-events-none fixed z-[60] card px-4 py-3.5 shadow-raised", className)}
     >
       {children}
     </div>,

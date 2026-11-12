@@ -74,7 +74,7 @@ function Dashboard({ data }: { data: StudioHomeData }) {
 
       <section className="grid gap-4" aria-labelledby="studio-season">
         <h2 id="studio-season" className="text-heading text-ink">
-          {season} 시즌
+          {season}
         </h2>
         <ul className="grid grid-cols-4 gap-3 max-lg:grid-cols-2">
           {cards.map((card) => (
@@ -82,12 +82,12 @@ function Dashboard({ data }: { data: StudioHomeData }) {
               <Link
                 href={card.href}
                 className={clsx(
-                  "group grid gap-3 rounded-[20px] border p-5 transition-[border-color,box-shadow] hover:shadow-[0_8px_24px_rgb(29_29_29/0.06)] max-sm:p-4",
+                  "group grid gap-3 rounded-card border p-5 transition-[border-color,box-shadow] hover:shadow-raised max-sm:p-4",
                   card.card,
                 )}
               >
                 <span
-                  className={clsx("flex items-center gap-2 text-[1.0625rem] font-bold", card.text)}
+                  className={clsx("flex items-center gap-2 text-subheading font-bold", card.text)}
                 >
                   {card.label}
                   <ArrowRightIcon className="ml-auto size-4 opacity-60 transition-transform group-hover:translate-x-0.5" />

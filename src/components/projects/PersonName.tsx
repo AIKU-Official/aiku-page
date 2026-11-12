@@ -68,7 +68,7 @@ export function PersonName({ person }: { person: ProjectPerson }) {
       {point ? (
             <CursorTip
               point={point}
-              className="flex w-[270px] items-center gap-3 card px-4 py-3.5 shadow-[0_12px_32px_rgb(29_29_29/0.14)]"
+              className="flex w-[270px] items-center gap-3"
             >
               <Avatar
                 name={member.name}

@@ -37,7 +37,12 @@ function parseField(column: SchemaColumn, text: string): Json {
         throw new Error(`${column.name}: JSON 형식이 올바르지 않습니다.`);
       }
     case "array":
-      return blank ? [] : text.split(",").map((item) => item.trim()).filter(Boolean);
+      return blank
+        ? []
+        : text
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
     case "text":
       return text;
     default:
@@ -75,7 +80,9 @@ export function RowEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<Record<string, string>>(() =>
-    Object.fromEntries(table.columns.map((column) => [column.name, toText(column, entry.row[column.name])])),
+    Object.fromEntries(
+      table.columns.map((column) => [column.name, toText(column, entry.row[column.name])]),
+    ),
   );
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -91,7 +98,8 @@ export function RowEditor({
         const before = entry.row[column.name];
         const unchanged = JSON.stringify(value ?? null) === JSON.stringify(before ?? null);
         // New rows leave untouched blank columns to their defaults.
-        if (unchanged || (isNew && before === undefined && (value === null || value === ""))) continue;
+        if (unchanged || (isNew && before === undefined && (value === null || value === "")))
+          continue;
         patch[column.name] = value;
       }
       setError(null);
@@ -111,10 +119,17 @@ export function RowEditor({
     }
     setUploading(column.name);
     try {
-      const paths = await uploadFiles(rule.scope, entityId, [...files].map((file) => ({ file, kind: rule.kind })), () => {});
+      const paths = await uploadFiles(
+        rule.scope,
+        entityId,
+        [...files].map((file) => ({ file, kind: rule.kind })),
+        () => {},
+      );
       setDraft((current) => ({
         ...current,
-        [column.name]: rule.many ? [current[column.name], ...paths].filter(Boolean).join(", ") : paths[0],
+        [column.name]: rule.many
+          ? [current[column.name], ...paths].filter(Boolean).join(", ")
+          : paths[0],
       }));
       setError(null);
     } catch (problem) {
@@ -130,13 +145,18 @@ export function RowEditor({
         <p className="text-small font-semibold text-ink">
           {isNew ? "새 행" : deleted ? "삭제 예정인 행" : "행 편집"}
         </p>
-        <button type="button" aria-label="편집 닫기" onClick={onClose} className="inline-flex size-8 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-ink">
+        <button
+          type="button"
+          aria-label="편집 닫기"
+          onClick={onClose}
+          className="inline-flex size-8 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-ink"
+        >
           <CloseIcon className="size-4" />
         </button>
       </header>
       {deleted ? (
         <p className="rounded-control bg-danger-soft px-3 py-2 text-small text-danger">
-          DB 업데이트 때 지워집니다. 되돌리려면 아래 도구 막대의 되돌리기를 누르세요.
+          DB 업데이트 때 지워집니다. 되살리려면 아래 도구 막대의 실행 취소를 누르세요.
         </p>
       ) : null}
 
@@ -147,7 +167,11 @@ export function RowEditor({
             column={column}
             schema={schema}
             value={draft[column.name] ?? ""}
-            disabled={locked || (column.primaryKey && !isNew) || (column.primaryKey && column.kind === "uuid")}
+            disabled={
+              locked ||
+              (column.primaryKey && !isNew) ||
+              (column.primaryKey && column.kind === "uuid")
+            }
             storage={Boolean(STORAGE_COLUMNS[table.name]?.[column.name])}
             uploading={uploading === column.name}
             onUpload={(files) => upload(column, files)}
@@ -156,14 +180,31 @@ export function RowEditor({
         ))}
       </div>
 
-      {error ? <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-small text-danger">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-small text-danger">
+          {error}
+        </p>
+      ) : null}
 
       {!locked ? (
         <div className="flex gap-2">
-          <Button variant="dark" size="sm" fullWidthOnMobile={false} onClick={stage} disabled={Boolean(uploading)} className="flex-1">
+          <Button
+            variant="dark"
+            size="sm"
+            fullWidthOnMobile={false}
+            onClick={stage}
+            disabled={Boolean(uploading)}
+            className="flex-1"
+          >
             변경 담기
           </Button>
-          <Button variant="secondary" size="sm" fullWidthOnMobile={false} onClick={onDelete} className="text-danger">
+          <Button
+            variant="secondary"
+            size="sm"
+            fullWidthOnMobile={false}
+            onClick={onDelete}
+            className="text-danger"
+          >
             {isNew ? "추가 취소" : "삭제"}
           </Button>
         </div>
@@ -203,9 +244,22 @@ function Field({
         </span>
       </label>
       {column.references ? (
-        <ReferencePicker id={id} column={column} schema={schema} value={value} disabled={disabled} onChange={onChange} />
+        <ReferencePicker
+          id={id}
+          column={column}
+          schema={schema}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+        />
       ) : column.kind === "boolean" ? (
-        <select id={id} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={clsx(fieldClassName, "h-9")}>
+        <select
+          id={id}
+          value={value}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+          className={clsx(fieldClassName, "h-9")}
+        >
           <option value="true">true</option>
           <option value="false">false</option>
         </select>
@@ -216,12 +270,22 @@ function Field({
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           rows={column.name === "markdown" ? 10 : 3}
-          className={clsx(fieldClassName, "py-2 font-[inherit]", column.kind === "json" && "font-mono text-label")}
+          className={clsx(
+            fieldClassName,
+            "py-2 font-[inherit]",
+            column.kind === "json" && "font-mono text-label",
+          )}
         />
       ) : (
         <input
           id={id}
-          type={column.kind === "date" ? "date" : column.kind === "integer" || column.kind === "number" ? "number" : "text"}
+          type={
+            column.kind === "date"
+              ? "date"
+              : column.kind === "integer" || column.kind === "number"
+                ? "number"
+                : "text"
+          }
           value={value}
           disabled={disabled}
           placeholder={column.kind === "array" ? "쉼표로 구분" : undefined}
@@ -231,7 +295,12 @@ function Field({
       )}
       {storage && !disabled ? (
         <label className="inline-flex w-fit cursor-pointer items-center gap-2 text-label font-semibold text-green-800">
-          <input type="file" className="sr-only" multiple={column.kind === "array"} onChange={(event) => onUpload(event.target.files)} />
+          <input
+            type="file"
+            className="sr-only"
+            multiple={column.kind === "array"}
+            onChange={(event) => onUpload(event.target.files)}
+          />
           {uploading ? "올리는 중…" : "파일 올리기"}
         </label>
       ) : null}
@@ -276,7 +345,9 @@ function ReferencePicker({
       onChange={(event) => onChange(event.target.value)}
       className={clsx(fieldClassName, "h-9")}
     >
-      <option value="">{options === null ? "불러오는 중…" : column.required ? "선택하세요" : "없음"}</option>
+      <option value="">
+        {options === null ? "불러오는 중…" : column.required ? "선택하세요" : "없음"}
+      </option>
       {value && options && !known ? <option value={value}>{value}</option> : null}
       {(options ?? []).map((option) => (
         <option key={formatValue(option.value)} value={formatValue(option.value)}>

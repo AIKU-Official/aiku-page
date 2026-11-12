@@ -108,7 +108,7 @@ export function TablePeek({
       <div className="grid gap-5">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-[1.375rem] font-bold text-ink">{table.name}</p>
+            <p className="font-mono text-heading text-ink">{table.name}</p>
             <p className="text-small text-muted">
               {tableCaption(table.name)}
               {rows ? ` · ${rows.length}행` : ""}

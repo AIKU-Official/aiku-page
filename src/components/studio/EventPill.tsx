@@ -2,20 +2,42 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type MouseEvent,
+} from "react";
 
 const PAD = 10; // px on each side of the label
 const FADE = "linear-gradient(to right, black calc(100% - 14px), transparent)";
 
+const isTouch = () => window.matchMedia("(pointer: coarse)").matches;
+
+/** A point at the middle of an element, standing in for the cursor (focus, taps). */
+const centreOf = (element: Element) => {
+  const box = element.getBoundingClientRect();
+  return { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 } as MouseEvent;
+};
+
 /**
  * One calendar entry as a bar over its days. The label is centred; when it
  * is longer than the bar it starts at the left and fades out at the right
- * edge, and on hover the bar stretches to the label's full length with a
- * soft, decelerating ease, then settles back when the pointer leaves. The
- * bar floats above its grid cell, so stretching never moves the calendar.
+ * edge, and on hover or focus the bar stretches to the label's full length
+ * with a soft, decelerating ease, then settles back. The bar floats above
+ * its grid cell, so stretching never moves the calendar.
+ *
+ * The details card beside it shows on hover, on keyboard focus and, on touch
+ * screens, on a first tap; a second tap opens the entry's page and a tap
+ * elsewhere closes the card. Entries without a page are buttons, so they can
+ * be reached by keyboard too.
  */
 export function EventPill({
   label,
+  description,
   href,
   tone,
   faded,
@@ -25,6 +47,8 @@ export function EventPill({
   onMouseLeave,
 }: {
   label: string;
+  /** What the entry is, read out in full: kind, title and date. */
+  description: string;
   href: string | null;
   tone: string;
   /** Past entries are paler. */
@@ -54,6 +78,27 @@ export function EventPill({
     return () => observer.disconnect();
   }, [label]);
 
+  const show = (event: MouseEvent) => {
+    setOpen(true);
+    onMouseEnter(event);
+  };
+  const hide = () => {
+    setOpen(false);
+    onMouseLeave();
+  };
+
+  // On a touch screen an open card closes with a tap anywhere else.
+  useEffect(() => {
+    if (!open || !isTouch()) return;
+    const away = (event: PointerEvent) => {
+      if (!cell.current?.contains(event.target as Node)) hide();
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+    // hide is recreated each render; the listener only needs the latest open state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const overflows = size.full > size.base + 1;
   const stretched = open && overflows;
 
@@ -65,12 +110,9 @@ export function EventPill({
         tone,
         faded && !open && "opacity-55",
         overflows && !stretched ? "justify-start" : "justify-center",
-        (href || stretched) && open && "shadow-[0_6px_18px_rgb(29_29_29/0.14)]",
+        open && "shadow-raised",
       )}
-      style={{
-        width: stretched ? size.full : size.base || "100%",
-        paddingInline: PAD,
-      }}
+      style={{ width: stretched ? size.full : size.base || "100%", paddingInline: PAD }}
     >
       <span
         className="block min-w-0 overflow-hidden"
@@ -83,16 +125,12 @@ export function EventPill({
     </span>
   );
 
-  const events = {
-    onMouseEnter: (event: MouseEvent) => {
-      setOpen(true);
-      onMouseEnter(event);
-    },
-    onMouseMove,
-    onMouseLeave: () => {
-      setOpen(false);
-      onMouseLeave();
-    },
+  const target = {
+    "aria-label": description,
+    className:
+      "absolute inset-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
+    onFocus: (event: FocusEvent) => show(centreOf(event.currentTarget)),
+    onBlur: hide,
   };
 
   return (
@@ -100,14 +138,32 @@ export function EventPill({
       ref={cell}
       className={clsx("relative mx-1 my-2.5", open ? "z-10" : "z-2")}
       style={style}
-      {...events}
+      onMouseEnter={(event) => !isTouch() && show(event)}
+      onMouseMove={onMouseMove}
+      onMouseLeave={() => !isTouch() && hide()}
     >
       {href ? (
-        <Link href={href} className="absolute inset-0 rounded-lg" aria-label={label}>
+        <Link
+          href={href}
+          {...target}
+          onClick={(event) => {
+            // First tap on a touch screen: show the card; the next tap follows the link.
+            if (isTouch() && !open) {
+              event.preventDefault();
+              show(centreOf(event.currentTarget));
+            }
+          }}
+        >
           {pill}
         </Link>
       ) : (
-        pill
+        <button
+          type="button"
+          {...target}
+          onClick={(event) => (open ? hide() : show(centreOf(event.currentTarget)))}
+        >
+          {pill}
+        </button>
       )}
     </div>
   );

@@ -1,7 +1,14 @@
 "use client";
 
 import clsx from "clsx";
-import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type MouseEvent,
+} from "react";
 
 import type { StudioEvent } from "@/actions/studio";
 import { CursorTip, useCursorPoint } from "@/components/ui/CursorTip";
@@ -10,6 +17,7 @@ import { SeasonTicker } from "@/components/studio/SeasonTicker";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
 import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
+import { PHONE_QUERY } from "@/lib/ui/viewport";
 import { addDays, monthEnd, sessionAnchor, timelineDays, weekStart } from "@/lib/studio/timeline";
 
 type Lane = { kinds: StudioEvent["kind"][]; label: string; tone: string; accent: string };
@@ -24,19 +32,19 @@ const LANES: Lane[] = [
   })),
   {
     kinds: ["event", "conference", "exchange", "aikuthon"],
-    label: "Events",
+    label: "행사",
     tone: "bg-violet-100 text-violet-800 border-violet-800/20",
     accent: "bg-violet-800/60",
   },
   {
     kinds: ["academic", "holiday"],
-    label: "Academic",
+    label: "학사일정",
     tone: "bg-danger-soft text-danger border-danger/20",
     accent: "bg-danger/60",
   },
   {
     kinds: ["notice"],
-    label: "Notice",
+    label: "공지",
     tone: "bg-surface text-body border-line",
     accent: "bg-line-strong",
   },
@@ -44,8 +52,16 @@ const LANES: Lane[] = [
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const DAY_WIDTH = 76; // px: room for "16회" or a short title on one day
 const LABEL_WIDTH = 140;
+// On phones the lane names take less room, so more days fit beside them.
+const PHONE_LABEL_WIDTH = 96;
 const ROW_HEIGHT = 56;
 const DAY_MS = 86_400_000;
+
+const subscribePhone = (change: () => void) => {
+  const query = window.matchMedia(PHONE_QUERY);
+  query.addEventListener("change", change);
+  return () => query.removeEventListener("change", change);
+};
 
 /** Where an entry leads: its session on the program's page, AIKUTHON's page, or nowhere. */
 function hrefOf(event: StudioEvent) {
@@ -84,7 +100,14 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
     monthEnd(today, 4),
   );
   const weeks = Math.floor((Date.parse(last) - Date.parse(first)) / DAY_MS / 7) + 1;
-  const days = timelineDays(first, weeks * 7);
+  // One array per range, so the season ticker's scroll listener is not re-attached on every hover.
+  const days = useMemo(() => timelineDays(first, weeks * 7), [first, weeks]);
+  const phone = useSyncExternalStore(
+    subscribePhone,
+    () => window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+  const labelWidth = phone ? PHONE_LABEL_WIDTH : LABEL_WIDTH;
   const column = (iso: string) => days.findIndex((day) => day.iso === iso);
   // Grid line where the past ends: today's column, or past the last day if all are past.
   const pastEnd =
@@ -108,7 +131,8 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
 
   useLayoutEffect(() => {
     // Once, on opening; the member scrolls from there.
-    scrollToDay(weekStart(today), "instant");
+    // A phone shows only a few days: open on today itself rather than its Monday.
+    scrollToDay(window.matchMedia(PHONE_QUERY).matches ? today : weekStart(today), "instant");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -158,13 +182,13 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
 
       <div
         ref={scroller}
-        className="overflow-x-auto overscroll-x-contain rounded-[20px] border border-line bg-surface"
+        className="overflow-x-auto overscroll-x-contain rounded-card border border-line bg-surface"
       >
         <div
           className="relative grid"
           style={{
-            width: LABEL_WIDTH + days.length * DAY_WIDTH,
-            gridTemplateColumns: `${LABEL_WIDTH}px repeat(${days.length}, ${DAY_WIDTH}px)`,
+            width: labelWidth + days.length * DAY_WIDTH,
+            gridTemplateColumns: `${labelWidth}px repeat(${days.length}, ${DAY_WIDTH}px)`,
             gridTemplateRows: `auto repeat(${LANES.length}, ${ROW_HEIGHT}px)`,
           }}
         >
@@ -278,7 +302,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
             <div
               key={lane.label}
               className={clsx(
-                "sticky left-0 z-3 flex items-center gap-2 bg-surface px-5 text-label font-semibold text-body",
+                "sticky left-0 z-3 flex min-w-0 items-center gap-2 bg-surface px-5 text-label font-semibold text-body max-sm:px-3",
                 row < LANES.length - 1 && "border-b border-soft-line",
                 fade,
               )}
@@ -288,7 +312,9 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
                 className={clsx("size-2 shrink-0 rounded-full", lane.accent)}
                 aria-hidden="true"
               />
-              {lane.label}
+              <span className="truncate" title={lane.label}>
+                {lane.label}
+              </span>
             </div>
           ))}
 
@@ -299,6 +325,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
                 <EventPill
                   key={`${event.kind}-${event.date}-${event.title}`}
                   label={event.label}
+                  description={`${event.kindLabel} ${event.title}, ${formatDay(event.date)}${event.until ? ` – ${formatDay(event.until)}` : ""}`}
                   href={hrefOf(event)}
                   tone={lane.tone}
                   faded={(event.until ?? event.date) < today}
@@ -316,10 +343,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
       </div>
 
       {point && hovered ? (
-        <CursorTip
-          point={point}
-          className="grid w-[260px] gap-1 card px-4 py-3.5 shadow-[0_12px_32px_rgb(29_29_29/0.14)]"
-        >
+        <CursorTip point={point} className="grid w-[260px] gap-1">
           <span className="text-label font-semibold text-muted">{hovered.kindLabel}</span>
           <span className="font-semibold text-ink">{hovered.title}</span>
           <span className="text-small text-body tabular-nums">

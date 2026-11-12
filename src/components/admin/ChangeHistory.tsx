@@ -6,6 +6,8 @@ import { useState } from "react";
 import { revertBatch } from "@/actions/db-admin";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyNotice } from "@/components/ui/EmptyNotice";
+import { ErrorNotice } from "@/components/ui/ErrorNotice";
 import { Pill } from "@/components/ui/Pill";
 import {
   type Batch,
@@ -49,7 +51,7 @@ export function ChangeHistory({ batches }: { batches: Batch[] }) {
       aria-labelledby="change-history-title"
     >
       <div className="grid gap-1">
-        <h2 id="change-history-title" className="text-[1.375rem] font-bold text-ink">
+        <h2 id="change-history-title" className="text-heading text-ink">
           변경 기록
         </h2>
         <p className="text-small text-muted">
@@ -58,16 +60,14 @@ export function ChangeHistory({ batches }: { batches: Batch[] }) {
       </div>
 
       {batches.length === 0 ? (
-        <p className="rounded-[20px] border border-line bg-surface-soft px-5 py-6 text-center text-small text-muted">
-          아직 기록이 없습니다.
-        </p>
+        <EmptyNotice>아직 기록이 없습니다.</EmptyNotice>
       ) : (
         <ol className="grid gap-3">
           {batches.map((batch) => {
             const undo = undoneBy.get(batch.id);
             const original = batch.reverts ? byId.get(batch.reverts) : undefined;
             return (
-              <li key={batch.id} className="rounded-[20px] border border-line bg-surface">
+              <li key={batch.id} className="card">
                 <details className="group">
                   <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 max-sm:px-4">
                     <div className="grid min-w-0 flex-1 gap-1">
@@ -78,8 +78,8 @@ export function ChangeHistory({ batches }: { batches: Batch[] }) {
                         <span className="text-muted">{batch.member?.name ?? "알 수 없음"}</span>
                         {batch.reverts ? (
                           <Pill>
-                            되돌리기
-                            {original ? ` · ${formatSavedAt(original.created_at)} 변경` : ""}
+                            되돌린 변경
+                            {original ? ` · ${formatSavedAt(original.created_at)}` : ""}
                           </Pill>
                         ) : null}
                         {undo ? <Pill tone="bg-amber-100 text-amber-800">되돌림</Pill> : null}
@@ -110,12 +110,7 @@ export function ChangeHistory({ batches }: { batches: Batch[] }) {
                   </summary>
 
                   {errors[batch.id] ? (
-                    <p
-                      role="alert"
-                      className="mx-5 mb-4 rounded-control bg-danger-soft px-4 py-3 text-small text-danger max-sm:mx-4"
-                    >
-                      {errors[batch.id]}
-                    </p>
+                    <ErrorNotice className="mx-5 mb-4 max-sm:mx-4">{errors[batch.id]}</ErrorNotice>
                   ) : null}
 
                   <ul className="grid gap-2 border-t border-soft-line px-5 py-4 text-small max-sm:px-4">

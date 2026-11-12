@@ -14,7 +14,9 @@ import {
 
 import { commitChanges, getTableRows } from "@/actions/db-admin";
 import { CenterPeek } from "@/components/ui/CenterPeek";
+import { buttonClassName } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { summarize } from "@/lib/admin/history";
 import {
   ExpandIcon,
   FitIcon,
@@ -29,7 +31,6 @@ import {
   redo,
   toPayload,
   undo,
-  type Change,
   type ChangeHistory,
 } from "@/lib/admin/changes";
 import { routeEdges } from "@/lib/admin/edge-path";
@@ -64,11 +65,11 @@ const HOW_TO = [
   },
   {
     title: "고치기",
-    body: "바꾼 내용은 바로 저장되지 않고 쌓입니다. 바뀐 표에는 개수가 표시되고, ⌘Z로 되돌리거나 취소로 모두 버릴 수 있습니다.",
+    body: "바꾼 내용은 바로 저장되지 않고 쌓입니다. 바뀐 표에는 개수가 표시되고, ⌘Z로 실행 취소하거나 취소로 모두 버릴 수 있습니다.",
   },
   {
-    title: "저장하기",
-    body: "아래 도구 막대의 DB 업데이트를 누르면 쌓인 내용이 한 번에 저장됩니다. 하나라도 실패하면 아무것도 바뀌지 않습니다.",
+    title: "DB 업데이트",
+    body: "아래 도구 막대의 DB 업데이트를 누르면 쌓인 내용이 한 번에 반영됩니다. 하나라도 실패하면 아무것도 바뀌지 않고, 반영한 것은 아래 변경 기록에서 되돌릴 수 있습니다.",
   },
 ] as const;
 
@@ -445,16 +446,20 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
       ) : null}
       {asking === "commit" ? (
         <ConfirmDialog
-          title="DB에 바로 반영할까요?"
-          confirmLabel={`${pendingCount}건 반영하기`}
+          title="DB를 업데이트할까요?"
+          confirmLabel={`${pendingCount}건 DB 업데이트`}
           onConfirm={() => void commit()}
           onCancel={() => setAsking(null)}
         >
           <p>
-            누르는 순간 운영 데이터베이스가 실제로 바뀌고, 사이트에도 바로 반영됩니다. 반영한 뒤에는
-            되돌리기로 취소할 수 없습니다.
+            누르는 순간 운영 데이터베이스와 사이트가 바로 바뀝니다. 잘못 반영했으면 아래 변경
+            기록에서 되돌릴 수 있습니다.
           </p>
-          <p className="mt-2 font-medium text-body">{describeChanges(history.changes)}</p>
+          <p className="mt-2 font-mono text-label text-body">
+            {summarize(
+              history.changes.map((change) => ({ table_name: change.table, op: change.op })),
+            )}
+          </p>
         </ConfirmDialog>
       ) : null}
       {asking === "discard" ? (
@@ -468,22 +473,11 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
           }}
           onCancel={() => setAsking(null)}
         >
-          <p>아직 반영하지 않은 변경 {pendingCount}건이 사라집니다.</p>
+          <p>아직 DB에 업데이트하지 않은 변경 {pendingCount}건이 사라집니다.</p>
         </ConfirmDialog>
       ) : null}
     </section>
   );
-}
-
-/** "members 수정 2건, projects 추가 1건" for the confirmation before a commit. */
-function describeChanges(changes: Change[]): string {
-  const words = { insert: "추가", update: "수정", delete: "삭제" } as const;
-  const counts = new Map<string, number>();
-  for (const change of changes) {
-    const label = `${change.table} ${words[change.op]}`;
-    counts.set(label, (counts.get(label) ?? 0) + 1);
-  }
-  return [...counts].map(([label, count]) => `${label} ${count}건`).join(", ");
 }
 
 /** DB 업데이트, undo, redo and 취소, floating at the bottom of the canvas. */
@@ -507,7 +501,7 @@ function ChangeToolbar({
   onCommit: () => void;
 }) {
   const iconButton =
-    "inline-flex size-10 items-center justify-center rounded-control text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-35";
+    "inline-flex size-10 items-center justify-center rounded-control text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-50";
   return (
     <div
       role="toolbar"
@@ -516,8 +510,8 @@ function ChangeToolbar({
     >
       <button
         type="button"
-        aria-label="되돌리기"
-        title="되돌리기 (⌘Z)"
+        aria-label="실행 취소"
+        title="실행 취소 (⌘Z)"
         disabled={!canUndo || busy}
         onClick={onUndo}
         className={iconButton}
@@ -539,7 +533,7 @@ function ChangeToolbar({
         type="button"
         disabled={!pending || busy}
         onClick={onDiscard}
-        className="inline-flex h-10 items-center rounded-control px-3.5 text-small font-semibold whitespace-nowrap text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-35"
+        className="inline-flex h-10 items-center rounded-control px-3.5 text-small font-semibold whitespace-nowrap text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-50"
       >
         취소
       </button>
@@ -547,9 +541,9 @@ function ChangeToolbar({
         type="button"
         disabled={!pending || busy}
         onClick={onCommit}
-        className="inline-flex h-10 items-center gap-2 rounded-control bg-ink px-4 text-small font-semibold whitespace-nowrap text-white transition-colors hover:bg-ink-hover disabled:pointer-events-none disabled:opacity-35"
+        className={buttonClassName({ variant: "dark", size: "sm", fullWidthOnMobile: false })}
       >
-        {busy ? "반영 중…" : "DB 업데이트"}
+        {busy ? "업데이트 중…" : "DB 업데이트"}
         {pending && !busy ? (
           <span className="rounded-full bg-white/20 px-1.5 text-label tabular-nums">{pending}</span>
         ) : null}

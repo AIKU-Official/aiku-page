@@ -8,7 +8,7 @@ import { signedInMember } from "@/lib/members/signed-in";
 import { mapPersonMember } from "@/lib/data/mappers";
 import { PERSON_MEMBER_SELECT } from "@/lib/members/positions";
 import { canUseStudio } from "@/lib/members/studio";
-import { seasonName, seasonOfDate } from "@/lib/seasons/name";
+import { pointsPeriod, seasonName, seasonOfDate, type SeasonTerm } from "@/lib/seasons/name";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { isProgram, PROGRAMS } from "@/lib/studio/programs";
 import { monthEnd, todayInKorea } from "@/lib/studio/timeline";
@@ -68,7 +68,7 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
     const current = unwrap(
       await db
         .from("seasons")
-        .select("id, name, starts_on")
+        .select("id, name, year, term, starts_on")
         .lte("starts_on", today)
         .gte("ends_on", today)
         .maybeSingle(),
@@ -76,7 +76,20 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
     // A season not stored yet still has a name; it simply has nothing in it.
     const now = seasonOfDate(today);
     const season = current?.name ?? seasonName(now.year, now.term);
-    const from = current?.starts_on ?? today;
+    // From the start of the current half-year (winter with 1, summer with 2):
+    // a program run of this season may begin in the break before it, as the
+    // 26-2 Seminar begins in July.
+    const half = current
+      ? (unwrap(
+          await db
+            .from("seasons")
+            .select("starts_on")
+            .in("name", [...pointsPeriod(current.year, current.term as SeasonTerm).seasons])
+            .order("starts_on")
+            .limit(1),
+        ) ?? [])
+      : [];
+    const from = half[0]?.starts_on ?? current?.starts_on ?? today;
     const until = monthEnd(today, 4);
 
     const [sessionRows, aikuthonRows, projectCount] = await Promise.all([

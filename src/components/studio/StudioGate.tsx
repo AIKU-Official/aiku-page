@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { ErrorNotice } from "@/components/ui/ErrorNotice";
 import { Notice } from "@/components/ui/Notice";
 import type { ActionResult } from "@/lib/actions/result";
 import { type MemberAccount, useMemberAccount } from "@/lib/auth/member";
@@ -57,11 +58,7 @@ export function StudioGate<T>({
     );
   }
   if (state.status === "error") {
-    return (
-      <p role="alert" className="text-danger">
-        {state.message}
-      </p>
-    );
+    return <ErrorNotice>{state.message}</ErrorNotice>;
   }
   return children(state.data, member);
 }
