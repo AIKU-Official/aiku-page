@@ -29,7 +29,6 @@ const TONES: Record<AttendanceStatus, string> = {
   excused_absent: "bg-attend-excused",
 };
 
-
 /**
  * The member's own attendance calendar and points, at the foot of their
  * profile's side column. Rendered only when the viewer is signed in as this
@@ -41,7 +40,9 @@ export function MyActivity({ memberId }: { memberId: string }) {
   const isMe = Boolean(account?.member && account.member.id === memberId);
   // The member themselves, or an admin (a current officer) looking at anyone.
   const allowed = isMe || Boolean(account?.admin);
-  const [state] = useSignedInData(allowed ? memberId : null, (token) => getActivity(token, memberId));
+  const [state] = useSignedInData(allowed ? memberId : null, (token) =>
+    getActivity(token, memberId),
+  );
   const ob = state.status === "ready" && state.data.ob;
   const semesters = state.status === "ready" ? state.data.semesters : [];
   // 0 is the newest semester; ">" moves towards it, "<" back in time.
@@ -62,16 +63,16 @@ export function MyActivity({ memberId }: { memberId: string }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <PageButton
-            label="이전 학기"
+            label="이전 기간"
             disabled={page >= semesters.length - 1}
             onClick={() => setPage((value) => value + 1)}
             icon={<ChevronLeftIcon className="size-4" />}
           />
           <h3 className="min-w-[6.5rem] text-center text-label font-semibold tracking-[0.08em] text-muted uppercase">
-            출결 · {activity.semester}학기
+            출결 · {activity.semester}
           </h3>
           <PageButton
-            label="다음 학기"
+            label="다음 기간"
             disabled={page === 0}
             onClick={() => setPage((value) => value - 1)}
             icon={<ChevronRightIcon className="size-4" />}
@@ -82,7 +83,7 @@ export function MyActivity({ memberId }: { memberId: string }) {
       {activity.sessions.length ? (
         <AttendanceCalendar key={activity.semester} sessions={activity.sessions} />
       ) : (
-        <p className="text-small text-muted">이 학기의 출결 기록이 없습니다.</p>
+        <p className="text-small text-muted">이 기간의 출결 기록이 없습니다.</p>
       )}
       <PointsButton activity={activity} />
     </section>
@@ -168,7 +169,10 @@ function SessionDetail({ session }: { session: ActivitySession }) {
       </p>
       <p className="font-semibold text-ink">{session.title}</p>
       <p className="flex items-center gap-1.5 text-body">
-        <span className={clsx("size-2 shrink-0 rounded-[2px]", TONES[session.status])} aria-hidden="true" />
+        <span
+          className={clsx("size-2 shrink-0 rounded-[2px]", TONES[session.status])}
+          aria-hidden="true"
+        />
         {ATTENDANCE_LABELS[session.status]}
         {session.reason ? <span className="text-muted">· {session.reason}</span> : null}
       </p>
@@ -193,7 +197,11 @@ function PointsButton({ activity }: { activity: Activity }) {
         <span
           className={clsx(
             "tabular-nums",
-            activity.total === 0 ? "text-muted" : activity.total < 0 ? "text-danger" : "text-green-800",
+            activity.total === 0
+              ? "text-muted"
+              : activity.total < 0
+                ? "text-danger"
+                : "text-green-800",
           )}
         >
           {formatPoints(activity.total)}점
@@ -224,7 +232,7 @@ function PointsPanel({ activity }: { activity: Activity }) {
     <div data-peek-panel-only className="grid gap-5">
       <div>
         <p className="text-label font-semibold tracking-[0.08em] text-muted uppercase">
-          {activity.semester}학기 상벌점
+          {activity.semester} 상벌점
         </p>
         <p
           className={clsx(
@@ -236,7 +244,7 @@ function PointsPanel({ activity }: { activity: Activity }) {
         </p>
         {activity.atRisk ? (
           <p className="mt-2 rounded-control bg-danger-soft px-3 py-2 text-small text-danger">
-            누적 상벌점이 -5점 이하라 이번 학기 재이수 기준에 해당합니다.
+            누적 상벌점이 -5점 이하라 이번 기간의 재이수 기준에 해당합니다.
           </p>
         ) : null}
       </div>
@@ -263,10 +271,11 @@ function PointsPanel({ activity }: { activity: Activity }) {
           ))}
         </ul>
       ) : (
-        <p className="text-small text-muted">이번 학기 상벌점 기록이 없습니다.</p>
+        <p className="text-small text-muted">이 기간의 상벌점 기록이 없습니다.</p>
       )}
       <p className="text-label text-muted">
-        학기가 끝나면 점수는 0점으로 초기화됩니다. 기록이 잘못되었으면 운영진에게 알려주세요.
+        점수는 두 시즌(겨울과 1, 여름과 2)마다 0점으로 초기화됩니다. 기록이 잘못되었으면 운영진에게
+        알려주세요.
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { addDays, monthEnd, rangeLabel, seasonCode, timelineDays, weekStart } from "./timeline";
+import { addDays, monthEnd, rangeLabel, timelineDays, weekStart } from "./timeline";
 
 describe("timeline", () => {
   it("starts on the Monday of the week", () => {
@@ -24,11 +24,5 @@ describe("timeline", () => {
   it("finds the end of a month ahead, across a year", () => {
     expect(monthEnd("2026-11-13", 4)).toBe("2027-03-31");
     expect(monthEnd("2026-01-31", 1)).toBe("2026-02-28");
-  });
-
-  it("names the season of a day", () => {
-    expect(["2027-01-01", "2027-02-28", "2027-03-01", "2026-06-30", "2026-07-01", "2026-08-31", "2026-09-01", "2026-12-31"].map(seasonCode)).toEqual(
-      ["2027-W", "2027-W", "2027-1", "2026-1", "2026-S", "2026-S", "2026-2", "2026-2"],
-    );
   });
 });

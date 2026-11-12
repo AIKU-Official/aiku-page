@@ -14,7 +14,10 @@ export const OFF_CANVAS_TABLES = ["admin_change_batches", "admin_change_log"] as
 /** Columns uploaded to Storage rather than typed in: one file, or a list of files. */
 export const STORAGE_COLUMNS: Record<
   string,
-  Record<string, { many: boolean; kind: "image" | "presentation"; scope: "projects" | "members"; entity: string }>
+  Record<
+    string,
+    { many: boolean; kind: "image" | "presentation"; scope: "projects" | "members"; entity: string }
+  >
 > = {
   projects: {
     image_paths: { many: true, kind: "image", scope: "projects", entity: "id" },
@@ -47,7 +50,7 @@ export const TABLE_GROUPS: { label: string; tone: string; tables: Record<string,
     label: "프로젝트",
     tone: "bg-sky-100 text-sky-800",
     tables: {
-      seasons: "분기",
+      seasons: "시즌",
       projects: "프로젝트",
       project_members: "참여자",
       tags: "분야 태그",
@@ -67,10 +70,10 @@ export const TABLE_GROUPS: { label: string; tone: string; tables: Record<string,
     },
   },
   {
-    label: "출결·상벌점",
+    label: "일정·출결",
     tone: "bg-violet-100 text-violet-800",
     tables: {
-      activity_sessions: "회차",
+      activity_sessions: "일정",
       attendance: "출결",
       point_rules: "점수표",
       point_events: "상벌점",
@@ -91,4 +94,5 @@ export function tableGroup(table: string) {
 
 export const tableCaption = (table: string) => tableGroup(table).tables[table] ?? "";
 
-export const rowsHidden = (table: string) => (HIDDEN_ROW_TABLES as readonly string[]).includes(table);
+export const rowsHidden = (table: string) =>
+  (HIDDEN_ROW_TABLES as readonly string[]).includes(table);

@@ -61,11 +61,11 @@ const KIND_NAMES: Record<StudioEvent["kind"], string> = {
 const DAY_MS = 86_400_000;
 
 /** Where an entry leads: its session on the program's page, AIKUTHON's page, or nowhere. */
-function hrefOf(event: StudioEvent, semester: string) {
+function hrefOf(event: StudioEvent) {
   const program = (Object.keys(PROGRAMS) as ProgramSlug[]).find(
     (slug) => PROGRAMS[slug].kind === event.kind,
   );
-  if (program) return `${programHref(program, semester)}#${sessionAnchor(event.date)}`;
+  if (program) return `${programHref(program, event.season)}#${sessionAnchor(event.date)}`;
   if (event.kind === "aikuthon") return "/aikuthon";
   return null;
 }
@@ -81,26 +81,18 @@ function when(event: StudioEvent, today: string) {
 }
 
 /**
- * The semester as one scrolling timeline: days across (past days greyed,
+ * The current season and the months ahead as one scrolling timeline: days across (past days greyed,
  * today marked), one lane per program, each entry a bar over its days. It
  * opens on the current week; the lane names stay put while the days scroll
  * under a fade. Hovering an entry shows it beside the cursor; clicking a
  * session opens it on its program's page.
  */
-export function StudioTimeline({
-  events,
-  today,
-  semester,
-}: {
-  events: StudioEvent[];
-  today: string;
-  semester: string;
-}) {
+export function StudioTimeline({ events, today }: { events: StudioEvent[]; today: string }) {
   const scroller = useRef<HTMLDivElement>(null);
   const { point, follow, hide } = useCursorPoint();
   const [hovered, setHovered] = useState<StudioEvent | null>(null);
 
-  // The whole semester: from the week of its first entry to at least four weeks ahead.
+  // From the week of the first entry (the season's start) on.
   const first = weekStart(events.reduce((min, e) => (e.date < min ? e.date : min), today));
   // To the last entry, and at least to the end of the month four months ahead.
   const last = events.reduce(
@@ -150,7 +142,7 @@ export function StudioTimeline({
   return (
     <section className="grid gap-4" aria-labelledby="studio-timeline">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="studio-timeline" className="text-[1.25rem] font-bold text-ink">
+        <h2 id="studio-timeline" className="text-heading text-ink">
           일정
         </h2>
         <div className="flex items-center gap-1">
@@ -323,7 +315,7 @@ export function StudioTimeline({
                 <EventPill
                   key={`${event.kind}-${event.date}-${event.title}`}
                   label={shortTitle(event.title)}
-                  href={hrefOf(event, semester)}
+                  href={hrefOf(event)}
                   tone={lane.tone}
                   faded={(event.until ?? event.date) < today}
                   style={{
@@ -352,7 +344,7 @@ export function StudioTimeline({
           </span>
           <span className="text-label text-muted">
             {when(hovered, today)}
-            {hrefOf(hovered, semester) ? " · 눌러서 보기" : ""}
+            {hrefOf(hovered) ? " · 눌러서 보기" : ""}
           </span>
         </CursorTip>
       ) : null}

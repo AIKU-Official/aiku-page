@@ -109,7 +109,8 @@ const DB_MESSAGES: { match: RegExp; message: (detail: string) => string }[] = [
   { match: /ADMIN_ALREADY_REVERTED/, message: () => "이미 되돌린 변경입니다." },
   {
     match: /SEASON_NAME_FORMAT/,
-    message: () => "분기 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요.",
+    message: () =>
+      "시즌 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요. 2026-S, 26-W처럼 써도 됩니다.",
   },
 ];
 

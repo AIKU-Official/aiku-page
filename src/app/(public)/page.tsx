@@ -26,7 +26,7 @@ const homeLinks = [
   {
     href: "/projects",
     label: "Projects",
-    title: "분기별 프로젝트",
+    title: "시즌별 프로젝트",
     description: "문제의식, 접근 방식, 발표자료, GitHub 링크를 함께 살펴봅니다.",
   },
   {

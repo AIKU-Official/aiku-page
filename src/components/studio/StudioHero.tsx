@@ -27,7 +27,7 @@ export function StudioHero() {
           </span>
         </h1>
         <p className="mt-6 max-w-[620px] enter-1 text-lead text-white/85 max-sm:mt-4">
-          학회원을 위한 활동 공간입니다. 이번 학기 일정과 활동을 한곳에서 봅니다.
+          학회원을 위한 활동 공간입니다. 이번 시즌 일정과 활동을 한곳에서 봅니다.
         </p>
       </div>
     </section>

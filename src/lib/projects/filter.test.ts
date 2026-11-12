@@ -48,6 +48,6 @@ describe("filter copy", () => {
     expect(filterStatusText(ALL_PROJECTS, 2, 2)).toBe("전체 프로젝트 2개를 보고 있습니다.");
     expect(filterStatusText("26-1", 1, 2)).toBe("26-1 프로젝트 1개를 보고 있습니다.");
     expect(filterStatusText(ALL_PROJECTS, 0, 0)).toBe("아직 공개된 프로젝트가 없습니다.");
-    expect(emptyFilterText("26-1")).toBe("26-1 분기에 공개된 프로젝트가 아직 없습니다.");
+    expect(emptyFilterText("26-1")).toBe("26-1 시즌에 공개된 프로젝트가 아직 없습니다.");
   });
 });

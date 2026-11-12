@@ -22,7 +22,7 @@ import datetime
 import json
 import re
 
-from aiku_db import NotionApi, SupabaseRest, read_env, script_args, season_name
+from aiku_db import NotionApi, SupabaseRest, read_env, script_args
 
 env_file, apply = script_args()
 db = SupabaseRest.from_env_file(env_file)
@@ -200,11 +200,7 @@ for (kind, day), s in sessions.items():
 
 # 3. Write -------------------------------------------------------------------------------
 
-season_ids = db.season_ids(apply)
-
-
-def season_id(day):
-    return season_ids(season_name(day))
+season_id = db.season_of_date(apply)
 
 
 marks = sum(len(s["rows"]) for s in sessions.values())

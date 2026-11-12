@@ -11,7 +11,7 @@ import { getProjectSeasonList } from "@/lib/projects/filter";
 
 export const metadata: Metadata = {
   title: "프로젝트",
-  description: "AIKU 분기별 프로젝트를 소개합니다.",
+  description: "AIKU 시즌별 프로젝트를 소개합니다.",
 };
 
 // Refreshed on demand after admin edits; hourly as a safety net.
@@ -44,8 +44,8 @@ export default async function ProjectsPage() {
     <>
       <PageHero
         eyebrow="Projects"
-        title="분기별 프로젝트"
-        lead="AIKU 학회원들이 한 학기 동안 탐구하고 구현한 딥러닝 프로젝트를 분기별로 소개합니다."
+        title="시즌별 프로젝트"
+        lead="AIKU 학회원들이 한 시즌 동안 탐구하고 구현한 딥러닝 프로젝트를 시즌별로 소개합니다."
       />
       <ProjectArchive seasons={getProjectSeasonList(seasons, projects)} entries={entries} />
     </>

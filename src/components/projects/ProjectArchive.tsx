@@ -117,13 +117,13 @@ export function ProjectArchive({
         <div className="site-container">
           <SectionHead eyebrow="Filter" title="프로젝트 살펴보기">
             <p>
-              분기를 고르고, 수상작이나 관심 분야 태그로 좁혀 프로젝트의 문제의식, 접근 방식,
+              시즌을 고르고, 수상작이나 관심 분야 태그로 좁혀 프로젝트의 문제의식, 접근 방식,
               발표자료, GitHub 링크를 확인해보세요.
             </p>
           </SectionHead>
-          {entries.length > 0 ? <p className={groupLabelClassName}>분기</p> : null}
+          {entries.length > 0 ? <p className={groupLabelClassName}>시즌</p> : null}
           {entries.length > 0 ? (
-            <div className="flex flex-wrap gap-2" role="group" aria-label="프로젝트 분기 필터">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="프로젝트 시즌 필터">
               {[ALL_PROJECTS, ...seasons].map((option) => (
                 <button
                   key={option}
@@ -258,7 +258,7 @@ export function ProjectArchive({
                 onClick={() => setSeasonSteps((steps) => steps + 1)}
                 className={buttonClassName({ variant: "secondary", fullWidthOnMobile: false })}
               >
-                이전 분기 더보기
+                이전 시즌 더보기
                 <ChevronDownIcon className="size-4" />
               </button>
             </div>

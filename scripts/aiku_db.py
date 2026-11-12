@@ -22,14 +22,6 @@ def script_args():
     return sys.argv[1], "--apply" in sys.argv
 
 
-def season_name(day):
-    """The season a date falls in, named like "26-여름": Jan–Feb winter,
-    Mar–Jun 1st semester, Jul–Aug summer, Sep–Dec 2nd semester."""
-    year, month = int(day[:4]), int(day[5:7])
-    term = "겨울" if month <= 2 else "1" if month <= 6 else "여름" if month <= 8 else "2"
-    return f"{year % 100:02d}-{term}"
-
-
 class SupabaseRest:
     """The project's REST and Storage APIs, called with the secret key."""
 
@@ -92,15 +84,24 @@ class SupabaseRest:
         except (urllib.error.URLError, urllib.error.HTTPError) as error:
             print(f"  pages not refreshed ({error}); they update within the hour")
 
-    def season_ids(self, apply):
-        """A lookup from season name to id that creates missing seasons when applying."""
-        known = {s["name"]: s["id"] for s in self.get("/rest/v1/seasons?select=id,name")}
+    def season_of_date(self, apply):
+        """A lookup from an ISO day to the id of its season, by the dates stored
+        on each season (the seasons table is the record; no month rule here).
+        A season not stored yet is made by the database (season_for_date) when
+        applying, and reported."""
+        known = self.get("/rest/v1/seasons?select=id,name,starts_on,ends_on")
 
-        def season_id(name):
-            if name not in known:
-                known[name] = self.insert("seasons", {"name": name}, returning=True)[0]["id"] if apply else None
-                print(f"  new season {name}")
-            return known[name]
+        def season_id(day):
+            for season in known:
+                if season["starts_on"] <= day[:10] <= season["ends_on"]:
+                    return season["id"]
+            if not apply:
+                print(f"  new season needed for {day[:10]}")
+                return None
+            made = self.rpc("season_for_date", {"p_day": day[:10], "p_create": True})
+            known[:] = self.get("/rest/v1/seasons?select=id,name,starts_on,ends_on")
+            print(f"  new season for {day[:10]}: " + next(s["name"] for s in known if s["id"] == made))
+            return made
 
         return season_id
 

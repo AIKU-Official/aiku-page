@@ -4,7 +4,7 @@ const pages = [
   { path: "/", heading: "AIKU" },
   { path: "/about", heading: "고려대학교 딥러닝 학회 AIKU" },
   { path: "/activities", heading: "AIKU의 학술 활동과 교류 행사" },
-  { path: "/projects", heading: "분기별 우수 프로젝트" },
+  { path: "/projects", heading: "시즌별 프로젝트" },
   { path: "/members", heading: "AIKU Members" },
   { path: "/contact", heading: "AIKU Contact" },
 ];

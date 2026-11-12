@@ -6,8 +6,8 @@
 
 Source: the "일정(활동 DB)" database on the "AIKU 활동용" Notion page
 (NOTION_TOKEN). Each dated, titled row becomes one calendar entry; its 태그
-decide the kind (see KINDS). The season comes from the date, as the
-attendance import does it.
+decide the kind (see KINDS). The season is the stored season whose dates
+hold the day (made by the database if missing, when applying).
 
 Rows are keyed by their Notion page id, so running this again updates rather
 than duplicates. A row of a kind that already has an entry on the same day
@@ -18,7 +18,7 @@ aikuthons table is the record of those), and rows whose tags are unknown.
 """
 from collections import Counter
 
-from aiku_db import NotionApi, SupabaseRest, read_env, script_args, season_name
+from aiku_db import NotionApi, SupabaseRest, read_env, script_args
 
 env_file, apply = script_args()
 db = SupabaseRest.from_env_file(env_file)
@@ -53,7 +53,7 @@ def kind_of(tags):
     return UNTAGGED if not tags else None
 
 
-seasons = {s["name"]: s["id"] for s in db.get("/rest/v1/seasons?select=id,name")}
+season_id = db.season_of_date(apply)
 existing = db.get("/rest/v1/activity_sessions?select=id,kind,held_on,source_key,notion_page_id")
 by_notion = {s["notion_page_id"]: s for s in existing if s["notion_page_id"]}
 by_day = {(s["kind"], s["held_on"]): s for s in existing if not s["notion_page_id"]}
@@ -78,10 +78,6 @@ for row in notion.query_all(SCHEDULE):
     if not kind:
         skipped.append(f"모르는 태그 {tags}: {title}")
         continue
-    season = season_name(start)
-    if season not in seasons:
-        skipped.append(f"분기 {season} 없음: {title}")
-        continue
     end = (date.get("end") or "")[:10] or None
     entry = {
         "notion_page_id": row["id"],
@@ -89,7 +85,7 @@ for row in notion.query_all(SCHEDULE):
         "title": title,
         "held_on": start,
         "ends_on": end if end and end > start else None,
-        "season_id": seasons[season],
+        "season_id": season_id(start),
     }
     match = by_notion.get(row["id"]) or by_day.pop((kind, start), None)
     plan.append((entry, match))

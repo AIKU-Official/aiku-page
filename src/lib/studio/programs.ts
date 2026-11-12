@@ -28,7 +28,7 @@ export const PROGRAMS: Record<
   deepintodeep: {
     kind: "deepintodeep",
     label: "DeepIntoDeep",
-    lead: "주니어를 위한 딥러닝 강의입니다. 학기마다 열두 번 남짓, 화요일과 목요일에 열립니다.",
+    lead: "주니어를 위한 딥러닝 강의입니다. 시즌마다 열두 번 남짓, 화요일과 목요일에 열립니다.",
     tone: {
       accent: "bg-amber-400",
       chip: "bg-amber-100 text-amber-800 border-amber-400/50",

@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-import { seasonCode, type TimelineDay } from "@/lib/studio/timeline";
+import { seasonCode as code, seasonOfDate } from "@/lib/seasons/name";
+import type { TimelineDay } from "@/lib/studio/timeline";
+
+/** "2026-S" for a day. */
+const seasonCode = (iso: string) => {
+  const season = seasonOfDate(iso);
+  return code(season.year, season.term);
+};
 
 /** How far a season boundary travels while the label turns over: two days' width. */
 const SPAN_DAYS = 2;

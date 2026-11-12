@@ -11,14 +11,14 @@ exactly one member of that name; others stay as names and are reported.
 """
 import json
 
-from aiku_db import SupabaseRest, script_args, season_name
+from aiku_db import SupabaseRest, script_args
 
 env_file, apply = script_args()
 db = SupabaseRest.from_env_file(env_file)
 
 
 events = json.load(open("data/aikuthon/aikuthons.json"))
-season_id = db.season_ids(apply)
+season_id = db.season_of_date(apply)
 roster = {}
 for m in db.get("/rest/v1/members?select=id,name"):
     roster.setdefault(m["name"], []).append(m["id"])
@@ -28,7 +28,7 @@ for event in events:
     row = {k: event[k] for k in ("edition", "kind", "format", "name", "starts_on", "date_precision", "ends_on", "venue",
                                  "mode", "overnight", "team_size_min", "team_size_max", "platform",
                                  "task_title", "task_description", "metric", "competition_url")}
-    row["season_id"] = season_id(season_name(event["starts_on"]))
+    row["season_id"] = season_id(event["starts_on"])
     partners = [{"name": p["name"], "role": p["role"], "sort_order": i} for i, p in enumerate(event["partners"])]
     tracks = [{"name": name, "sort_order": i} for i, name in enumerate(event["tracks"])]
     row["source_key"] = event["key"]

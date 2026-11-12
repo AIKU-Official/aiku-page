@@ -7,7 +7,6 @@ export type AttendanceKind = "deepintodeep" | "seminar" | "momentum" | "event" |
 /** Every kind of entry on AIKU's calendar: the sessions and the rest of the schedule. */
 export type SessionKind =
   AttendanceKind | "conference" | "exchange" | "academic" | "holiday" | "notice";
-export type SeasonTerm = "winter" | "1" | "summer" | "2";
 
 export const SESSION_KIND_LABELS: Record<SessionKind, string> = {
   deepintodeep: "DeepIntoDeep",
@@ -29,15 +28,6 @@ export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
   absent: "무단결석",
   excused_absent: "인정결석",
 };
-
-/**
- * The points semester a season belongs to: winter and the 1st term form
- * semester 1, summer and the 2nd term semester 2. "26-2" for 2026 summer.
- */
-export function semesterOf(year: number, term: SeasonTerm): string {
-  const half = term === "winter" || term === "1" ? 1 : 2;
-  return `${String(year % 100).padStart(2, "0")}-${half}`;
-}
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const toDate = (iso: string) => new Date(`${iso}T00:00:00Z`);

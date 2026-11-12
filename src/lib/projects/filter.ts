@@ -52,5 +52,5 @@ export function filterStatusText(
 export function emptyFilterText(filter: string): string {
   return filter === ALL_PROJECTS
     ? "아직 공개된 프로젝트가 없습니다."
-    : `${filter} 분기에 공개된 프로젝트가 아직 없습니다.`;
+    : `${filter} 시즌에 공개된 프로젝트가 아직 없습니다.`;
 }

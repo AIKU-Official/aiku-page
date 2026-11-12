@@ -19,8 +19,8 @@ import { StudioGate } from "./StudioGate";
 import { StudioTimeline } from "./StudioTimeline";
 
 /**
- * The first page of AIKU Studio: what is coming up this semester, the
- * semester's programs, and the member's own attendance. Only 주니어, 시니어
+ * The first page of AIKU Studio: what is coming up, the current season's
+ * programs, and the member's own attendance. Only 주니어, 시니어
  * and 활동 OB get past the notices.
  */
 export function StudioHome() {
@@ -32,7 +32,7 @@ export function StudioHome() {
 }
 
 function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string }) {
-  const { semester, season, events, counts } = data;
+  const { season, events, counts } = data;
   const today = todayInKorea();
   // The next session of a program from today on, for "다음" on its card.
   const next = (kind: StudioEvent["kind"]) =>
@@ -46,10 +46,10 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
         label: PROGRAMS[slug].label,
         value: counts[slug],
         unit: "회",
-        href: programHref(slug, semester),
+        href: programHref(slug, season),
         card: PROGRAMS[slug].tone.card,
         text: PROGRAMS[slug].tone.text,
-        note: upcoming ? `다음 · ${formatDay(upcoming.date)}` : "이번 학기 일정 끝",
+        note: upcoming ? `다음 · ${formatDay(upcoming.date)}` : "이번 시즌 일정 끝",
       };
     }),
     {
@@ -66,11 +66,11 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
 
   return (
     <div className="grid gap-12 max-sm:gap-9">
-      <StudioTimeline events={events} today={today} semester={semester} />
+      <StudioTimeline events={events} today={today} />
 
-      <section className="grid gap-4" aria-labelledby="studio-semester">
-        <h2 id="studio-semester" className="text-[1.25rem] font-bold text-ink">
-          {semester}학기
+      <section className="grid gap-4" aria-labelledby="studio-season">
+        <h2 id="studio-season" className="text-heading text-ink">
+          {season} 시즌
         </h2>
         <ul className="grid grid-cols-4 gap-3 max-lg:grid-cols-2">
           {cards.map((card) => (

@@ -2,9 +2,10 @@
 
 import { unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
-import { semesterOf, type SeasonTerm, type SessionKind } from "@/lib/activity/calendar";
+import type { SessionKind } from "@/lib/activity/calendar";
 import { signedInMember } from "@/lib/members/signed-in";
 import { canUseStudio } from "@/lib/members/studio";
+import { seasonName, seasonOfDate } from "@/lib/seasons/name";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { isProgram, PROGRAMS } from "@/lib/studio/programs";
 import { monthEnd, todayInKorea } from "@/lib/studio/timeline";
@@ -16,16 +17,16 @@ export type StudioEvent = {
   until: string | null;
   title: string;
   kind: SessionKind | "aikuthon";
+  /** The season it belongs to, "26-2", for links to the season's sessions. */
+  season: string;
 };
 
 export type StudioHome = {
-  /** The current semester, "26-2". */
-  semester: string;
-  /** The newest season in it, "26-2", for links to season filters. */
+  /** The season today falls in, "26-2". */
   season: string;
-  /** Every session and AIKUTHON of the semester, in date order. */
+  /** From the start of the current season to the months the calendar reaches, in date order. */
   events: StudioEvent[];
-  /** Sessions of each kind this semester, and the semester's projects. */
+  /** Sessions of each kind in the current season, and its projects. */
   counts: Record<"deepintodeep" | "momentum" | "seminar" | "projects", number>;
 };
 
@@ -40,43 +41,49 @@ async function isStudioMember(db: ReturnType<typeof createAdminClient>, accessTo
   return Boolean(member && canUseStudio(member.grade));
 }
 
-const TERM_ORDER: Record<SeasonTerm, number> = { winter: 0, "1": 1, summer: 2, "2": 3 };
-
 /**
- * The Studio home for the signed-in member: the current semester's schedule
- * and programs. Only for members who may use Studio (주니어, 시니어, 활동 OB);
- * the member comes from the access token, never from the request.
+ * The Studio home for the signed-in member: the current season (the seasons
+ * row whose dates hold today), its schedule and programs, and what is coming
+ * in the next months. Only for members who may use Studio (주니어, 시니어,
+ * 활동 OB); the member comes from the access token, never from the request.
  */
 export async function getStudioHome(accessToken: unknown): Promise<ActionResult<StudioHome>> {
   try {
     const db = createAdminClient();
     if (!(await isStudioMember(db, accessToken))) return { ok: false, message: NOT_ALLOWED };
 
-    const seasons = (unwrap(await db.from("seasons").select("id, name, year, term")) ?? []).sort(
-      (a, b) =>
-        b.year - a.year || TERM_ORDER[b.term as SeasonTerm] - TERM_ORDER[a.term as SeasonTerm],
-    );
-    const newest = seasons[0];
-    if (!newest) {
-      return { ok: false, message: "아직 등록된 분기가 없습니다." };
-    }
-    const semester = semesterOf(newest.year, newest.term as SeasonTerm);
     const today = todayInKorea();
-    const ids = seasons
-      .filter((season) => semesterOf(season.year, season.term as SeasonTerm) === semester)
-      .map((season) => season.id);
+    const current = unwrap(
+      await db
+        .from("seasons")
+        .select("id, name, starts_on")
+        .lte("starts_on", today)
+        .gte("ends_on", today)
+        .maybeSingle(),
+    );
+    // A season not stored yet still has a name; it simply has nothing in it.
+    const now = seasonOfDate(today);
+    const season = current?.name ?? seasonName(now.year, now.term);
+    const from = current?.starts_on ?? today;
+    const until = monthEnd(today, 4);
 
     const [sessionRows, aikuthonRows, projectCount] = await Promise.all([
-      // This semester's sessions, and anything from today on in the months the
-      // calendar reaches into, e.g. the next semester's first dates.
       db
         .from("activity_sessions")
-        .select("title, kind, held_on, ends_on, season_id")
-        .or(
-          `season_id.in.(${ids.join(",")}),and(held_on.gte.${today},held_on.lte.${monthEnd(today, 4)})`,
-        ),
-      db.from("aikuthons").select("name, starts_on, ends_on").in("season_id", ids),
-      db.from("projects").select("id", { count: "exact", head: true }).in("season_id", ids),
+        .select("title, kind, held_on, ends_on, season_id, seasons(name)")
+        .gte("held_on", from)
+        .lte("held_on", until),
+      db
+        .from("aikuthons")
+        .select("name, starts_on, ends_on, seasons(name)")
+        .gte("starts_on", from)
+        .lte("starts_on", until),
+      current
+        ? db
+            .from("projects")
+            .select("id", { count: "exact", head: true })
+            .eq("season_id", current.id)
+        : Promise.resolve({ count: 0 }),
     ]);
     // After-parties belong to the Seminar before them; they are not their own event.
     const sessions = (unwrap(sessionRows) ?? []).filter((row) => row.kind !== "afterparty");
@@ -86,6 +93,7 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
         until: row.ends_on,
         title: row.title,
         kind: row.kind as SessionKind,
+        season: row.seasons.name,
       })),
       // An AIKUTHON that attendance was taken for is already a session that day.
       ...(unwrap(aikuthonRows) ?? [])
@@ -95,18 +103,17 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
           until: row.ends_on && row.ends_on > row.starts_on ? row.ends_on : null,
           title: row.name,
           kind: "aikuthon" as const,
+          season: row.seasons.name,
         })),
     ].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, "ko"));
 
-    // Counts are this semester's only.
     const count = (kind: SessionKind) =>
-      sessions.filter((row) => row.kind === kind && ids.includes(row.season_id)).length;
+      sessions.filter((row) => row.kind === kind && row.season_id === current?.id).length;
     return {
       ok: true,
       message: "",
       data: {
-        semester,
-        season: newest.name,
+        season,
         events,
         counts: {
           deepintodeep: count("deepintodeep"),
@@ -126,8 +133,10 @@ export type ProgramSession = {
   date: string;
   until: string | null;
   title: string;
-  /** "26-2". */
-  semester: string;
+  /** Its season's stored name, "26-여름". */
+  season: string;
+  /** Its season's place in time; smaller is newer. */
+  seasonOrder: number;
 };
 
 /** Every session of one program, newest first, for its Studio page. Studio members only. */
@@ -144,7 +153,7 @@ export async function getProgramSessions(
       unwrap(
         await db
           .from("activity_sessions")
-          .select("title, held_on, ends_on, seasons(year, term)")
+          .select("title, held_on, ends_on, seasons(name, sort_order)")
           .eq("kind", PROGRAMS[slug].kind)
           .order("held_on", { ascending: false }),
       ) ?? [];
@@ -155,7 +164,8 @@ export async function getProgramSessions(
         date: row.held_on,
         until: row.ends_on,
         title: row.title,
-        semester: semesterOf(row.seasons.year, row.seasons.term as SeasonTerm),
+        season: row.seasons.name,
+        seasonOrder: row.seasons.sort_order,
       })),
     };
   } catch (error) {

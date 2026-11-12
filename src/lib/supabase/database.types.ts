@@ -989,27 +989,33 @@ export type Database = {
       seasons: {
         Row: {
           created_at: string
+          ends_on: string
           id: string
           name: string
           sort_order: number
+          starts_on: string
           term: string
           updated_at: string
           year: number
         }
         Insert: {
           created_at?: string
+          ends_on: string
           id?: string
           name: string
           sort_order?: number
+          starts_on: string
           term: string
           updated_at?: string
           year: number
         }
         Update: {
           created_at?: string
+          ends_on?: string
           id?: string
           name?: string
           sort_order?: number
+          starts_on?: string
           term?: string
           updated_at?: string
           year?: number
@@ -1071,6 +1077,10 @@ export type Database = {
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string }
         Returns: undefined
+      }
+      season_for_date: {
+        Args: { p_create?: boolean; p_day: string }
+        Returns: string
       }
       set_aikuthon_tags: {
         Args: { p_aikuthon_id: string; p_names: string[] }

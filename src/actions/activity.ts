@@ -2,15 +2,11 @@
 
 import { unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
-import {
-  semesterOf,
-  type AttendanceStatus,
-  type SeasonTerm,
-  type AttendanceKind,
-} from "@/lib/activity/calendar";
+import { type AttendanceStatus, type AttendanceKind } from "@/lib/activity/calendar";
 import { getAdminSession } from "@/lib/auth/session";
 import { signedInMember } from "@/lib/members/signed-in";
 import { isOb } from "@/lib/members/studio";
+import { pointsPeriod, type SeasonTerm } from "@/lib/seasons/name";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export type ActivitySession = {
@@ -32,7 +28,7 @@ export type PointEntry = {
 
 /** One member's attendance and points for one semester. */
 export type ActivitySemester = {
-  /** "26-2". */
+  /** The two seasons counted together, "26-여름 · 26-2". */
   semester: string;
   /**
    * The sessions shown on the calendar, in the order they were held. After-
@@ -102,8 +98,13 @@ export async function getActivity(
         .select("season_id, held_on, title, label, points")
         .eq("member_id", memberId),
     ]);
+    // Attendance and points are counted per pair of seasons (winter with the
+    // 1st term, summer with the 2nd); each pair is labelled with both names.
     const semesterBySeason = new Map(
-      (unwrap(seasonRows) ?? []).map((s) => [s.id, semesterOf(s.year, s.term as SeasonTerm)]),
+      (unwrap(seasonRows) ?? []).map((s) => {
+        const period = pointsPeriod(s.year, s.term as SeasonTerm);
+        return [s.id, period.seasons.join(" · ")];
+      }),
     );
     const attended = unwrap(marks) ?? [];
     const earned = unwrap(entryRows) ?? [];
