@@ -3,7 +3,10 @@
 import { unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
 import type { SessionKind } from "@/lib/activity/calendar";
+import type { ProjectPerson } from "@/lib/types";
 import { signedInMember } from "@/lib/members/signed-in";
+import { mapPersonMember } from "@/lib/data/mappers";
+import { PERSON_MEMBER_SELECT } from "@/lib/members/positions";
 import { canUseStudio } from "@/lib/members/studio";
 import { seasonName, seasonOfDate } from "@/lib/seasons/name";
 import { createAdminClient } from "@/lib/supabase/admin-client";
@@ -129,6 +132,14 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
   }
 }
 
+export type ProgramTalk = {
+  title: string;
+  keywords: string[];
+  /** A Momentum talk's track: its short label ("CV", "RL") and full name. */
+  track: { label: string; name: string } | null;
+  speakers: ProjectPerson[];
+};
+
 export type ProgramSession = {
   date: string;
   until: string | null;
@@ -137,9 +148,10 @@ export type ProgramSession = {
   season: string;
   /** Its season's place in time; smaller is newer. */
   seasonOrder: number;
+  talks: ProgramTalk[];
 };
 
-/** Every session of one program, newest first, for its Studio page. Studio members only. */
+/** Every session of one program with its talks, newest first, for its Studio page. Studio members only. */
 export async function getProgramSessions(
   accessToken: unknown,
   slug: unknown,
@@ -153,10 +165,14 @@ export async function getProgramSessions(
       unwrap(
         await db
           .from("activity_sessions")
-          .select("title, held_on, ends_on, seasons(name, sort_order)")
+          .select(
+            `title, held_on, ends_on, seasons(name, sort_order), session_talks(title, keywords, sort_order, tags(name, abbreviation), session_talk_speakers(name, sort_order, ${PERSON_MEMBER_SELECT}))`,
+          )
           .eq("kind", PROGRAMS[slug].kind)
           .order("held_on", { ascending: false }),
       ) ?? [];
+    const bySort = <T extends { sort_order: number }>(list: T[]) =>
+      [...list].sort((a, b) => a.sort_order - b.sort_order);
     return {
       ok: true,
       message: "",
@@ -166,6 +182,18 @@ export async function getProgramSessions(
         title: row.title,
         season: row.seasons.name,
         seasonOrder: row.seasons.sort_order,
+        talks: bySort(row.session_talks).map((talk) => ({
+          title: talk.title,
+          keywords: talk.keywords,
+          track: talk.tags
+            ? { label: talk.tags.abbreviation ?? talk.tags.name, name: talk.tags.name }
+            : null,
+          speakers: bySort(talk.session_talk_speakers).map((speaker) => ({
+            name: speaker.members?.name ?? speaker.name,
+            role: "member" as const,
+            member: mapPersonMember(speaker.members),
+          })),
+        })),
       })),
     };
   } catch (error) {

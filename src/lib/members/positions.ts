@@ -65,3 +65,10 @@ export function formatPositions(rows: PositionRow[] | null | undefined): string 
     .map((row) => `${row.generations.name} ${row.title}`)
     .join(", ");
 }
+
+/**
+ * The joined member a name card needs (PersonName): roster facts, the public
+ * profile's picture and the officer titles. Read through mapPersonMember.
+ */
+export const PERSON_MEMBER_SELECT =
+  `members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT})` as const;

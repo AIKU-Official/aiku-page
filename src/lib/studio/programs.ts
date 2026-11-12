@@ -68,3 +68,6 @@ export const isProgram = (slug: string): slug is ProgramSlug => slug in PROGRAMS
 /** "/studio/seminar?season=26-2". */
 export const programHref = (slug: ProgramSlug, semester?: string) =>
   `/studio/${slug}${semester ? `?season=${encodeURIComponent(semester)}` : ""}`;
+
+/** "26-2 Seminar 16회" → "16회", or the whole title when it has no number. */
+export const sessionNumber = (title: string) => /(\d+\s*(?:회|강))\s*$/.exec(title)?.[1] ?? title;

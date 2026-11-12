@@ -1022,18 +1022,108 @@ export type Database = {
         }
         Relationships: []
       }
+      session_talk_speakers: {
+        Row: {
+          id: string
+          member_id: string | null
+          name: string
+          sort_order: number
+          talk_id: string
+        }
+        Insert: {
+          id?: string
+          member_id?: string | null
+          name: string
+          sort_order?: number
+          talk_id: string
+        }
+        Update: {
+          id?: string
+          member_id?: string | null
+          name?: string
+          sort_order?: number
+          talk_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_talk_speakers_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_talk_speakers_talk_id_fkey"
+            columns: ["talk_id"]
+            isOneToOne: false
+            referencedRelation: "session_talks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_talks: {
+        Row: {
+          created_at: string
+          id: string
+          keywords: string[]
+          session_id: string
+          sort_order: number
+          source_key: string | null
+          title: string
+          track_tag_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keywords?: string[]
+          session_id: string
+          sort_order?: number
+          source_key?: string | null
+          title?: string
+          track_tag_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keywords?: string[]
+          session_id?: string
+          sort_order?: number
+          source_key?: string | null
+          title?: string
+          track_tag_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_talks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "activity_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_talks_track_tag_id_fkey"
+            columns: ["track_tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
+          abbreviation: string | null
           created_at: string
           id: string
           name: string
         }
         Insert: {
+          abbreviation?: string | null
           created_at?: string
           id?: string
           name: string
         }
         Update: {
+          abbreviation?: string | null
           created_at?: string
           id?: string
           name?: string

@@ -99,7 +99,6 @@ function Dashboard({ data }: { data: StudioHomeData }) {
           ))}
         </ul>
       </section>
-
     </div>
   );
 }

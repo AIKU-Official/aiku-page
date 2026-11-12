@@ -4,10 +4,11 @@ import clsx from "clsx";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getProgramSessions, type ProgramSession } from "@/actions/studio";
+import { getProgramSessions, type ProgramSession, type ProgramTalk } from "@/actions/studio";
+import { PersonName } from "@/components/projects/PersonName";
 import { formatDay } from "@/lib/activity/calendar";
 import { parseSeasonName, seasonName } from "@/lib/seasons/name";
-import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
+import { programHref, PROGRAMS, sessionNumber, type ProgramSlug } from "@/lib/studio/programs";
 import { sessionAnchor, todayInKorea } from "@/lib/studio/timeline";
 
 import { GroupHeading } from "@/components/ui/GroupHeading";
@@ -101,33 +102,136 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
                 />
               }
             />
-            <ol className="grid divide-y divide-soft-line rounded-[20px] border border-line bg-surface">
+            {/* Cards as in a gallery: a Momentum session is wide, one column per track. */}
+            <ol
+              className={clsx(
+                "grid gap-4",
+                slug === "momentum"
+                  ? "grid-cols-1"
+                  : "grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1",
+              )}
+            >
               {rows.map((session) => (
-                <li
+                <SessionCard
                   key={`${session.date}-${session.title}`}
-                  id={sessionAnchor(session.date)}
-                  className={clsx(
-                    "transition-colors duration-700",
-                    marked === sessionAnchor(session.date) && "bg-green-100",
-                    "grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-4 px-5 py-3.5 max-sm:grid-cols-1 max-sm:gap-0.5 max-sm:px-4",
-                    session.date > now && "text-muted",
-                  )}
-                >
-                  <span className="text-small font-semibold tabular-nums">
-                    {formatDay(session.date)}
-                    {session.date === now ? (
-                      <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-label text-white">
-                        오늘
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="min-w-0 truncate text-body">{session.title}</span>
-                </li>
+                  slug={slug}
+                  session={session}
+                  now={now}
+                  marked={marked === sessionAnchor(session.date)}
+                />
               ))}
             </ol>
           </section>
         );
       })}
     </div>
+  );
+}
+
+/**
+ * One session as a card: its number and date, then its talks. A
+ * DeepIntoDeep lecture shows its topic and lecturer; a Seminar lists each
+ * talk; a Momentum session puts each track in its own column, so the card
+ * grows sideways rather than down.
+ */
+function SessionCard({
+  slug,
+  session,
+  now,
+  marked,
+}: {
+  slug: ProgramSlug;
+  session: ProgramSession;
+  now: string;
+  marked: boolean;
+}) {
+  const upcoming = session.date > now;
+  const tracks = [
+    ...new Map(session.talks.map((talk) => [talk.track?.label ?? "", talk.track])).entries(),
+  ];
+
+  return (
+    <li
+      id={sessionAnchor(session.date)}
+      className={clsx(
+        "grid content-start gap-4 rounded-[20px] border bg-surface p-5 transition-[background-color,border-color] duration-700 max-sm:p-4",
+        marked ? "border-green-400 bg-green-50" : "border-line",
+      )}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[1.375rem] font-bold text-ink tabular-nums">
+          {sessionNumber(session.title)}
+        </span>
+        <span className={clsx("text-small tabular-nums", upcoming ? "text-muted" : "text-body")}>
+          {formatDay(session.date)}
+          {session.date === now ? (
+            <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-label text-white">오늘</span>
+          ) : null}
+        </span>
+      </div>
+
+      {session.talks.length === 0 ? (
+        <p className="text-small text-muted">
+          {upcoming ? "아직 발표가 정해지지 않았습니다." : "발표 기록이 없습니다."}
+        </p>
+      ) : slug === "momentum" ? (
+        <div
+          className="grid gap-5 max-lg:grid-cols-1"
+          style={{ gridTemplateColumns: `repeat(${tracks.length}, minmax(0, 1fr))` }}
+        >
+          {tracks.map(([key, track]) => (
+            <div key={key} className="grid content-start gap-3">
+              <span
+                className="w-fit rounded-full bg-green-100 px-2.5 py-0.5 text-label font-semibold text-green-800"
+                title={track?.name}
+              >
+                {track?.label ?? "트랙 없음"}
+              </span>
+              <TalkList talks={session.talks.filter((talk) => (talk.track?.label ?? "") === key)} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <TalkList talks={session.talks} lecture={slug === "deepintodeep"} />
+      )}
+    </li>
+  );
+}
+
+/** Talks one under another: title, then who gave it, then its keywords. */
+function TalkList({ talks, lecture = false }: { talks: ProgramTalk[]; lecture?: boolean }) {
+  return (
+    <ul className="grid gap-3.5">
+      {talks.map((talk, index) => (
+        <li key={index} className="grid gap-1">
+          <p className={clsx("font-semibold text-ink", lecture && "text-[1.0625rem] leading-snug")}>
+            {talk.title || <span className="text-muted">제목 없음</span>}
+          </p>
+          {talk.speakers.length ? (
+            <p className="text-small text-muted">
+              {lecture ? "강의 · " : ""}
+              {talk.speakers.map((speaker, i) => (
+                <span key={speaker.name}>
+                  {i > 0 ? ", " : ""}
+                  <PersonName person={speaker} />
+                </span>
+              ))}
+            </p>
+          ) : null}
+          {talk.keywords.length ? (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {talk.keywords.map((keyword) => (
+                <span
+                  key={keyword}
+                  className="rounded-full bg-surface-soft px-2 py-0.5 text-label text-body"
+                >
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -6,6 +6,7 @@ root as `python3 scripts/<name>.py <env file> [--apply]`).
 import json
 import sys
 import urllib.error
+import time
 import urllib.request
 
 
@@ -120,7 +121,14 @@ class NotionApi:
                      "Content-Type": "application/json"},
             data=json.dumps(body).encode() if body is not None else None,
         )
-        return json.load(urllib.request.urlopen(req, timeout=60))
+        # Notion allows about three requests a second; on 429 wait as it asks and try again.
+        for attempt in range(8):
+            try:
+                return json.load(urllib.request.urlopen(req, timeout=60))
+            except urllib.error.HTTPError as error:
+                if error.code != 429 or attempt == 7:
+                    raise
+                time.sleep(float(error.headers.get("Retry-After") or 1.5 * 2**attempt))
 
     def query_all(self, database_id):
         """Every row of a database, following the pages."""

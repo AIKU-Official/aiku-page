@@ -9,7 +9,7 @@ import { EventPill } from "@/components/studio/EventPill";
 import { SeasonTicker } from "@/components/studio/SeasonTicker";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
-import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
+import { programHref, PROGRAMS, sessionNumber, type ProgramSlug } from "@/lib/studio/programs";
 import { addDays, monthEnd, sessionAnchor, timelineDays, weekStart } from "@/lib/studio/timeline";
 
 type Lane = { kinds: StudioEvent["kind"][]; label: string; tone: string; accent: string };
@@ -69,9 +69,6 @@ function hrefOf(event: StudioEvent) {
   if (event.kind === "aikuthon") return "/aikuthon";
   return null;
 }
-
-/** "26-2 Seminar 16회" → "16회": the lane already says what it is. */
-const shortTitle = (title: string) => /(\d+회)\s*$/.exec(title)?.[1] ?? title;
 
 /** "지난 일정", "오늘", "6일 남음". */
 function when(event: StudioEvent, today: string) {
@@ -314,7 +311,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
               .map((event) => (
                 <EventPill
                   key={`${event.kind}-${event.date}-${event.title}`}
-                  label={shortTitle(event.title)}
+                  label={sessionNumber(event.title)}
                   href={hrefOf(event)}
                   tone={lane.tone}
                   faded={(event.until ?? event.date) < today}
