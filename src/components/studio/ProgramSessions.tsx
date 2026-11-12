@@ -198,40 +198,52 @@ function SessionCard({
   );
 }
 
-/** Talks one under another: title, then who gave it, then its keywords. */
+/** Talks one under another: a lecture's topic then its lecturer, or a talk's speaker then its title; then keywords. */
 function TalkList({ talks, lecture = false }: { talks: ProgramTalk[]; lecture?: boolean }) {
   return (
     <ul className="grid gap-3.5">
-      {talks.map((talk, index) => (
-        <li key={index} className="grid gap-1">
-          <p className={clsx("font-semibold text-ink", lecture && "text-[1.0625rem] leading-snug")}>
-            {talk.title || <span className="text-muted">제목 없음</span>}
-          </p>
-          {talk.speakers.length ? (
-            <p className="text-small text-muted">
-              {lecture ? "강의 · " : ""}
-              {talk.speakers.map((speaker, i) => (
-                <span key={speaker.name}>
-                  {i > 0 ? ", " : ""}
-                  <PersonName person={speaker} />
-                </span>
-              ))}
-            </p>
-          ) : null}
-          {talk.keywords.length ? (
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {talk.keywords.map((keyword) => (
-                <span
-                  key={keyword}
-                  className="rounded-full bg-surface-soft px-2 py-0.5 text-label text-body"
-                >
-                  {keyword}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </li>
-      ))}
+      {talks.map((talk, index) => {
+        const speakers = talk.speakers.length ? (
+          <>
+            {talk.speakers.map((speaker, i) => (
+              <span key={speaker.name}>
+                {i > 0 ? ", " : ""}
+                <PersonName person={speaker} />
+              </span>
+            ))}
+          </>
+        ) : null;
+        const title = talk.title || <span className="text-muted">제목 없음</span>;
+        return (
+          <li key={index} className="grid gap-1">
+            {lecture ? (
+              // A lecture: its topic, then who gave it.
+              <>
+                <p className="text-[1.0625rem] leading-snug font-semibold text-ink">{title}</p>
+                {speakers ? <p className="text-small text-muted">강의자 · {speakers}</p> : null}
+              </>
+            ) : (
+              // A talk: who gave it, then its title.
+              <>
+                {speakers ? <p className="font-semibold text-ink">{speakers}</p> : null}
+                <p className="text-small leading-snug text-body">{title}</p>
+              </>
+            )}
+            {talk.keywords.length ? (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {talk.keywords.map((keyword) => (
+                  <span
+                    key={keyword}
+                    className="rounded-full bg-surface-soft px-2 py-0.5 text-label text-body"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </li>
+        );
+      })}
     </ul>
   );
 }

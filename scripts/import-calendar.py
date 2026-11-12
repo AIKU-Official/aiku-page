@@ -12,7 +12,8 @@ hold the day (made by the database if missing, when applying).
 Rows are keyed by their Notion page id, so running this again updates rather
 than duplicates. A row of a kind that already has an entry on the same day
 from the attendance import (keyed "<kind>:<date>") is that entry: it gains the
-Notion id, the Notion title and end date, and keeps its attendance.
+Notion id, the Notion title and end date, and keeps its attendance and the
+date attendance was taken on (where the two disagree, the sheet wins).
 Skipped and reported: rows without a date or title, AIKUTHON rows (the
 aikuthons table is the record of those), and rows whose tags are unknown.
 """
@@ -100,6 +101,10 @@ for line in skipped:
 if apply:
     for entry, match in plan:
         if match:
+            # A session the attendance import made keeps the date attendance was
+            # taken on; Notion only adds its id, title and end date.
+            if (match.get("source_key") or "").startswith(f"{entry['kind']}:"):
+                entry = {k: v for k, v in entry.items() if k not in ("held_on", "season_id")}
             db.request("PATCH", f"/rest/v1/activity_sessions?id=eq.{match['id']}", entry)
         else:
             db.upsert("activity_sessions", entry | {"source_key": "notion:" + entry["notion_page_id"]}, "source_key")
