@@ -47,7 +47,7 @@ export type ActivitySemester = {
 export type MyActivity = {
   /**
    * OB members are outside attendance and points: nothing is sent for them
-   * and their points show as "-".
+   * and their profile has no attendance panel.
    */
   ob: boolean;
   /** Every semester the member has a record in, newest first. */

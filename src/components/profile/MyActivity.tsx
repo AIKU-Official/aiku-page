@@ -54,18 +54,8 @@ export function MyActivity({ memberId }: { memberId: string }) {
     </span>
   );
   if (!allowed) return null;
-  // OB members are outside attendance and points: no calendar, points "-".
-  if (ob) {
-    return (
-      <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-label font-semibold tracking-[0.08em] text-muted uppercase">상벌점</h3>
-          {visibility}
-        </div>
-        <PointsButton activity={null} />
-      </section>
-    );
-  }
+  // OB members are outside attendance and points, so they get no panel at all.
+  if (ob) return null;
   if (!activity) return null;
   return (
     <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
@@ -192,8 +182,8 @@ function SessionTip({ tip, session }: { tip: Tip; session: ActivitySession }) {
   );
 }
 
-/** The total on a button that opens the entries; "-" and inert for OB members (no activity). */
-function PointsButton({ activity }: { activity: Activity | null }) {
+/** The total on a button that opens the entries. */
+function PointsButton({ activity }: { activity: Activity }) {
   const button = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -202,25 +192,20 @@ function PointsButton({ activity }: { activity: Activity | null }) {
       <button
         ref={button}
         type="button"
-        disabled={!activity}
         onClick={() => setOpen(true)}
-        className="flex h-11 items-center justify-between rounded-control border border-line bg-surface px-4 text-small font-semibold text-ink transition-colors hover:border-line-strong hover:bg-surface-soft disabled:pointer-events-none"
+        className="flex h-11 items-center justify-between rounded-control border border-line bg-surface px-4 text-small font-semibold text-ink transition-colors hover:border-line-strong hover:bg-surface-soft"
       >
         상벌점 내역
         <span
           className={clsx(
             "tabular-nums",
-            !activity || activity.total === 0
-              ? "text-muted"
-              : activity.total < 0
-                ? "text-danger"
-                : "text-green-800",
+            activity.total === 0 ? "text-muted" : activity.total < 0 ? "text-danger" : "text-green-800",
           )}
         >
-          {activity ? `${formatPoints(activity.total)}점` : "-"}
+          {formatPoints(activity.total)}점
         </span>
       </button>
-      {open && activity ? (
+      {open ? (
         <CenterPeek
           label="상벌점 내역"
           origin={() => button.current?.getBoundingClientRect()}
