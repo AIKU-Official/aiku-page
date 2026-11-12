@@ -1,3 +1,4 @@
+import { StudioRedirect } from "@/components/studio/StudioRedirect";
 import clsx from "clsx";
 
 import { HomeHero } from "@/components/home/HomeHero";
@@ -47,6 +48,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <StudioRedirect />
       <HomeHero />
 
       <Section>

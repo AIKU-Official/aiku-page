@@ -81,8 +81,8 @@ export function SiteHeader() {
       )}
     >
       <Link
-        href="/"
-        onClick={() => startTrail("/")}
+        href={account?.member?.studio ? "/studio" : "/"}
+        onClick={() => startTrail(account?.member?.studio ? "/studio" : "/")}
         className="inline-flex shrink-0 items-center"
         aria-label="AIKU 홈으로 이동"
       >
