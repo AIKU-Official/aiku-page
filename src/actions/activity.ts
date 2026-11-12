@@ -10,6 +10,7 @@ import {
 } from "@/lib/activity/calendar";
 import { getAdminSession } from "@/lib/auth/session";
 import { signedInMember } from "@/lib/members/signed-in";
+import { isOb } from "@/lib/members/studio";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export type ActivitySession = {
@@ -46,7 +47,7 @@ export type ActivitySemester = {
 
 export type MyActivity = {
   /**
-   * OB members are outside attendance and points: nothing is sent for them
+   * OB members (명예 and 활동 OB alike) are outside attendance and points: nothing is sent for them
    * and their profile has no attendance panel.
    */
   ob: boolean;
@@ -84,9 +85,11 @@ export async function getActivity(
       return { ok: false, message: "본인 또는 관리자만 볼 수 있습니다." };
     }
 
-    const member = unwrap(await db.from("members").select("grade").eq("id", memberId).maybeSingle());
+    const member = unwrap(
+      await db.from("members").select("grade").eq("id", memberId).maybeSingle(),
+    );
     if (!member) return { ok: false, message: "회원을 찾을 수 없습니다." };
-    if (member.grade === "ob") return { ok: true, message: "", data: { ob: true, semesters: [] } };
+    if (isOb(member.grade)) return { ok: true, message: "", data: { ob: true, semesters: [] } };
 
     const [seasonRows, marks, entryRows] = await Promise.all([
       db.from("seasons").select("id, year, term"),
@@ -124,15 +127,13 @@ export async function getActivity(
             semesterOfSeason(mark.activity_sessions.season_id) === semester &&
             mark.activity_sessions.kind !== "afterparty",
         )
-        .map(
-          (mark): ActivitySession => ({
-            date: mark.activity_sessions.held_on,
-            title: mark.activity_sessions.title,
-            kind: mark.activity_sessions.kind as SessionKind,
-            status: mark.status as AttendanceStatus,
-            reason: mark.reason,
-          }),
-        )
+        .map((mark): ActivitySession => ({
+          date: mark.activity_sessions.held_on,
+          title: mark.activity_sessions.title,
+          kind: mark.activity_sessions.kind as SessionKind,
+          status: mark.status as AttendanceStatus,
+          reason: mark.reason,
+        }))
         .sort((a, b) => a.date.localeCompare(b.date) || DAY_ORDER[a.kind] - DAY_ORDER[b.kind]);
       const entries = earned
         .filter((entry) => semesterOfSeason(entry.season_id) === semester)

@@ -25,6 +25,9 @@ export const navItems: NavItem[] = [
   { href: "/login", label: "Login", prefetch: false, utility: true, alsoActiveOn: ["/admin"] },
 ];
 
+/** For a member who may use AIKU Studio, Studio takes About's place in the menu. */
+export const studioNavItem: NavItem = { href: "/studio", label: "Studio", prefetch: false };
+
 export const instagramUrl = "https://www.instagram.com/aiku__official/";
 
 export const contactChannels = [

@@ -5,6 +5,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { emailToLoginId } from "@/lib/auth/login-id";
 import { formatPositions, POSITION_SELECT } from "@/lib/members/positions";
+import { canUseStudio } from "@/lib/members/studio";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import type { MemberGrade } from "@/lib/types";
 import { hasStoredMemberSession } from "@/lib/supabase/auth-client";
@@ -32,6 +33,8 @@ export type MemberAccount = {
     position: string;
     /** Uploaded profile picture (storage object key), if any. */
     avatarPath: string | null;
+    /** May use AIKU Studio: 주니어, 시니어 or 활동 OB. */
+    studio: boolean;
   } | null;
   /** A sign-up request is waiting for an admin. */
   pending: boolean;
@@ -80,6 +83,7 @@ export async function loadMembership(): Promise<Pick<MemberAccount, "member" | "
           grade: member.grade as MemberGrade,
           position: formatPositions(member.member_positions),
           avatarPath: member.member_profiles?.avatar_path ?? null,
+          studio: canUseStudio(member.grade),
         }
       : null,
     pending: Boolean(request.data),
@@ -126,7 +130,8 @@ export function watchMemberAccount() {
       const turn = ++latest;
       if (!session) {
         // Signed out: the admin session goes with the member session.
-        if (state?.admin) void import("@/actions/auth").then(({ clearAdminSession }) => clearAdminSession());
+        if (state?.admin)
+          void import("@/actions/auth").then(({ clearAdminSession }) => clearAdminSession());
         publish(null);
         return;
       }

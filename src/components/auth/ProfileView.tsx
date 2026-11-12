@@ -3,26 +3,8 @@
 import { ProfileContent } from "@/components/profile/ProfileContent";
 import { useMyProfile } from "@/components/profile/useMyProfile";
 import { ButtonLink } from "@/components/ui/Button";
+import { Notice } from "@/components/ui/Notice";
 import { useMemberAccount } from "@/lib/auth/member";
-
-function Notice({
-  children,
-  action,
-}: {
-  children: string;
-  action: { href: string; label: string };
-}) {
-  return (
-    <div className="mx-auto grid w-full max-w-[520px] gap-4 card p-7 max-sm:p-5">
-      <p className="text-muted">{children}</p>
-      <div>
-        <ButtonLink href={action.href} variant="dark" size="sm">
-          {action.label}
-        </ButtonLink>
-      </div>
-    </div>
-  );
-}
 
 /** The signed-in member's own profile, with the way in to editing it. */
 export function ProfileView() {
