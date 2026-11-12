@@ -211,13 +211,18 @@ export function ProfileContent({
                 <li key={project.id}>
                   <Link
                     href={`/projects/${project.id}`}
-                    className="group flex flex-wrap items-center gap-x-3 gap-y-1 py-4"
+                    className="group flex flex-wrap items-baseline gap-x-3 gap-y-1 py-4"
                   >
                     <span className="w-16 shrink-0 text-small text-muted tabular-nums">
                       {project.season}
                     </span>
-                    <span className="min-w-0 flex-1 font-semibold text-ink underline-offset-4 group-hover:underline">
-                      {project.title}
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-ink underline-offset-4 group-hover:underline">
+                        {project.title}
+                      </span>
+                      {project.oneLine ? (
+                        <span className="mt-0.5 block text-small text-muted">{project.oneLine}</span>
+                      ) : null}
                     </span>
                     {project.awardRank ? (
                       <span className={clsx(pillClassName, AWARD_TONES[project.awardRank])}>
@@ -241,13 +246,18 @@ export function ProfileContent({
                 <li key={award.anchor}>
                   <Link
                     href={`/aikuthon#${award.anchor}`}
-                    className="group flex flex-wrap items-center gap-x-3 gap-y-1 py-4"
+                    className="group flex flex-wrap items-baseline gap-x-3 gap-y-1 py-4"
                   >
                     <span className="w-16 shrink-0 text-small text-muted tabular-nums">
                       {award.month}
                     </span>
-                    <span className="min-w-0 flex-1 font-semibold text-ink underline-offset-4 group-hover:underline">
-                      {award.event}
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-ink underline-offset-4 group-hover:underline">
+                        {award.event}
+                      </span>
+                      {award.task ? (
+                        <span className="mt-0.5 block text-small text-muted">{award.task}</span>
+                      ) : null}
                     </span>
                     <span className={clsx(pillClassName, AWARD_TONES[award.rank])}>
                       {award.rank}등

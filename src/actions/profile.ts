@@ -75,7 +75,7 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
   const taken = unwrap(
     await db
       .from("project_members")
-      .select("role, projects(id, title, award_rank, seasons(name, sort_order))")
+      .select("role, projects(id, title, one_line, award_rank, seasons(name, sort_order))")
       .eq("member_id", memberId),
   );
   const projects = (taken ?? [])
@@ -89,13 +89,14 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
         season: entry.projects.seasons.name,
         role: entry.role === "leader" ? "leader" : "member",
         awardRank: rank === 1 || rank === 2 || rank === 3 ? rank : null,
+        oneLine: entry.projects.one_line,
       };
     });
 
   const won = unwrap(
     await db
       .from("aikuthon_award_members")
-      .select("aikuthon_awards(rank, team_name, aikuthons(id, edition, name, starts_on))")
+      .select("aikuthon_awards(rank, team_name, aikuthons(id, edition, name, task_title, starts_on))")
       .eq("member_id", memberId),
   );
   const awards = (won ?? [])
@@ -106,6 +107,7 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
       (award): ProfileAward => ({
         anchor: `aikuthon-${award.aikuthons.edition ?? award.aikuthons.id}`,
         event: award.aikuthons.name,
+        task: award.aikuthons.task_title,
         month: award.aikuthons.starts_on.slice(0, 7).replace("-", "."),
         rank: award.rank as 1 | 2 | 3,
         teamName: award.team_name,
