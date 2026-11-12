@@ -129,7 +129,7 @@ export function StudioTimeline({
     hide();
   };
   const fade =
-    "after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-10 after:bg-linear-to-r after:from-surface-soft after:to-transparent";
+    "after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-10 after:bg-linear-to-r after:from-surface after:to-transparent";
 
   return (
     <section className="grid gap-4" aria-labelledby="studio-timeline">
@@ -166,7 +166,7 @@ export function StudioTimeline({
 
       <div
         ref={scroller}
-        className="overflow-x-auto overscroll-x-contain rounded-[20px] border border-line bg-surface-soft"
+        className="overflow-x-auto overscroll-x-contain rounded-[20px] border border-line bg-surface"
       >
         <div
           className="relative grid"
@@ -176,17 +176,22 @@ export function StudioTimeline({
             gridTemplateRows: `auto repeat(${LANES.length}, ${ROW_HEIGHT}px)`,
           }}
         >
-          {/* Each day's column, behind everything: past days darker, today tinted. */}
+          {/* Each day's column under the lanes only (the header stays white):
+              past days grey, coming days light grey, today white and outlined.
+              Greys only, so the programs' colours stay the only colour. */}
           {days.map((day, i) => (
             <div
               key={`bg-${day.iso}`}
               aria-hidden="true"
               className={clsx(
                 day.weekday === 1 && "border-l border-line/70",
-                day.iso < today && "bg-ink/[0.05]",
-                day.iso === today && "bg-green-100/80",
+                day.iso < today
+                  ? "bg-ink/[0.07]"
+                  : day.iso === today
+                    ? "border-x border-ink/20 bg-surface"
+                    : "bg-surface-soft",
               )}
-              style={{ gridRow: `1 / ${LANES.length + 2}`, gridColumn: i + 2 }}
+              style={{ gridRow: `2 / ${LANES.length + 2}`, gridColumn: i + 2 }}
             />
           ))}
 
@@ -222,14 +227,14 @@ export function StudioTimeline({
           {/* Lane names and the corner stay at the left; the days pass under a fade. */}
           <div
             aria-hidden="true"
-            className={clsx("sticky left-0 z-3 bg-surface-soft", fade)}
+            className={clsx("sticky left-0 z-3 bg-surface", fade)}
             style={{ gridRow: 1, gridColumn: 1 }}
           />
           {LANES.map((lane, row) => (
             <div
               key={lane.label}
               className={clsx(
-                "sticky left-0 z-3 flex items-center gap-2 bg-surface-soft px-5 text-label font-semibold text-body",
+                "sticky left-0 z-3 flex items-center gap-2 bg-surface px-5 text-label font-semibold text-body",
                 fade,
               )}
               style={{ gridRow: row + 2, gridColumn: 1 }}
