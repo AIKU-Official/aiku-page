@@ -19,7 +19,8 @@ Sources (NOTION_TOKEN, read only):
 Talks are keyed by their Notion block, so running this again updates rather
 than duplicates; a session's talks that are no longer in Notion are removed.
 Speakers are matched to the roster by exact name; a name shared by two
-members is left unlinked and reported. Template text ("제목을 적어주세요.")
+members is left unlinked and reported. A talk whose Talker is empty in Notion
+keeps the speakers entered on the site. Template text ("제목을 적어주세요.")
 is ignored. A talk with no title and no speaker is skipped; when its
 uploaded file names a person, that is reported as a guess, never applied.
 """
@@ -253,8 +254,10 @@ if apply:
         for row in rows:
             speakers = row.pop("speakers")
             saved = db.upsert("session_talks", row | {"session_id": session["id"]}, "source_key")
-            db.delete("session_talk_speakers", f"talk_id=eq.{saved['id']}")
+            # Notion's speakers replace the stored ones; when Notion has none, the
+            # speakers entered on the site (admin canvas) stay.
             if speakers:
+                db.delete("session_talk_speakers", f"talk_id=eq.{saved['id']}")
                 db.insert("session_talk_speakers", [s | {"talk_id": saved["id"]} for s in speakers])
         # Talks of this session no longer in Notion go (curriculum rows are per session too).
         if keep:
