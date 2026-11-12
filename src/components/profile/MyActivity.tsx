@@ -50,7 +50,7 @@ export function MyActivity({ memberId }: { memberId: string }) {
 
   const activity = semesters[page];
   const visibility = (
-    <span className="text-label text-muted/60">
+    <span className="text-label whitespace-nowrap text-muted/60">
       {isMe ? "본인에게만 보입니다" : "관리자에게만 보입니다"}
     </span>
   );
@@ -60,7 +60,9 @@ export function MyActivity({ memberId }: { memberId: string }) {
   if (!activity) return null;
   return (
     <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
-      <div className="flex items-center justify-between gap-3">
+      {/* The period (two seasons) and the note each stay on one line; in a
+          narrow column the note moves under the period. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="flex items-center gap-1">
           <PageButton
             label="이전 기간"
@@ -68,7 +70,7 @@ export function MyActivity({ memberId }: { memberId: string }) {
             onClick={() => setPage((value) => value + 1)}
             icon={<ChevronLeftIcon className="size-4" />}
           />
-          <h3 className="min-w-[6.5rem] text-center text-label font-semibold tracking-[0.08em] text-muted uppercase">
+          <h3 className="text-center text-label font-semibold tracking-[0.04em] whitespace-nowrap text-muted">
             출결 · {activity.semester}
           </h3>
           <PageButton
@@ -274,7 +276,7 @@ function PointsPanel({ activity }: { activity: Activity }) {
         <p className="text-small text-muted">이 기간의 상벌점 기록이 없습니다.</p>
       )}
       <p className="text-label text-muted">
-        점수는 두 시즌(겨울과 1, 여름과 2)마다 0점으로 초기화됩니다. 기록이 잘못되었으면 운영진에게
+        점수는 두 시즌(한 학기)마다 0점으로 초기화됩니다. 기록이 잘못되었으면 운영진에게
         알려주세요.
       </p>
     </div>
