@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 import {
-  getMyActivity,
+  getActivity,
   type ActivitySemester as Activity,
   type ActivitySession,
 } from "@/actions/activity";
@@ -38,13 +38,15 @@ type Tip = { x: number; y: number; index: number };
 export function MyActivity({ memberId }: { memberId: string }) {
   const account = useMemberAccount();
   const isMe = Boolean(account?.member && account.member.id === memberId);
-  const [state] = useSignedInData(isMe ? memberId : null, getMyActivity);
+  // The member themselves, or an admin (a current officer) looking at anyone.
+  const allowed = isMe || Boolean(account?.admin);
+  const [state] = useSignedInData(allowed ? memberId : null, (token) => getActivity(token, memberId));
   const semesters = state.status === "ready" ? state.data : [];
   // 0 is the newest semester; ">" moves towards it, "<" back in time.
   const [page, setPage] = useState(0);
 
   const activity = semesters[page];
-  if (!isMe || !activity) return null;
+  if (!allowed || !activity) return null;
   return (
     <section className="grid gap-4 border-t border-soft-line pt-6" aria-label="내 출결과 상벌점">
       <div className="flex items-center justify-between gap-3">
@@ -65,7 +67,9 @@ export function MyActivity({ memberId }: { memberId: string }) {
             path="M6 3.5 10.5 8 6 12.5"
           />
         </div>
-        <span className="text-label text-muted/60">본인에게만 보입니다</span>
+        <span className="text-label text-muted/60">
+          {isMe ? "본인에게만 보입니다" : "관리자에게만 보입니다"}
+        </span>
       </div>
       {activity.sessions.length ? (
         <AttendanceCalendar key={activity.semester} sessions={activity.sessions} />

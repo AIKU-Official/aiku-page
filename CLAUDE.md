@@ -26,11 +26,13 @@ The site is AIKU's public homepage and its internal management tool. The owner i
 
 - `data/` holds personal data and is never committed. `.env*.local` files are never committed and their values are never printed.
 - Student IDs exist in the database only as keyed hashes. The public roster shows name, department, generation, grade and the president / vice-president title, nothing else.
-- Points and attendance records are visible only to the member they belong to, never publicly.
-- A member's profile is private until they make it public. Profile pictures are only the ones a member uploaded; pictures from Google or GitHub are not used.
+- Points and attendance records are visible only to the member they belong to and to admins, never publicly.
+- A member's profile is private until they make it public; admins can see every profile. Profile pictures are only the ones a member uploaded; pictures from Google or GitHub are not used.
 - Receipts, ledgers and application forms may be read to find facts, but account numbers, phone numbers, signatures and the like are never copied anywhere.
 
 ## Members and sign-in
+
+- Admins are the current generation's officers (회장, 부회장 of the newest generation in `member_positions`), signed in with their member account; there is no separate admin login. The admin session cookie holds the member id and is honoured only while they are still a current officer (`src/lib/auth/session.ts`, `src/lib/members/officers.ts`).
 
 - One person, one member: an AIKU ID, Google and GitHub all link to the same roster member. Identity is checked with name, joining generation (`가입 기수`) and student ID; replies never say which field was wrong.
 - Members two or more generations behind the newest are OB automatically (database trigger) unless pinned.

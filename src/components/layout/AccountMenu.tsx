@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { startTrail } from "@/lib/navigation/trail";
 import type { MemberAccount } from "@/lib/auth/member";
+import { signOut } from "@/lib/auth/sign-out";
 
 const itemClassName =
   "flex h-10 w-full items-center rounded-control px-3 text-left text-[0.9375rem] font-medium transition-colors max-lg:h-12 max-lg:text-[1.0625rem]";
@@ -46,11 +47,9 @@ export function AccountMenu({
     onNavigate();
   };
 
-  const signOut = async () => {
+  const leave = async () => {
     close();
-    // Loaded on demand so the header does not ship the Supabase client to every visitor.
-    const { getAuthClient } = await import("@/lib/supabase/auth-client");
-    await getAuthClient().auth.signOut();
+    await signOut();
   };
 
   return (
@@ -98,10 +97,23 @@ export function AccountMenu({
         >
           프로필
         </Link>
+        {account.admin ? (
+          <Link
+            href="/admin"
+            role="menuitem"
+            onClick={() => {
+              startTrail("/admin");
+              close();
+            }}
+            className={clsx(itemClassName, "text-body hover:bg-surface-soft hover:text-ink")}
+          >
+            관리자
+          </Link>
+        ) : null}
         <button
           type="button"
           role="menuitem"
-          onClick={signOut}
+          onClick={leave}
           className={clsx(itemClassName, "cursor-pointer text-danger hover:bg-danger-soft")}
         >
           로그아웃

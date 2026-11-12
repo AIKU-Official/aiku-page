@@ -50,7 +50,10 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
   // A signed-in member's own card leads to their profile page; other cards
   // open the public profile here, when there is one.
   const router = useRouter();
-  const ownMemberId = useMemberAccount()?.member?.id;
+  const account = useMemberAccount();
+  const ownMemberId = account?.member?.id;
+  // Admins (current officers) can open every profile, private ones included.
+  const canOpen = (member: Member) => member.hasPublicProfile || Boolean(account?.admin);
   const [openProfile, setOpenProfile] = useState<{
     member: Member;
     card: HTMLElement;
@@ -237,7 +240,7 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
                     onOpen={
                       member.id === ownMemberId
                         ? () => router.push("/profile")
-                        : member.hasPublicProfile
+                        : canOpen(member)
                           ? (card) => openFrom(member, card)
                           : undefined
                     }

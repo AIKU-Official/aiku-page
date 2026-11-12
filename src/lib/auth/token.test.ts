@@ -6,18 +6,17 @@ import { signSessionToken, verifySessionToken } from "./token";
 const secret = "x".repeat(48);
 
 describe("session token", () => {
-  it("round-trips for the configured admin", async () => {
-    const token = await signSessionToken("admin", secret);
-    expect(await verifySessionToken(token, secret, "admin")).toBe("admin");
+  it("round-trips the admin's member id", async () => {
+    const token = await signSessionToken("member-1", secret);
+    expect(await verifySessionToken(token, secret)).toBe("member-1");
   });
 
-  it("rejects a different secret, a different admin id and garbage", async () => {
-    const token = await signSessionToken("admin", secret);
-    expect(await verifySessionToken(token, "y".repeat(48), "admin")).toBeNull();
-    expect(await verifySessionToken(token, secret, "someone-else")).toBeNull();
-    expect(await verifySessionToken(`${token}x`, secret, "admin")).toBeNull();
-    expect(await verifySessionToken(undefined, secret, "admin")).toBeNull();
-    expect(await verifySessionToken(token, undefined, "admin")).toBeNull();
+  it("rejects a different secret and garbage", async () => {
+    const token = await signSessionToken("member-1", secret);
+    expect(await verifySessionToken(token, "y".repeat(48))).toBeNull();
+    expect(await verifySessionToken(`${token}x`, secret)).toBeNull();
+    expect(await verifySessionToken(undefined, secret)).toBeNull();
+    expect(await verifySessionToken(token, undefined)).toBeNull();
   });
 
   it("rejects expired tokens and tokens for another audience", async () => {
@@ -37,7 +36,7 @@ describe("session token", () => {
       .setExpirationTime("1h")
       .sign(key);
 
-    expect(await verifySessionToken(expired, secret, "admin")).toBeNull();
-    expect(await verifySessionToken(otherAudience, secret, "admin")).toBeNull();
+    expect(await verifySessionToken(expired, secret)).toBeNull();
+    expect(await verifySessionToken(otherAudience, secret)).toBeNull();
   });
 });

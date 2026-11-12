@@ -70,7 +70,6 @@ pnpm dev                      # http://localhost:3000
 `.env.local` 값은 이렇게 채웁니다.
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`: `pnpm exec supabase status`에 나오는 `API_URL`, `PUBLISHABLE_KEY`, `SECRET_KEY`
-- `ADMIN_ID`, `ADMIN_PASSWORD`: 로컬에서 쓸 관리자 계정 (아무 값)
 - `SESSION_SECRET`: `openssl rand -base64 48`로 만든 값
 - `CRON_SECRET`: `openssl rand -hex 24`로 만든 값
 
@@ -97,7 +96,7 @@ src/
   actions/             Server Actions (콘텐츠 저장, 회원 확인과 계정 연결, 프로필, 업로드 URL 발급)
   components/          화면 컴포넌트 (layout, home, projects, members, profile, auth, markdown, admin, ui)
   lib/                 데이터 조회, 인증, 입력 검증, 마크다운 처리, Storage 규칙
-  proxy.ts             로그인하지 않은 /admin 접근을 /login/admin으로 보냄
+  proxy.ts             관리자 세션 없이 /admin에 오면 /login으로 보냄
 supabase/migrations/   DB 스키마, 정렬 함수, 권한(RLS), Storage 버킷
 scripts/               Storage 정리, 노션 프로젝트 가져오기
 tests/e2e/             Playwright 스모크 테스트
@@ -137,7 +136,7 @@ python3 scripts/import-notion-projects.py .env.local --apply    # 실제 반영
 
 ## 콘텐츠 관리
 
-**DB에서 관리하는 콘텐츠:** 소식, 시즌과 프로젝트, 기수와 멤버. 모두 `/login/admin`에서 관리자 계정으로 로그인한 뒤 `/admin`에서 관리합니다.
+**DB에서 관리하는 콘텐츠:** 소식, 시즌과 프로젝트, 기수와 멤버. 현재 기수 회장단(회장, 부회장)이 회원 계정으로 로그인하면 자동으로 관리자가 되고, 계정 메뉴의 `관리자`(`/admin`)에서 관리합니다.
 
 - **새 분기 프로젝트:** 시즌을 먼저 추가한 다음 그 시즌에 프로젝트를 올립니다. 프로젝트가 있는 시즌과 멤버가 있는 기수는 삭제할 수 없습니다.
 - **순서 변경:** 카드를 드래그하거나 ⋮⋮ 손잡이에 포커스한 뒤 스페이스와 방향키로 옮깁니다. 바꾼 순서는 공개 페이지에 그대로 반영됩니다.
@@ -186,7 +185,7 @@ python3 scripts/import-notion-projects.py .env.local --apply    # 실제 반영
 
 로컬에서 시험하려면 `supabase/config.toml`의 `[auth.external.google]`, `[auth.external.github]`을 `enabled = true`로 바꾸고 `SUPABASE_AUTH_EXTERNAL_*` 환경변수 네 개를 설정한 뒤 `pnpm db:stop && pnpm db:start`를 실행합니다. 이때 리디렉션 URI는 `http://127.0.0.1:54321/auth/v1/callback`입니다.
 
-회원 로그인은 방문자가 누구인지 확인할 뿐이고 콘텐츠 수정 권한은 주지 않습니다. 관리자 로그인(`/login/admin`)과는 별개입니다.
+별도 관리자 계정은 없습니다. 회원 표에서 가장 최근 기수의 회장·부회장으로 등록된 회원이 로그인하면 서버가 이를 확인해 관리자 세션을 발급합니다. 새 기수가 추가되면 이전 회장단의 관리자 권한은 자동으로 사라집니다. 관리자는 비공개 프로필을 포함한 모든 프로필과 모든 회원의 출결·상벌점을 볼 수 있습니다.
 
 ### 2. Vercel
 
@@ -195,7 +194,6 @@ python3 scripts/import-notion-projects.py .env.local --apply    # 실제 반영
    - Hobby 플랜은 **public** org 레포만 배포할 수 있으니 레포를 public으로 유지합니다.
 2. Settings → Environment Variables에 `.env.example`의 변수를 모두 넣습니다.
    - `NEXT_PUBLIC_SITE_URL`은 실제 도메인으로 넣습니다(예: `https://aiku.example.com`).
-   - `ADMIN_PASSWORD`는 12자 이상이어야 합니다.
    - `NEXT_PUBLIC_*` 값을 바꾼 뒤에는 재배포해야 반영됩니다.
 3. 배포하면 `vercel.json` 설정이 적용됩니다.
    - 함수는 서울(`icn1`) 리전에서 실행됩니다.
@@ -209,7 +207,7 @@ python3 scripts/import-notion-projects.py .env.local --apply    # 실제 반영
   - Vercel과 Supabase 공식 계정 로그인 정보와 2단계 인증 복구 코드
   - 도메인 계정
   - 이 정보들은 운영진 공유 드라이브에 보관하고, 레포에는 절대 넣지 않습니다.
-- **관리자 비밀번호 변경:** Vercel에서 `ADMIN_PASSWORD`를 바꾸고 재배포합니다. 모든 관리자를 로그아웃시키려면 `SESSION_SECRET`도 새 값으로 바꿉니다.
+- **관리자 인계:** 새 기수의 회장·부회장을 `/admin`의 멤버 관리에서 직책으로 등록하면 그들이 관리자가 됩니다. 모든 관리자 세션을 끊으려면 Vercel에서 `SESSION_SECRET`을 새 값으로 바꾸고 재배포합니다.
 - **Supabase 무료 플랜 주의:**
   - **일시정지:** 약 7일간 DB 활동이 없으면 일시정지됩니다. keepalive cron이 이를 막으니 `CRON_SECRET`이 설정돼 있는지 확인합니다.
   - **전송량:** 월 전송량 한도는 약 5GB입니다. 큰 발표자료(20MB 이상)가 많이 다운로드되면 한도에 닿을 수 있으니, 필요하면 PDF로 줄이거나 외부 링크를 씁니다.

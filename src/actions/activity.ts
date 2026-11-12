@@ -8,6 +8,7 @@ import {
   type SeasonTerm,
   type SessionKind,
 } from "@/lib/activity/calendar";
+import { getAdminSession } from "@/lib/auth/session";
 import { signedInMember } from "@/lib/members/signed-in";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
@@ -58,16 +59,23 @@ const DAY_ORDER: Record<SessionKind, number> = {
 };
 
 /**
- * The signed-in member's own attendance and points. The member is taken from
- * the access token, never from the request, so nobody can read another
- * member's records; there is no public variant. Empty when there is
- * nothing to show yet.
+ * A member's attendance and points, for that member or an admin only. The
+ * viewer is taken from the access token, never from the request; an admin is
+ * a current officer with an admin session. There is no public variant.
+ * Empty when there is nothing to show yet.
  */
-export async function getMyActivity(accessToken: unknown): Promise<ActionResult<MyActivity>> {
+export async function getActivity(
+  accessToken: unknown,
+  memberId: unknown,
+): Promise<ActionResult<MyActivity>> {
   try {
     const db = createAdminClient();
-    const memberId = await signedInMember(db, String(accessToken ?? ""));
-    if (!memberId) return { ok: false, message: "학회원으로 확인된 계정만 볼 수 있습니다." };
+    const viewer = await signedInMember(db, String(accessToken ?? ""));
+    const admin = viewer ? await getAdminSession() : null;
+    const allowed = viewer && (viewer === memberId || admin?.memberId === viewer);
+    if (!allowed || typeof memberId !== "string") {
+      return { ok: false, message: "본인 또는 관리자만 볼 수 있습니다." };
+    }
 
     const [seasonRows, marks, entryRows] = await Promise.all([
       db.from("seasons").select("id, year, term"),

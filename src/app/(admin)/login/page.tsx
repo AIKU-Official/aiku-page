@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { MemberLogin } from "@/components/auth/MemberLogin";
 import { PageHero } from "@/components/layout/PageHero";
 import { Section } from "@/components/layout/Section";
-import { ButtonLink } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
   title: "로그인",
@@ -21,18 +20,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         lead="AIKU 회원은 Google, GitHub 또는 AIKU 아이디로 로그인할 수 있습니다."
       />
       <Section>
-        <div className="site-container grid justify-items-center gap-10 max-sm:gap-8">
+        <div className="site-container grid justify-items-center">
           <MemberLogin error={typeof error === "string" ? error : undefined} />
-          <div className="grid w-full max-w-[520px] gap-3 border-t border-line pt-6">
-            <p className="text-small text-muted">
-              소식, 프로젝트, 멤버 콘텐츠를 관리하는 운영진은 관리자 계정으로 로그인하세요.
-            </p>
-            <div>
-              <ButtonLink href="/login/admin" variant="secondary" size="sm">
-                관리자 로그인
-              </ButtonLink>
-            </div>
-          </div>
         </div>
       </Section>
     </>

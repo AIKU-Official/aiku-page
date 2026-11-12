@@ -24,6 +24,7 @@ import {
   isObjectKeyOf,
 } from "@/lib/storage/keys";
 import { formatPositions, POSITION_SELECT } from "@/lib/members/positions";
+import { getAdminSession } from "@/lib/auth/session";
 import { signedInMember } from "@/lib/members/signed-in";
 import { UPLOAD_BUCKET } from "@/lib/storage/public-url";
 import { removeObjects } from "@/lib/storage/server";
@@ -135,19 +136,44 @@ export async function getMyProfile(accessToken: string): Promise<ActionResult<Pr
   }
 }
 
-/** A member's profile as visitors see it; fails for profiles that are not public. */
+const NOT_FOUND = "프로필을 찾을 수 없습니다.";
+const NOT_PUBLIC = "공개된 프로필이 없습니다.";
+
+/**
+ * A member's profile as anonymous visitors see it; fails for profiles that are
+ * not public. Reads no cookies, so pages that call it stay static.
+ */
 export async function getPublicProfile(memberId: unknown): Promise<ActionResult<ProfilePage>> {
   const parsed = idSchema.safeParse(memberId);
-  if (!parsed.success) return { ok: false, message: "프로필을 찾을 수 없습니다." };
+  if (!parsed.success) return { ok: false, message: NOT_FOUND };
   try {
     const page = await loadPage(createAdminClient(), parsed.data);
-    return page?.profile.isPublic
-      ? { ok: true, message: "", data: page }
-      : { ok: false, message: "공개된 프로필이 없습니다." };
+    if (!page) return { ok: false, message: NOT_FOUND };
+    return page.profile.isPublic ? { ok: true, message: "", data: page } : { ok: false, message: NOT_PUBLIC };
   } catch (error) {
     console.error("[profile]", error);
     return FAILED;
   }
+}
+
+/**
+ * A member's profile for whoever is asking: public profiles for everyone, and
+ * private ones too for an admin (a current officer, checked from the admin
+ * session). For panels and pages opened in the browser.
+ */
+export async function getProfileForViewer(memberId: unknown): Promise<ActionResult<ProfilePage>> {
+  const result = await getPublicProfile(memberId);
+  if (result.ok || result.message !== NOT_PUBLIC || !(await getAdminSession())) return result;
+  const page = await loadPage(createAdminClient(), String(memberId));
+  return page ? { ok: true, message: "", data: page } : { ok: false, message: NOT_FOUND };
+}
+
+/** Whether a member with this id exists, public profile or not. */
+export async function memberExists(memberId: unknown): Promise<boolean> {
+  const parsed = idSchema.safeParse(memberId);
+  if (!parsed.success) return false;
+  const row = unwrap(await createAdminClient().from("members").select("id").eq("id", parsed.data).maybeSingle());
+  return Boolean(row);
 }
 
 /** Issues a one-time URL for uploading a new profile picture straight to storage. */

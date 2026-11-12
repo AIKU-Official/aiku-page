@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-import { getPublicProfile, type ProfilePage } from "@/actions/profile";
+import { getProfileForViewer, type ProfilePage } from "@/actions/profile";
 import { CenterPeek } from "@/components/ui/CenterPeek";
 
 import { ProfileContent } from "./ProfileContent";
@@ -12,7 +12,7 @@ type State =
   | { status: "ready"; page: ProfilePage }
   | { status: "error"; message: string };
 
-/** A public profile opened over the current page. */
+/** A profile opened over the current page: public ones, and any for an admin. */
 export function ProfileModal({
   memberId,
   onClose,
@@ -30,7 +30,7 @@ export function ProfileModal({
 
   useEffect(() => {
     let cancelled = false;
-    void getPublicProfile(memberId).then((result) => {
+    void getProfileForViewer(memberId).then((result) => {
       if (cancelled) return;
       setState(
         result.ok

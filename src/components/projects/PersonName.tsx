@@ -12,12 +12,14 @@ import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS, type ProjectPerson } from "@/lib/types";
 import { pillClassName as pill } from "@/components/ui/Pill";
 import { isPhone } from "@/lib/ui/viewport";
+import { useMemberAccount } from "@/lib/auth/member";
 
 const CARD_WIDTH = 270;
 
 /**
  * A participant's name. For roster members, hovering shows their name card
- * beside the cursor and, when their profile is public, a click opens it.
+ * beside the cursor and, when their profile is public (or the viewer is an
+ * admin), a click opens it.
  */
 export function PersonName({ person }: { person: ProjectPerson }) {
   const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
@@ -25,6 +27,7 @@ export function PersonName({ person }: { person: ProjectPerson }) {
   const close = useCallback(() => setOpen(false), []);
   const member = person.member;
   const router = useRouter();
+  const admin = Boolean(useMemberAccount()?.admin);
 
   if (!member) return <span>{person.name}</span>;
 
@@ -37,15 +40,18 @@ export function PersonName({ person }: { person: ProjectPerson }) {
     setPoint({ x: Math.max(8, x), y: Math.min(event.clientY + 18, window.innerHeight - 110) });
   };
 
+  // Admins (current officers) can open every profile, private ones included.
+  const openable = member.hasPublicProfile || admin;
+
   const className = clsx(
     "rounded-sm underline-offset-4 transition-colors hover:text-ink hover:underline focus-visible:text-ink",
-    member.hasPublicProfile ? "cursor-pointer" : "cursor-default",
+    openable ? "cursor-pointer" : "cursor-default",
   );
   const hover = { onMouseEnter: follow, onMouseMove: follow, onMouseLeave: () => setPoint(null) };
 
   return (
     <>
-      {member.hasPublicProfile ? (
+      {openable ? (
         <button
           type="button"
           className={className}

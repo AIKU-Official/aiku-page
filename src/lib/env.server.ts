@@ -2,14 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
-const isProduction = process.env.NODE_ENV === "production";
-
 const serverEnvSchema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1, "SUPABASE_SECRET_KEY가 필요합니다."),
-  ADMIN_ID: z.string().min(1, "ADMIN_ID가 필요합니다."),
-  ADMIN_PASSWORD: z
-    .string()
-    .min(isProduction ? 12 : 1, "ADMIN_PASSWORD는 운영 환경에서 12자 이상이어야 합니다."),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET은 32자 이상이어야 합니다."),
   CRON_SECRET: z.string().optional(),
   // Only member sign-up needs it, so its absence must not break the admin.

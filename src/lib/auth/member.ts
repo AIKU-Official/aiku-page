@@ -35,6 +35,8 @@ export type MemberAccount = {
   } | null;
   /** A sign-up request is waiting for an admin. */
   pending: boolean;
+  /** A current officer (회장 or 부회장), so an admin; their admin session is set. */
+  admin: boolean;
 };
 
 const toAccount = (user: User): MemberAccount => {
@@ -50,6 +52,7 @@ const toAccount = (user: User): MemberAccount => {
     provider: typeof user.app_metadata.provider === "string" ? user.app_metadata.provider : null,
     member: null,
     pending: false,
+    admin: false,
   };
 };
 
@@ -122,6 +125,8 @@ export function watchMemberAccount() {
     getAuthClient().auth.onAuthStateChange((_event, session) => {
       const turn = ++latest;
       if (!session) {
+        // Signed out: the admin session goes with the member session.
+        if (state?.admin) void import("@/actions/auth").then(({ clearAdminSession }) => clearAdminSession());
         publish(null);
         return;
       }
@@ -131,7 +136,15 @@ export function watchMemberAccount() {
       setTimeout(async () => {
         const membership = await loadMembership();
         if (turn !== latest) return;
-        publish(withMembership(base, membership));
+        const account = withMembership(base, membership);
+        publish(account);
+        // Current officers are admins: the server checks and sets (or clears)
+        // the admin session, and the account learns the answer.
+        if (account.member) {
+          const { syncAdminSession } = await import("@/actions/auth");
+          const admin = await syncAdminSession(session.access_token);
+          if (turn === latest && state) publish({ ...state, admin });
+        }
       }, 0);
     });
   });
