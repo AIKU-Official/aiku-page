@@ -6,10 +6,11 @@ import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 
 import type { StudioEvent } from "@/actions/studio";
 import { CursorTip, useCursorPoint } from "@/components/ui/CursorTip";
+import { YearTicker } from "@/components/studio/YearTicker";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
 import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
-import { addDays, sessionAnchor, timelineDays, weekStart } from "@/lib/studio/timeline";
+import { addDays, monthEnd, sessionAnchor, timelineDays, weekStart } from "@/lib/studio/timeline";
 
 type Lane = { kinds: StudioEvent["kind"][]; label: string; tone: string; accent: string };
 
@@ -101,13 +102,17 @@ export function StudioTimeline({
 
   // The whole semester: from the week of its first entry to at least four weeks ahead.
   const first = weekStart(events.reduce((min, e) => (e.date < min ? e.date : min), today));
+  // To the last entry, and at least to the end of the month four months ahead.
   const last = events.reduce(
     (max, e) => ((e.until ?? e.date) > max ? (e.until ?? e.date) : max),
-    addDays(today, 27),
+    monthEnd(today, 4),
   );
   const weeks = Math.floor((Date.parse(last) - Date.parse(first)) / DAY_MS / 7) + 1;
   const days = timelineDays(first, weeks * 7);
   const column = (iso: string) => days.findIndex((day) => day.iso === iso);
+  // Grid line where the past ends: today's column, or past the last day if all are past.
+  const pastEnd =
+    column(today) >= 0 ? column(today) + 2 : today > days.at(-1)!.iso ? days.length + 2 : 2;
   // Every day a public holiday covers, for the header's colour.
   const holidays = new Set(
     events
@@ -195,7 +200,9 @@ export function StudioTimeline({
               key={`bg-${day.iso}`}
               aria-hidden="true"
               className={clsx(
-                day.weekday === 1 && "border-l border-soft-line",
+                // Rules a step darker over the past wash, so they stay one with it.
+                day.weekday === 1 &&
+                  (day.iso < today ? "border-l border-line" : "border-l border-soft-line"),
                 // The wash fades out over the last day before today rather than stopping at a line.
                 day.iso < addDays(today, -1) && "bg-surface-soft",
                 day.iso === addDays(today, -1) && "bg-linear-to-r from-surface-soft to-transparent",
@@ -211,6 +218,26 @@ export function StudioTimeline({
               style={{ gridRow: row + 2, gridColumn: `1 / ${days.length + 2}` }}
             />
           ))}
+          {/* Over the past wash the lane hairlines are a step darker, fading
+              back to the light rule over the day before today as the wash does. */}
+          {pastEnd > 2
+            ? LANES.slice(0, -1).flatMap((lane, row) => [
+                pastEnd > 3 ? (
+                  <div
+                    key={`past-rule-${lane.label}`}
+                    aria-hidden="true"
+                    className="h-px self-end bg-line"
+                    style={{ gridRow: row + 2, gridColumn: `2 / ${pastEnd - 1}` }}
+                  />
+                ) : null,
+                <div
+                  key={`past-fade-${lane.label}`}
+                  aria-hidden="true"
+                  className="h-px self-end bg-linear-to-r from-line to-transparent"
+                  style={{ gridRow: row + 2, gridColumn: pastEnd - 1 }}
+                />,
+              ])
+            : null}
           {column(today) >= 0 ? (
             <div
               aria-hidden="true"
@@ -263,10 +290,14 @@ export function StudioTimeline({
 
           {/* Lane names and the corner stay at the left; the days pass under a fade. */}
           <div
-            aria-hidden="true"
-            className={clsx("sticky left-0 z-3 border-b border-line bg-surface", fade)}
+            className={clsx(
+              "sticky left-0 z-3 flex items-end border-b border-line bg-surface pb-2.5 pl-3",
+              fade,
+            )}
             style={{ gridRow: 1, gridColumn: 1 }}
-          />
+          >
+            <YearTicker scroller={scroller} days={days} dayWidth={DAY_WIDTH} />
+          </div>
           {LANES.map((lane, row) => (
             <div
               key={lane.label}

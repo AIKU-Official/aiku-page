@@ -7,6 +7,7 @@ import { signedInMember } from "@/lib/members/signed-in";
 import { canUseStudio } from "@/lib/members/studio";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { isProgram, PROGRAMS } from "@/lib/studio/programs";
+import { monthEnd, todayInKorea } from "@/lib/studio/timeline";
 
 export type StudioEvent = {
   /** ISO date. */
@@ -60,12 +61,20 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
       return { ok: false, message: "아직 등록된 분기가 없습니다." };
     }
     const semester = semesterOf(newest.year, newest.term as SeasonTerm);
+    const today = todayInKorea();
     const ids = seasons
       .filter((season) => semesterOf(season.year, season.term as SeasonTerm) === semester)
       .map((season) => season.id);
 
     const [sessionRows, aikuthonRows, projectCount] = await Promise.all([
-      db.from("activity_sessions").select("title, kind, held_on, ends_on").in("season_id", ids),
+      // This semester's sessions, and anything from today on in the months the
+      // calendar reaches into, e.g. the next semester's first dates.
+      db
+        .from("activity_sessions")
+        .select("title, kind, held_on, ends_on, season_id")
+        .or(
+          `season_id.in.(${ids.join(",")}),and(held_on.gte.${today},held_on.lte.${monthEnd(today, 4)})`,
+        ),
       db.from("aikuthons").select("name, starts_on, ends_on").in("season_id", ids),
       db.from("projects").select("id", { count: "exact", head: true }).in("season_id", ids),
     ]);
@@ -89,7 +98,9 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
         })),
     ].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, "ko"));
 
-    const count = (kind: SessionKind) => sessions.filter((row) => row.kind === kind).length;
+    // Counts are this semester's only.
+    const count = (kind: SessionKind) =>
+      sessions.filter((row) => row.kind === kind && ids.includes(row.season_id)).length;
     return {
       ok: true,
       message: "",

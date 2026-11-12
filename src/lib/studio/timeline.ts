@@ -48,3 +48,9 @@ export const todayInKorea = () =>
 
 /** The id of a session's row on its program page, "session-2026-11-19", for direct links. */
 export const sessionAnchor = (iso: string) => `session-${iso}`;
+
+/** The last day of the month `months` after the month of `iso`: monthEnd("2026-11-13", 4) is "2027-03-31". */
+export function monthEnd(iso: string, months: number): string {
+  const date = toDate(iso);
+  return toIso(new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months + 1, 0)));
+}
