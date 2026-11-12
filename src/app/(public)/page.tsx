@@ -19,7 +19,7 @@ const homeLinks = [
   {
     href: "/aikuthon",
     label: "AIKUTHON",
-    title: "AIKU가 직접 만드는 데이터톤",
+    title: "AIKU 자체 데이터톤",
     description: "역대 대회의 문제와 수상팀을 살펴봅니다.",
   },
   {
