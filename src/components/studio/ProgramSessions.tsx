@@ -1,14 +1,15 @@
 "use client";
 
 import clsx from "clsx";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { getProgramSessions, type ProgramSession, type ProgramTalk } from "@/actions/studio";
 import { PersonName } from "@/components/projects/PersonName";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
 import { parseSeasonName, seasonName } from "@/lib/seasons/name";
-import { programHref, PROGRAMS, sessionNumber, type ProgramSlug } from "@/lib/studio/programs";
+import { programHref, sessionNumber, type ProgramSlug } from "@/lib/studio/programs";
 import { sessionAnchor, todayInKorea } from "@/lib/studio/timeline";
 
 import { GroupHeading } from "@/components/ui/GroupHeading";
@@ -16,9 +17,9 @@ import { GroupHeading } from "@/components/ui/GroupHeading";
 import { StudioGate } from "./StudioGate";
 
 /**
- * One program across every season: season filters (?season=26-2, kept in
- * the address so a link can open one season), then each season's sessions
- * newest first.
+ * One program, one season at a time (?season=26-2, kept in the address so a
+ * link can open a season), moved between with arrows beside the season's
+ * name; its sessions newest first.
  */
 export function ProgramSessions({ slug }: { slug: ProgramSlug }) {
   return (
@@ -33,7 +34,6 @@ export function ProgramSessions({ slug }: { slug: ProgramSlug }) {
 
 function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramSession[] }) {
   const router = useRouter();
-  const pathname = usePathname();
   const params = useSearchParams();
   // The program's seasons, newest first by the seasons table's own order.
   const seasons = [...new Map(sessions.map((s) => [s.season, s.seasonOrder]))]
@@ -43,8 +43,11 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
   const wanted = params.get("season");
   const parsed = wanted ? parseSeasonName(wanted) : null;
   const wantedName = parsed ? seasonName(parsed.year, parsed.term) : null;
-  const selected = wantedName && seasons.includes(wantedName) ? wantedName : null;
-  const shown = selected ? [selected] : seasons;
+  // One season at a time: the one asked for, else the program's newest.
+  const season = wantedName && seasons.includes(wantedName) ? wantedName : seasons[0];
+  const at = seasons.indexOf(season);
+  const older = seasons[at + 1];
+  const newer = seasons[at - 1];
   const now = todayInKorea();
   // Opened from the calendar at one session (#session-<date>): bring it into
   // view and mark it for a moment. Runs once the sessions are on the page.
@@ -60,8 +63,7 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
     return () => window.clearTimeout(timer);
   }, []);
 
-  const choose = (season: string | null) =>
-    router.replace(season ? programHref(slug, season) : pathname, { scroll: false });
+  const choose = (name: string) => router.replace(programHref(slug, name), { scroll: false });
 
   if (!sessions.length) {
     return <p className="text-muted">아직 등록된 일정이 없습니다.</p>;
@@ -69,36 +71,29 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
 
   return (
     <div className="grid gap-8">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="시즌">
-        {[null, ...seasons].map((season) => (
-          <button
-            key={season ?? "all"}
-            type="button"
-            aria-pressed={selected === season}
-            onClick={() => choose(season)}
-            className={clsx(
-              "h-9 rounded-full border px-4 text-small font-semibold tabular-nums transition-colors",
-              selected === season
-                ? "border-surface-soft bg-surface-soft text-ink"
-                : "border-line bg-surface text-muted hover:border-line-strong hover:text-ink",
-            )}
-          >
-            {season ?? "전체"}
-          </button>
-        ))}
-      </div>
-
-      {shown.map((season) => {
+      {[season].map((season) => {
         const rows = sessions.filter((session) => session.season === season);
         return (
           <section key={season} className="grid gap-3" aria-label={season}>
+            {/* The season's name between arrows in the program's colour (the page's
+                accent scope): left for the season before, right for the one after. */}
             <GroupHeading
               title={season}
               count={`${rows.length}회`}
               marker={
-                <span
-                  className={clsx("size-2.5 shrink-0 rounded-full", PROGRAMS[slug].tone.accent)}
-                  aria-hidden="true"
+                <SeasonArrow
+                  label={older ? `이전 시즌 ${older}` : "이전 시즌 없음"}
+                  disabled={!older}
+                  onClick={() => older && choose(older)}
+                  icon={<ChevronLeftIcon className="size-6" />}
+                />
+              }
+              after={
+                <SeasonArrow
+                  label={newer ? `다음 시즌 ${newer}` : "다음 시즌 없음"}
+                  disabled={!newer}
+                  onClick={() => newer && choose(newer)}
+                  icon={<ChevronRightIcon className="size-6" />}
                 />
               }
             />
@@ -245,5 +240,31 @@ function TalkList({ talks, lecture = false }: { talks: ProgramTalk[]; lecture?: 
         );
       })}
     </ul>
+  );
+}
+
+/** An arrow beside the season's name, in the page's accent colour. */
+function SeasonArrow({
+  label,
+  disabled,
+  onClick,
+  icon,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex size-10 items-center justify-center rounded-full text-green-700 transition-colors hover:bg-green-100 disabled:pointer-events-none disabled:text-line-strong"
+    >
+      {icon}
+    </button>
   );
 }
