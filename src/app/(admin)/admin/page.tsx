@@ -31,7 +31,7 @@ export default async function AdminPage() {
       </div>
       <section className="site-container hidden py-10 max-lg:block pointer-coarse:block">
         <p className="rounded-[20px] border border-line bg-surface-soft px-5 py-6 text-center text-body text-muted">
-          관리자 페이지는 컴퓨터에서만 쓸 수 있습니다.
+          관리자 페이지는 컴퓨터 환경에서만 이용할 수 있습니다.
         </p>
       </section>
     </>
