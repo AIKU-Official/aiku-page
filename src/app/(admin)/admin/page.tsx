@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { LogoutButton } from "@/components/admin/LogoutButton";
 import { MembersPanel } from "@/components/admin/MembersPanel";
 import { NewsPanel } from "@/components/admin/NewsPanel";
 import { ProjectPanel } from "@/components/admin/ProjectPanel";
@@ -43,7 +42,6 @@ export default async function AdminPage() {
         eyebrow="Admin"
         title="AIKU 콘텐츠 관리"
         lead="소식, 프로젝트, 멤버를 등록하고 수정합니다. 저장한 내용은 홈, 프로젝트, Members 페이지에 바로 반영됩니다."
-        aside={<LogoutButton />}
       />
       <Section>
         <div className="site-container grid gap-16">
