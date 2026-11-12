@@ -176,31 +176,44 @@ export function StudioTimeline({
             gridTemplateRows: `auto repeat(${LANES.length}, ${ROW_HEIGHT}px)`,
           }}
         >
-          {/* Each day's column under the lanes only (the header stays white):
-              past days grey, coming days light grey, today white and outlined.
-              Greys only, so the programs' colours stay the only colour. */}
+          {/* Under the lanes, in greys only so the programs' colours stay the
+              only colour: past days washed light grey, a rule at each week,
+              a hairline under each lane, and today as a thin dark line. */}
           {days.map((day, i) => (
             <div
               key={`bg-${day.iso}`}
               aria-hidden="true"
               className={clsx(
-                day.weekday === 1 && "border-l border-line/70",
-                day.iso < today
-                  ? "bg-ink/[0.07]"
-                  : day.iso === today
-                    ? "border-x border-ink/20 bg-surface"
-                    : "bg-surface-soft",
+                day.weekday === 1 && "border-l border-soft-line",
+                day.iso < today && "bg-surface-soft",
               )}
               style={{ gridRow: `2 / ${LANES.length + 2}`, gridColumn: i + 2 }}
             />
           ))}
+          {LANES.slice(0, -1).map((lane, row) => (
+            <div
+              key={`rule-${lane.label}`}
+              aria-hidden="true"
+              className="border-b border-soft-line"
+              style={{ gridRow: row + 2, gridColumn: `1 / ${days.length + 2}` }}
+            />
+          ))}
+          {column(today) >= 0 ? (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none z-1 flex justify-center"
+              style={{ gridRow: `2 / ${LANES.length + 2}`, gridColumn: column(today) + 2 }}
+            >
+              <div className="w-px bg-ink/45" />
+            </div>
+          ) : null}
 
           {/* Day header: the month on its first day, weekday, date. */}
           {days.map((day, i) => (
             <div
               key={`day-${day.iso}`}
               className={clsx(
-                "grid justify-items-center gap-0.5 pt-3 pb-2.5 text-[0.6875rem] tabular-nums",
+                "grid justify-items-center gap-0.5 border-b border-line pt-3 pb-2.5 text-[0.6875rem] tabular-nums",
                 day.weekday === 0 || day.weekday === 6 ? "text-muted/60" : "text-muted",
               )}
               style={{ gridRow: 1, gridColumn: i + 2 }}
@@ -227,7 +240,7 @@ export function StudioTimeline({
           {/* Lane names and the corner stay at the left; the days pass under a fade. */}
           <div
             aria-hidden="true"
-            className={clsx("sticky left-0 z-3 bg-surface", fade)}
+            className={clsx("sticky left-0 z-3 border-b border-line bg-surface", fade)}
             style={{ gridRow: 1, gridColumn: 1 }}
           />
           {LANES.map((lane, row) => (
@@ -235,6 +248,7 @@ export function StudioTimeline({
               key={lane.label}
               className={clsx(
                 "sticky left-0 z-3 flex items-center gap-2 bg-surface px-5 text-label font-semibold text-body",
+                row < LANES.length - 1 && "border-b border-soft-line",
                 fade,
               )}
               style={{ gridRow: row + 2, gridColumn: 1 }}
