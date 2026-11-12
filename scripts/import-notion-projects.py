@@ -250,3 +250,6 @@ def main():
 
 
 main()
+
+if apply:
+    db.refresh_pages(["projects"])

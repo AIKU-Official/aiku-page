@@ -60,3 +60,6 @@ for event in events:
 
 print(f"{'applied' if apply else 'dry run'}: {len(events)} events, {linked} winners linked to members, "
       f"{len(unmatched)} not on the roster: {', '.join(sorted(unmatched))}")
+
+if apply:
+    db.refresh_pages(["aikuthons"])

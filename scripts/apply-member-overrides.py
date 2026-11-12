@@ -41,3 +41,6 @@ for page_id, entry in json.load(open("data/notion/member-overrides.json")).items
     if added and apply:
         db.insert("project_members", added)
     print(f"  {project['title']}: {'added' if apply else 'would add'} {', '.join(a['name'] for a in added) or 'nobody'}")
+
+if apply:
+    db.refresh_pages(["projects"])

@@ -33,14 +33,15 @@ def season_name(day):
 class SupabaseRest:
     """The project's REST and Storage APIs, called with the secret key."""
 
-    def __init__(self, url, key, timeout=60):
+    def __init__(self, url, key, timeout=60, site_url=None):
         self.url, self.key, self.timeout = url.rstrip("/"), key, timeout
+        self.site_url = site_url.rstrip("/") if site_url else None
 
     @classmethod
     def from_env_file(cls, path, timeout=60):
         env = read_env(path)
         key = env.get("SUPABASE_SECRET_KEY") or env["SUPABASE_SERVICE_ROLE_KEY"]
-        return cls(env["NEXT_PUBLIC_SUPABASE_URL"], key, timeout)
+        return cls(env["NEXT_PUBLIC_SUPABASE_URL"], key, timeout, env.get("NEXT_PUBLIC_SITE_URL"))
 
     def request(self, method, path, body=None, *, prefer=None, headers=None, raw=None):
         """One call; JSON in and out unless `raw` bytes are sent. Exits on an HTTP error."""
@@ -74,6 +75,22 @@ class SupabaseRest:
 
     def rpc(self, function, args):
         return self.request("POST", f"/rest/v1/rpc/{function}", args)
+
+    def refresh_pages(self, kinds):
+        """Asks the site to rebuild the public pages showing these kinds of
+        content ("news", "projects", "members", "aikuthons") instead of waiting
+        for the hourly refresh. Never fails the import; it only reports."""
+        if not self.site_url:
+            print("  pages not refreshed: no NEXT_PUBLIC_SITE_URL in the env file")
+            return
+        req = urllib.request.Request(self.site_url + "/api/revalidate", method="POST",
+                                     data=json.dumps({"kinds": list(kinds)}).encode(),
+                                     headers={"Authorization": "Bearer " + self.key, "Content-Type": "application/json"})
+        try:
+            urllib.request.urlopen(req, timeout=30).read()
+            print(f"  pages refreshed on {self.site_url}: {', '.join(kinds)}")
+        except (urllib.error.URLError, urllib.error.HTTPError) as error:
+            print(f"  pages not refreshed ({error}); they update within the hour")
 
     def season_ids(self, apply):
         """A lookup from season name to id that creates missing seasons when applying."""

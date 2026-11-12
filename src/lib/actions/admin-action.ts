@@ -8,6 +8,7 @@ import { getAdminSession } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
 import type { ActionResult } from "./result";
+import { type ContentKind, revalidateContent } from "@/lib/cache/content-paths";
 
 export type AdminDb = ReturnType<typeof createAdminClient>;
 
@@ -37,14 +38,7 @@ export function unwrap<T>(
   return result.data;
 }
 
-/** Public pages affected by each kind of content. */
-const affectedPaths = {
-  news: ["/"],
-  projects: ["/projects"],
-  members: ["/members"],
-} as const;
-
-export type ContentKind = keyof typeof affectedPaths;
+export type { ContentKind } from "@/lib/cache/content-paths";
 
 type AdminActionOptions<S extends z.ZodType> = {
   schema: S;
@@ -74,18 +68,7 @@ export async function adminAction<S extends z.ZodType, T = undefined>(
 
   try {
     const result = await run(parsed.data, createAdminClient());
-    for (const kind of revalidate) {
-      for (const path of affectedPaths[kind]) {
-        revalidatePath(path);
-      }
-    }
-    // Each project also has its own page.
-    if (revalidate.includes("projects")) revalidatePath("/projects/[id]", "page");
-    // Profiles list a member's projects (with their summaries) and their
-    // roster facts, read live from those tables, so their pages refresh too.
-    if (revalidate.includes("projects") || revalidate.includes("members")) {
-      revalidatePath("/members/[id]", "page");
-    }
+    revalidateContent(revalidate);
     // Re-render the admin page itself in the same response.
     revalidatePath("/admin");
     return { ok: true, message: result.message, data: result.data as T };
