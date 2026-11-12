@@ -65,7 +65,11 @@ export function TablePeek({
     const all = displayRows(table.name, rows ?? [], table.primaryKey, history.changes);
     const needle = query.trim().toLowerCase();
     return needle
-      ? all.filter((entry) => Object.values(entry.row).some((value) => formatValue(value).toLowerCase().includes(needle)))
+      ? all.filter((entry) =>
+          Object.values(entry.row).some((value) =>
+            formatValue(value).toLowerCase().includes(needle),
+          ),
+        )
       : all;
   }, [table, rows, history.changes, query]);
   const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
@@ -77,7 +81,8 @@ export function TablePeek({
     const values: Row = {};
     // A generated uuid key is filled in now, so new rows can point at each other.
     for (const column of table.columns) {
-      if (column.primaryKey && column.kind === "uuid" && column.hasDefault) values[column.name] = crypto.randomUUID();
+      if (column.primaryKey && column.kind === "uuid" && column.hasDefault)
+        values[column.name] = crypto.randomUUID();
     }
     onHistory(addRow(history, table.name, ref, values));
     setSelected({ table: table.name, ref });
@@ -95,7 +100,9 @@ export function TablePeek({
       onClose={onClose}
       blend="fade"
       expandable
-      width="max-w-[1180px]"
+      // Widens when a row is open, so the editor gets its own room on the right
+      // instead of squeezing the rows.
+      width={current ? "max-w-[1440px]" : "max-w-[960px]"}
       className="p-8 max-lg:p-6 max-sm:p-4 max-sm:pt-14"
     >
       <div className="grid gap-5">
@@ -120,7 +127,12 @@ export function TablePeek({
             보안상 이 표의 데이터는 보여주지 않습니다. 구조만 캔버스에 표시됩니다.
           </p>
         ) : (
-          <div className={clsx("grid gap-5", current && "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]")}>
+          <div
+            className={clsx(
+              "grid gap-5",
+              current && "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]",
+            )}
+          >
             <section className="grid min-w-0 content-start gap-3">
               <label className="relative">
                 <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
@@ -135,7 +147,9 @@ export function TablePeek({
                 />
               </label>
               {rows === undefined ? (
-                <p role="status" className="py-10 text-center text-small text-muted">행을 불러오는 중입니다.</p>
+                <p role="status" className="py-10 text-center text-small text-muted">
+                  행을 불러오는 중입니다.
+                </p>
               ) : shown.length === 0 ? (
                 <p className="py-10 text-center text-small text-muted">
                   {query ? "찾는 값이 있는 행이 없습니다." : "아직 행이 없습니다."}
@@ -146,7 +160,10 @@ export function TablePeek({
                     <thead className="bg-surface-soft">
                       <tr>
                         {columns.map((column) => (
-                          <th key={column.name} className="px-3 py-2 font-mono text-label font-semibold whitespace-nowrap text-muted">
+                          <th
+                            key={column.name}
+                            className="px-3 py-2 font-mono text-label font-semibold whitespace-nowrap text-muted"
+                          >
                             {column.name}
                           </th>
                         ))}
@@ -160,7 +177,8 @@ export function TablePeek({
                           className={clsx(
                             "cursor-pointer border-t border-soft-line transition-colors hover:bg-surface-soft",
                             STATE_TONES[entry.state],
-                            sameTarget(selected, entry.target) && "outline-2 -outline-offset-2 outline-green-400",
+                            sameTarget(selected, entry.target) &&
+                              "outline-2 -outline-offset-2 outline-green-400",
                           )}
                         >
                           {columns.map((column) => (
@@ -168,10 +186,14 @@ export function TablePeek({
                               key={column.name}
                               className={clsx(
                                 "max-w-56 truncate px-3 py-2 align-top",
-                                entry.edited.has(column.name) && entry.state === "edited" && "font-semibold text-amber-800",
+                                entry.edited.has(column.name) &&
+                                  entry.state === "edited" &&
+                                  "font-semibold text-amber-800",
                               )}
                             >
-                              {formatValue(entry.row[column.name]) || <span className="text-line-strong">—</span>}
+                              {formatValue(entry.row[column.name]) || (
+                                <span className="text-line-strong">—</span>
+                              )}
                             </td>
                           ))}
                         </tr>
@@ -183,13 +205,26 @@ export function TablePeek({
               {pages > 1 ? (
                 <div className="flex items-center justify-between text-small text-muted">
                   <span className="tabular-nums">
-                    {page * PAGE_SIZE + 1}–{Math.min(shown.length, (page + 1) * PAGE_SIZE)} / {shown.length}
+                    {page * PAGE_SIZE + 1}–{Math.min(shown.length, (page + 1) * PAGE_SIZE)} /{" "}
+                    {shown.length}
                   </span>
                   <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" fullWidthOnMobile={false} disabled={page === 0} onClick={() => setPage(page - 1)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      fullWidthOnMobile={false}
+                      disabled={page === 0}
+                      onClick={() => setPage(page - 1)}
+                    >
                       이전
                     </Button>
-                    <Button variant="secondary" size="sm" fullWidthOnMobile={false} disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      fullWidthOnMobile={false}
+                      disabled={page >= pages - 1}
+                      onClick={() => setPage(page + 1)}
+                    >
                       다음
                     </Button>
                   </div>

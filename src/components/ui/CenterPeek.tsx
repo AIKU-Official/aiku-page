@@ -152,7 +152,8 @@ export function CenterPeek({
       <div
         ref={shell}
         className={clsx(
-          "relative w-full will-change-transform max-sm:drop-shadow-none",
+          // A panel whose width changes while open (e.g. a side editor opening) eases to it.
+          "relative w-full will-change-transform motion-safe:transition-[max-width] motion-safe:duration-300 motion-safe:ease-out max-sm:drop-shadow-none",
           expanded ? "max-w-none" : clsx(width, "drop-shadow-[0_24px_60px_rgb(29_29_29/0.2)]"),
         )}
       >
