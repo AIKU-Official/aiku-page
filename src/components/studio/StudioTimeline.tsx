@@ -1,11 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import Link from "next/link";
 import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 
 import type { StudioEvent } from "@/actions/studio";
 import { CursorTip, useCursorPoint } from "@/components/ui/CursorTip";
+import { EventPill } from "@/components/studio/EventPill";
 import { SeasonTicker } from "@/components/studio/SeasonTicker";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
@@ -319,34 +319,22 @@ export function StudioTimeline({
           {LANES.map((lane, row) =>
             events
               .filter((event) => lane.kinds.includes(event.kind))
-              .map((event) => {
-                const href = hrefOf(event, semester);
-                const props = {
-                  className: clsx(
-                    "z-2 mx-1 my-2.5 flex items-center truncate rounded-lg border px-2 text-label font-semibold",
-                    lane.tone,
-                    (event.until ?? event.date) < today && "opacity-55",
-                    href && "transition-shadow hover:shadow-[0_4px_12px_rgb(29_29_29/0.12)]",
-                  ),
-                  style: {
+              .map((event) => (
+                <EventPill
+                  key={`${event.kind}-${event.date}-${event.title}`}
+                  label={shortTitle(event.title)}
+                  href={hrefOf(event, semester)}
+                  tone={lane.tone}
+                  faded={(event.until ?? event.date) < today}
+                  style={{
                     gridRow: row + 2,
                     gridColumn: `${column(event.date) + 2} / ${column(event.until ?? event.date) + 3}`,
-                  },
-                  onMouseEnter: showTip(event),
-                  onMouseMove: follow,
-                  onMouseLeave: hideTip,
-                };
-                const key = `${event.kind}-${event.date}-${event.title}`;
-                return href ? (
-                  <Link key={key} href={href} {...props}>
-                    {shortTitle(event.title)}
-                  </Link>
-                ) : (
-                  <div key={key} {...props}>
-                    {shortTitle(event.title)}
-                  </div>
-                );
-              }),
+                  }}
+                  onMouseEnter={showTip(event)}
+                  onMouseMove={follow}
+                  onMouseLeave={hideTip}
+                />
+              )),
           )}
         </div>
       </div>
