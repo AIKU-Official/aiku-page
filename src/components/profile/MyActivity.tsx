@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
 import {
   getActivity,
@@ -19,6 +19,7 @@ import {
 import { useMemberAccount } from "@/lib/auth/member";
 import { useSignedInData } from "@/lib/auth/signed-in-data";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
+import { CursorTip, useCursorPoint } from "@/components/ui/CursorTip";
 
 const TONES: Record<AttendanceStatus, string> = {
   present: "bg-attend-present",
@@ -28,7 +29,6 @@ const TONES: Record<AttendanceStatus, string> = {
   excused_absent: "bg-attend-excused",
 };
 
-type Tip = { x: number; y: number; index: number };
 
 /**
  * The member's own attendance calendar and points, at the foot of their
@@ -120,12 +120,15 @@ function PageButton({
  * same day are two squares, and days without a session have none.
  */
 function AttendanceCalendar({ sessions }: { sessions: ActivitySession[] }) {
-  const [tip, setTip] = useState<Tip | null>(null);
-  const show = (event: ReactMouseEvent<HTMLElement>, index: number) =>
-    setTip({ x: event.clientX, y: event.clientY, index });
+  const { point, follow, hide } = useCursorPoint();
+  const [shown, setShown] = useState<number | null>(null);
+  const show = (event: ReactMouseEvent<HTMLElement>, index: number) => {
+    follow(event);
+    setShown(index);
+  };
 
   return (
-    <div onMouseLeave={() => setTip(null)}>
+    <div onMouseLeave={hide}>
       <ul className="flex flex-wrap gap-1" aria-label="출결 기록">
         {sessions.map((session, index) => (
           <li key={index}>
@@ -134,7 +137,7 @@ function AttendanceCalendar({ sessions }: { sessions: ActivitySession[] }) {
               aria-label={`${formatDay(session.date)} ${session.title}: ${ATTENDANCE_LABELS[session.status]}${session.reason ? `, ${session.reason}` : ""}`}
               onMouseEnter={(event) => show(event, index)}
               onMouseMove={(event) => show(event, index)}
-              onClick={(event) => (tip?.index === index ? setTip(null) : show(event, index))}
+              onClick={(event) => (point && shown === index ? hide() : show(event, index))}
               className={clsx(
                 "block size-4 cursor-default rounded-[4px] outline-offset-1 hover:outline hover:outline-ink/40",
                 TONES[session.status],
@@ -143,32 +146,23 @@ function AttendanceCalendar({ sessions }: { sessions: ActivitySession[] }) {
           </li>
         ))}
       </ul>
-      {tip ? <SessionTip tip={tip} session={sessions[tip.index]} /> : null}
+      {point && shown !== null ? (
+        <CursorTip
+          point={point}
+          role="tooltip"
+          className="grid max-w-64 gap-1 rounded-control border border-line bg-surface px-3 py-2.5 text-small shadow-lg"
+        >
+          <SessionDetail session={sessions[shown]} />
+        </CursorTip>
+      ) : null}
     </div>
   );
 }
 
-/** The little box beside the cursor: what the session was, how it went, and why. */
-function SessionTip({ tip, session }: { tip: Tip; session: ActivitySession }) {
-  const box = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ left: tip.x + 14, top: tip.y + 14 });
-
-  useEffect(() => {
-    const width = box.current?.offsetWidth ?? 220;
-    const height = box.current?.offsetHeight ?? 80;
-    setPosition({
-      left: Math.max(8, Math.min(tip.x + 14, window.innerWidth - width - 8)),
-      top: tip.y + 14 + height > window.innerHeight ? tip.y - height - 10 : tip.y + 14,
-    });
-  }, [tip]);
-
+/** What the session was, how it went, and why. */
+function SessionDetail({ session }: { session: ActivitySession }) {
   return (
-    <div
-      ref={box}
-      role="tooltip"
-      style={position}
-      className="pointer-events-none fixed z-50 grid max-w-64 gap-1 rounded-control border border-line bg-surface px-3 py-2.5 text-small shadow-lg"
-    >
+    <>
       <p className="text-label text-muted">
         {formatDay(session.date)} · {SESSION_KIND_LABELS[session.kind]}
       </p>
@@ -178,7 +172,7 @@ function SessionTip({ tip, session }: { tip: Tip; session: ActivitySession }) {
         {ATTENDANCE_LABELS[session.status]}
         {session.reason ? <span className="text-muted">· {session.reason}</span> : null}
       </p>
-    </div>
+    </>
   );
 }
 

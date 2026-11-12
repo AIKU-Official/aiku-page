@@ -1,8 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useCallback, useState, type MouseEvent } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { gradeToneClassName, positionToneClassName } from "@/components/members/tones";
@@ -13,8 +12,8 @@ import { MEMBER_GRADE_LABELS, type ProjectPerson } from "@/lib/types";
 import { pillClassName as pill } from "@/components/ui/Pill";
 import { isPhone } from "@/lib/ui/viewport";
 import { useMemberAccount } from "@/lib/auth/member";
+import { CursorTip, useCursorPoint } from "@/components/ui/CursorTip";
 
-const CARD_WIDTH = 270;
 
 /**
  * A participant's name. For roster members, hovering shows their name card
@@ -22,7 +21,7 @@ const CARD_WIDTH = 270;
  * admin), a click opens it.
  */
 export function PersonName({ person }: { person: ProjectPerson }) {
-  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
+  const { point, follow, hide } = useCursorPoint();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const member = person.member;
@@ -31,15 +30,6 @@ export function PersonName({ person }: { person: ProjectPerson }) {
 
   if (!member) return <span>{person.name}</span>;
 
-  const follow = (event: MouseEvent) => {
-    // Kept inside the window: flips to the left of the cursor near the right edge.
-    const x =
-      event.clientX + 18 + CARD_WIDTH > window.innerWidth
-        ? event.clientX - 18 - CARD_WIDTH
-        : event.clientX + 18;
-    setPoint({ x: Math.max(8, x), y: Math.min(event.clientY + 18, window.innerHeight - 110) });
-  };
-
   // Admins (current officers) can open every profile, private ones included.
   const openable = member.hasPublicProfile || admin;
 
@@ -47,7 +37,7 @@ export function PersonName({ person }: { person: ProjectPerson }) {
     "rounded-sm underline-offset-4 transition-colors hover:text-ink hover:underline focus-visible:text-ink",
     openable ? "cursor-pointer" : "cursor-default",
   );
-  const hover = { onMouseEnter: follow, onMouseMove: follow, onMouseLeave: () => setPoint(null) };
+  const hover = { onMouseEnter: follow, onMouseMove: follow, onMouseLeave: hide };
 
   return (
     <>
@@ -58,7 +48,7 @@ export function PersonName({ person }: { person: ProjectPerson }) {
           aria-label={`${person.name} 프로필 보기`}
           onClick={(event) => {
             event.stopPropagation();
-            setPoint(null);
+            hide();
             // Phones open the profile's page, as member cards do.
             if (isPhone()) {
               router.push(`/members/${member.id}`);
@@ -75,12 +65,10 @@ export function PersonName({ person }: { person: ProjectPerson }) {
           {person.name}
         </span>
       )}
-      {point
-        ? createPortal(
-            <div
-              aria-hidden="true"
-              style={{ left: point.x, top: point.y, width: CARD_WIDTH }}
-              className="pointer-events-none fixed z-50 flex items-center gap-3 card px-4 py-3.5 shadow-[0_12px_32px_rgb(29_29_29/0.14)]"
+      {point ? (
+            <CursorTip
+              point={point}
+              className="flex w-[270px] items-center gap-3 card px-4 py-3.5 shadow-[0_12px_32px_rgb(29_29_29/0.14)]"
             >
               <Avatar
                 name={member.name}
@@ -111,10 +99,8 @@ export function PersonName({ person }: { person: ProjectPerson }) {
                   </span>
                 </div>
               </div>
-            </div>,
-            document.body,
-          )
-        : null}
+            </CursorTip>
+      ) : null}
       {open ? <ProfileModal memberId={member.id} onClose={close} /> : null}
     </>
   );
