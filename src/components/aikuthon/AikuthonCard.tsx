@@ -124,7 +124,14 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
                   {RANKS[award.rank].label}
                 </span>
                 {award.teamName ? (
-                  <span className="font-semibold text-ink">{award.teamName}</span>
+                  // Long team names are cut with "…" at about 12 characters; the
+                  // full name shows on hover.
+                  <span
+                    title={award.teamName}
+                    className="max-w-[12em] truncate font-semibold text-ink"
+                  >
+                    {award.teamName}
+                  </span>
                 ) : null}
                 <span className="text-small text-body">
                   {award.people.map((person, i) => (
