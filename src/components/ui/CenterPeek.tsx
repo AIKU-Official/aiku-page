@@ -110,7 +110,10 @@ export function CenterPeek({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key !== "Escape") return;
+      // With one peek opened over another, Escape closes only the top one.
+      const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (dialogs[dialogs.length - 1] === panel.current) close();
     };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";

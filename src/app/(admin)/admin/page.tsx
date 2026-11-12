@@ -19,7 +19,7 @@ export default async function AdminPage() {
       <PageHero
         eyebrow="Admin"
         title="AIKU 데이터 관리"
-        lead="표를 눌러 행을 추가하고 고치고 지웁니다. 바꾼 내용은 DB 업데이트를 눌러야 실제로 저장되고, 사이트에 바로 반영됩니다."
+        lead="AIKU 데이터베이스의 모든 표를 한 화면에서 보고 고칩니다. 저장한 내용은 사이트에 바로 반영됩니다."
       />
       <SchemaCanvas schema={schema} />
       {/* The canvas needs a pointer and a wide screen; phones get a note instead. */}

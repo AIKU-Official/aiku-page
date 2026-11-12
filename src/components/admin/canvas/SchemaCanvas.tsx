@@ -13,7 +13,15 @@ import {
 } from "react";
 
 import { commitChanges, getTableRows } from "@/actions/db-admin";
-import { FitIcon, MinusIcon, PlusIcon, RedoIcon, UndoIcon } from "@/components/ui/icons";
+import { CenterPeek } from "@/components/ui/CenterPeek";
+import {
+  ExpandIcon,
+  FitIcon,
+  MinusIcon,
+  PlusIcon,
+  RedoIcon,
+  UndoIcon,
+} from "@/components/ui/icons";
 import {
   countByTable,
   emptyHistory,
@@ -32,9 +40,33 @@ import { useCanvasView } from "./useCanvasView";
 const LAYOUT_KEY = "aiku-admin-layout-v2";
 const CLICK_SLOP = 4;
 
-// Fades all four edges of the canvas into the page, so it has no hard border.
-/** The first view shows the whole schema only if it is still readable at this scale. */
-const OPENING_SCALE = 0.5;
+/**
+ * The first view shows the whole schema only if it is still readable at this
+ * scale; otherwise it opens at this scale from the top-left corner.
+ */
+const OPENING_SCALE = 0.8;
+
+/** Height of the canvas on the page: the window below the header, less a margin. */
+const STAGE_HEIGHT = "h-[calc(100dvh-var(--header-height)-5rem)] min-h-[32rem]";
+
+const HOW_TO = [
+  {
+    title: "둘러보기",
+    body: "빈 곳을 끌어 옮기고, ⌘ 또는 Ctrl을 누른 채 스크롤하거나 왼쪽 아래 +, − 로 확대·축소하고, 맨 아래 버튼으로 캔버스를 크게 띄웁니다. 표를 끌면 자리를 옮길 수 있습니다.",
+  },
+  {
+    title: "표 열기",
+    body: "표를 누르면 행 목록이 열립니다. 값으로 찾고, 행을 눌러 고치거나, 행 추가로 새 행을 만듭니다.",
+  },
+  {
+    title: "고치기",
+    body: "바꾼 내용은 바로 저장되지 않고 쌓입니다. 바뀐 표에는 개수가 표시되고, ⌘Z로 되돌리거나 취소로 모두 버릴 수 있습니다.",
+  },
+  {
+    title: "저장하기",
+    body: "아래 도구 막대의 DB 업데이트를 누르면 쌓인 내용이 한 번에 저장됩니다. 하나라도 실패하면 아무것도 바뀌지 않습니다.",
+  },
+] as const;
 
 /** Grid spacing on screen: 24 canvas units, doubled while zoomed out so the dots stay apart. */
 function gridStep(scale: number) {
@@ -68,6 +100,9 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: "error" | "info"; message: string } | null>(null);
   const drag = useRef<Drag | null>(null);
+  // The canvas opened large in a centre peek, and the box it leaves on the page.
+  const [full, setFull] = useState(false);
+  const placeholder = useRef<HTMLDivElement>(null);
   const pinch = useRef(new Map<number, { x: number; y: number }>());
 
   // Saved arrangement, if the admin moved nodes before.
@@ -248,131 +283,186 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
 
   const openTableSchema = open ? byName.get(open) : undefined;
 
-  return (
-    <section className="site-container py-10 max-sm:hidden">
-      <div className="relative overflow-hidden rounded-[20px] border border-line bg-white">
+  const stage = (inPeek: boolean) => (
+    <div
+      className={clsx(
+        "relative overflow-hidden bg-white",
+        inPeek ? "h-[calc(100dvh-6rem)]" : "rounded-[20px] border border-line",
+      )}
+    >
+      <div
+        ref={canvas}
+        onPointerDown={(event) => onPointerDown(event)}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        aria-label="DB 스키마 캔버스"
+        className={clsx(
+          "relative w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing",
+          inPeek ? "h-full" : STAGE_HEIGHT,
+        )}
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, var(--color-line-strong) 1px, transparent 1.4px)",
+          backgroundSize: `${gridStep(view.scale)}px ${gridStep(view.scale)}px`,
+          backgroundPosition: `${view.x}px ${view.y}px`,
+        }}
+      >
         <div
-          ref={canvas}
-          onPointerDown={(event) => onPointerDown(event)}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          aria-label="DB 스키마 캔버스"
-          className="relative h-[calc(100dvh-var(--header-height)-5rem)] min-h-[32rem] w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, var(--color-line-strong) 1px, transparent 1.4px)",
-            backgroundSize: `${gridStep(view.scale)}px ${gridStep(view.scale)}px`,
-            backgroundPosition: `${view.x}px ${view.y}px`,
-          }}
+          className="absolute top-0 left-0 origin-top-left"
+          style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
         >
-          <div
-            className="absolute top-0 left-0 origin-top-left"
-            style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
+          <svg
+            className="pointer-events-none absolute top-0 left-0 overflow-visible"
+            width="1"
+            height="1"
+            aria-hidden="true"
           >
-            <svg
-              className="pointer-events-none absolute top-0 left-0 overflow-visible"
-              width="1"
-              height="1"
-              aria-hidden="true"
-            >
-              {edges.map((edge) => {
-                const lit = hovered === edge.source || hovered === edge.target;
-                return (
-                  <path
-                    key={edge.id}
-                    d={edge.d}
-                    fill="none"
-                    strokeWidth={lit ? 2 : 1.25}
-                    className={lit ? "stroke-green-500" : "stroke-line-strong"}
-                  />
-                );
-              })}
-            </svg>
-            {schema.map((table) =>
-              positions[table.name] ? (
-                <TableNode
-                  key={table.name}
-                  table={table}
-                  position={positions[table.name]}
-                  pending={pendingByTable[table.name] ?? 0}
-                  highlighted={hovered === table.name || open === table.name}
-                  onHover={setHovered}
-                  onPointerDown={onPointerDown}
+            {edges.map((edge) => {
+              const lit = hovered === edge.source || hovered === edge.target;
+              return (
+                <path
+                  key={edge.id}
+                  d={edge.d}
+                  fill="none"
+                  strokeWidth={lit ? 2 : 1.25}
+                  className={lit ? "stroke-green-500" : "stroke-line-strong"}
                 />
-              ) : null,
-            )}
-          </div>
+              );
+            })}
+          </svg>
+          {schema.map((table) =>
+            positions[table.name] ? (
+              <TableNode
+                key={table.name}
+                table={table}
+                position={positions[table.name]}
+                pending={pendingByTable[table.name] ?? 0}
+                highlighted={hovered === table.name || open === table.name}
+                onHover={setHovered}
+                onPointerDown={onPointerDown}
+              />
+            ) : null,
+          )}
         </div>
-
-        {/* Zoom controls, outside the faded layer so they stay crisp. */}
-        <div className="absolute bottom-6 left-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)] max-sm:bottom-24 max-sm:left-4">
-          {[
-            { label: "확대", icon: <PlusIcon className="size-4" />, onClick: () => zoomBy(1.2) },
-            {
-              label: "축소",
-              icon: <MinusIcon className="size-4" />,
-              onClick: () => zoomBy(1 / 1.2),
-            },
-            {
-              label: "전체 보기",
-              icon: <FitIcon className="size-4" />,
-              onClick: () => fit(bounds(schema, positions)),
-            },
-          ].map((control) => (
-            <button
-              key={control.label}
-              type="button"
-              aria-label={control.label}
-              title={control.label}
-              onClick={control.onClick}
-              className="inline-flex size-9 items-center justify-center text-body transition-colors not-last:border-b not-last:border-soft-line hover:bg-surface-soft hover:text-ink"
-            >
-              {control.icon}
-            </button>
-          ))}
-        </div>
-
-        <ChangeToolbar
-          pending={pendingCount}
-          canUndo={history.past.length > 0}
-          canRedo={history.future.length > 0}
-          busy={busy}
-          onUndo={() => setHistory(undo)}
-          onRedo={() => setHistory(redo)}
-          onDiscard={discard}
-          onCommit={commit}
-        />
-
-        {notice ? (
-          <p
-            role={notice.tone === "error" ? "alert" : "status"}
-            className={clsx(
-              "absolute top-6 left-1/2 max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 rounded-control px-4 py-2.5 text-small shadow-[0_6px_18px_rgb(29_29_29/0.08)]",
-              notice.tone === "error" ? "bg-danger-soft text-danger" : "bg-surface text-body",
-            )}
-          >
-            {notice.message}
-          </p>
-        ) : null}
-
-        {openTableSchema ? (
-          <TablePeek
-            key={openTableSchema.name}
-            table={openTableSchema}
-            schema={schema}
-            rows={rows[openTableSchema.name]}
-            history={history}
-            onHistory={setHistory}
-            origin={() =>
-              canvas.current
-                ?.querySelector(`[data-node="${openTableSchema.name}"]`)
-                ?.getBoundingClientRect()
-            }
-            onClose={() => setOpen(null)}
-          />
-        ) : null}
       </div>
+
+      {/* Zoom controls, outside the faded layer so they stay crisp. */}
+      <div className="absolute bottom-6 left-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)] max-sm:bottom-24 max-sm:left-4">
+        {[
+          { label: "확대", icon: <PlusIcon className="size-4" />, onClick: () => zoomBy(1.2) },
+          {
+            label: "축소",
+            icon: <MinusIcon className="size-4" />,
+            onClick: () => zoomBy(1 / 1.2),
+          },
+          {
+            label: "전체 보기",
+            icon: <FitIcon className="size-4" />,
+            onClick: () => fit(bounds(schema, positions)),
+          },
+          ...(inPeek
+            ? []
+            : [
+                {
+                  label: "크게 보기",
+                  icon: <ExpandIcon className="size-4" />,
+                  onClick: () => setFull(true),
+                },
+              ]),
+        ].map((control) => (
+          <button
+            key={control.label}
+            type="button"
+            aria-label={control.label}
+            title={control.label}
+            onClick={control.onClick}
+            className="inline-flex size-9 items-center justify-center text-body transition-colors not-last:border-b not-last:border-soft-line hover:bg-surface-soft hover:text-ink"
+          >
+            {control.icon}
+          </button>
+        ))}
+      </div>
+
+      <ChangeToolbar
+        pending={pendingCount}
+        canUndo={history.past.length > 0}
+        canRedo={history.future.length > 0}
+        busy={busy}
+        onUndo={() => setHistory(undo)}
+        onRedo={() => setHistory(redo)}
+        onDiscard={discard}
+        onCommit={commit}
+      />
+
+      {notice ? (
+        <p
+          role={notice.tone === "error" ? "alert" : "status"}
+          className={clsx(
+            "absolute top-6 left-1/2 max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 rounded-control px-4 py-2.5 text-small shadow-[0_6px_18px_rgb(29_29_29/0.08)]",
+            notice.tone === "error" ? "bg-danger-soft text-danger" : "bg-surface text-body",
+          )}
+        >
+          {notice.message}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <section className="site-container grid gap-6 py-10 max-sm:hidden">
+      <ol className="grid grid-cols-4 gap-3 max-lg:grid-cols-2">
+        {HOW_TO.map((step, index) => (
+          <li
+            key={step.title}
+            className="rounded-card border border-line bg-surface-soft px-4 py-3.5"
+          >
+            <p className="text-small font-semibold text-ink">
+              <span className="mr-1.5 text-muted tabular-nums">{index + 1}</span>
+              {step.title}
+            </p>
+            <p className="mt-1 text-small leading-relaxed text-muted">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+      {full ? (
+        <>
+          {/* Keeps the page in place while the canvas is open large. */}
+          <div
+            ref={placeholder}
+            className={clsx("rounded-[20px] border border-line bg-surface-soft", STAGE_HEIGHT)}
+          />
+          <CenterPeek
+            label="DB 스키마 캔버스 크게 보기"
+            origin={() => placeholder.current?.getBoundingClientRect()}
+            originRadius="20px"
+            expandable={false}
+            width="max-w-none"
+            className="overflow-hidden p-0"
+            onClose={() => setFull(false)}
+          >
+            {stage(true)}
+          </CenterPeek>
+        </>
+      ) : (
+        stage(false)
+      )}
+      {openTableSchema ? (
+        <TablePeek
+          key={openTableSchema.name}
+          table={openTableSchema}
+          schema={schema}
+          rows={rows[openTableSchema.name]}
+          history={history}
+          onHistory={setHistory}
+          origin={() =>
+            canvas.current
+              ?.querySelector(`[data-node="${openTableSchema.name}"]`)
+              ?.getBoundingClientRect()
+          }
+          onClose={() => setOpen(null)}
+        />
+      ) : null}
     </section>
   );
 }
