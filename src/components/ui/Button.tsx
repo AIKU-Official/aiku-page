@@ -2,7 +2,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import type { ComponentProps } from "react";
 
-export type ButtonVariant = "primary" | "light" | "dark" | "secondary";
+export type ButtonVariant = "primary" | "light" | "dark" | "secondary" | "danger";
 export type ButtonSize = "md" | "sm";
 
 // Each variant sets exactly one border color so no two utilities compete.
@@ -12,6 +12,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   light: "border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20",
   dark: "border-ink bg-ink text-white hover:border-ink-hover hover:bg-ink-hover",
   secondary: "border-line bg-surface text-ink hover:border-line-strong hover:bg-surface-soft",
+  danger: "border-danger bg-danger text-white hover:border-danger/90 hover:bg-danger/90",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

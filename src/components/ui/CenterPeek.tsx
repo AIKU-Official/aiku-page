@@ -85,7 +85,12 @@ export function CenterPeek({
   const motion = () =>
     shell.current && panel.current
       ? new PeekMotion(
-          { shell: shell.current, panel: panel.current, backdrop: backdrop.current, controls: controls.current },
+          {
+            shell: shell.current,
+            panel: panel.current,
+            backdrop: backdrop.current,
+            controls: controls.current,
+          },
           origin,
           originRadius,
           blend,
@@ -111,8 +116,8 @@ export function CenterPeek({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      // With one peek opened over another, Escape closes only the top one.
-      const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      // With a peek or a confirmation opened over this one, Escape is theirs.
+      const dialogs = document.querySelectorAll('[aria-modal="true"]');
       if (dialogs[dialogs.length - 1] === panel.current) close();
     };
     const previousOverflow = document.body.style.overflow;

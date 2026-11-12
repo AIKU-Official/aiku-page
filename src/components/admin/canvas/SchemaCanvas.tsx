@@ -14,6 +14,7 @@ import {
 
 import { commitChanges, getTableRows } from "@/actions/db-admin";
 import { CenterPeek } from "@/components/ui/CenterPeek";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   ExpandIcon,
   FitIcon,
@@ -28,8 +29,10 @@ import {
   redo,
   toPayload,
   undo,
+  type Change,
   type ChangeHistory,
 } from "@/lib/admin/changes";
+import { metroPoints, roundedPath } from "@/lib/admin/edge-path";
 import { bounds, columnY, initialLayout, NODE_WIDTH, type Point } from "@/lib/admin/layout";
 import type { Row, Schema } from "@/lib/admin/schema-types";
 
@@ -103,6 +106,8 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   // The canvas opened large in a centre peek, and the box it leaves on the page.
   const [full, setFull] = useState(false);
   const placeholder = useRef<HTMLDivElement>(null);
+  // Which irreversible toolbar action is waiting for a yes.
+  const [asking, setAsking] = useState<"commit" | "discard" | null>(null);
   const pinch = useRef(new Map<number, { x: number; y: number }>());
 
   // Saved arrangement, if the admin moved nodes before.
@@ -232,6 +237,7 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   };
 
   const commit = async () => {
+    setAsking(null);
     setBusy(true);
     setNotice(null);
     const result = await commitChanges(toPayload(history.changes));
@@ -248,10 +254,8 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
   };
 
   const discard = () => {
-    if (window.confirm(`반영하지 않은 변경 ${pendingCount}건을 모두 버릴까요?`)) {
-      setHistory(emptyHistory);
-      setNotice(null);
-    }
+    setHistory(emptyHistory);
+    setNotice(null);
   };
 
   const edges = useMemo(() => {
@@ -259,24 +263,29 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
     for (const table of schema) {
       const from = positions[table.name];
       if (!from) continue;
-      for (const column of table.columns) {
+      const lines = table.columns.flatMap((column) => {
         const ref = column.references;
         const target = ref && byName.get(ref.table);
         const to = ref && positions[ref.table];
-        if (!ref || !target || !to) continue;
+        return ref && target && to ? [{ column, ref, target, to }] : [];
+      });
+      lines.forEach(({ column, ref, target, to }, index) => {
         const sy = from.y + columnY(table, column.name);
         const ty = to.y + columnY(target, ref.column);
-        const leftward = from.x > to.x;
-        const sx = leftward ? from.x : from.x + NODE_WIDTH;
-        const tx = leftward ? to.x + NODE_WIDTH : to.x;
-        const bend = Math.max(48, Math.abs(tx - sx) / 2) * (leftward ? -1 : 1);
+        // Tables in one column: loop out on the right. Otherwise leave on the side facing the target.
+        const sameColumn = Math.abs(from.x - to.x) < NODE_WIDTH;
+        const direction = sameColumn ? 0 : from.x > to.x ? -1 : 1;
+        const sx = direction === -1 ? from.x : from.x + NODE_WIDTH;
+        const tx = direction === 1 ? to.x : to.x + NODE_WIDTH;
+        // Lines from one table run side by side, 6 apart, instead of on top of each other.
+        const lane = (index - (lines.length - 1) / 2) * 6;
         list.push({
           id: `${table.name}.${column.name}`,
-          d: `M ${sx} ${sy} C ${sx + bend} ${sy}, ${tx - bend} ${ty}, ${tx} ${ty}`,
+          d: roundedPath(metroPoints({ x: sx, y: sy }, { x: tx, y: ty }, direction, lane)),
           source: table.name,
           target: ref.table,
         });
-      }
+      });
     }
     return list;
   }, [schema, positions, byName]);
@@ -391,8 +400,8 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
         busy={busy}
         onUndo={() => setHistory(undo)}
         onRedo={() => setHistory(redo)}
-        onDiscard={discard}
-        onCommit={commit}
+        onDiscard={() => setAsking("discard")}
+        onCommit={() => setAsking("commit")}
       />
 
       {notice ? (
@@ -463,8 +472,47 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
           onClose={() => setOpen(null)}
         />
       ) : null}
+      {asking === "commit" ? (
+        <ConfirmDialog
+          title="DB에 바로 반영할까요?"
+          confirmLabel={`${pendingCount}건 반영하기`}
+          onConfirm={() => void commit()}
+          onCancel={() => setAsking(null)}
+        >
+          <p>
+            누르는 순간 운영 데이터베이스가 실제로 바뀌고, 사이트에도 바로 반영됩니다. 반영한 뒤에는
+            되돌리기로 취소할 수 없습니다.
+          </p>
+          <p className="mt-2 font-medium text-body">{describeChanges(history.changes)}</p>
+        </ConfirmDialog>
+      ) : null}
+      {asking === "discard" ? (
+        <ConfirmDialog
+          title="변경을 모두 버릴까요?"
+          confirmLabel="모두 버리기"
+          tone="danger"
+          onConfirm={() => {
+            setAsking(null);
+            discard();
+          }}
+          onCancel={() => setAsking(null)}
+        >
+          <p>아직 반영하지 않은 변경 {pendingCount}건이 사라집니다.</p>
+        </ConfirmDialog>
+      ) : null}
     </section>
   );
+}
+
+/** "members 수정 2건, projects 추가 1건" for the confirmation before a commit. */
+function describeChanges(changes: Change[]): string {
+  const words = { insert: "추가", update: "수정", delete: "삭제" } as const;
+  const counts = new Map<string, number>();
+  for (const change of changes) {
+    const label = `${change.table} ${words[change.op]}`;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return [...counts].map(([label, count]) => `${label} ${count}건`).join(", ");
 }
 
 /** DB 업데이트, undo, redo and 취소, floating at the bottom of the canvas. */
