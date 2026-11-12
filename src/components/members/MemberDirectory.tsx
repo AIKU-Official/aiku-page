@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
+import { GroupHeading } from "@/components/ui/GroupHeading";
 import { Section, SectionHead } from "@/components/layout/Section";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { EmptyNotice } from "@/components/ui/EmptyNotice";
@@ -226,12 +227,11 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
               aria-labelledby={`generation-${generation.id}`}
               className="grid gap-5 motion-safe:animate-fade max-sm:gap-3"
             >
-              <div className="flex items-center gap-3 border-b border-line pb-4 max-sm:pb-3">
-                <h2 id={`generation-${generation.id}`}>{generation.name}</h2>
-                <span className="inline-flex h-7 items-center rounded-full bg-surface-soft px-3 text-label text-muted tabular-nums">
-                  {generation.members.length}명
-                </span>
-              </div>
+              <GroupHeading
+                id={`generation-${generation.id}`}
+                title={generation.name}
+                count={`${generation.members.length}명`}
+              />
               <div className="grid grid-cols-4 gap-3 max-lg:grid-cols-3 max-sm:grid-cols-2 max-sm:gap-2">
                 {generation.members.map((member) => (
                   <MemberCard

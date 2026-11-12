@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
+import { GroupHeading } from "@/components/ui/GroupHeading";
 import { Section, SectionHead } from "@/components/layout/Section";
 import { buttonClassName } from "@/components/ui/Button";
 import { EmptyNotice } from "@/components/ui/EmptyNotice";
@@ -235,10 +236,11 @@ export function ProjectArchive({
             return (
               <Fragment key={entry.id}>
                 {startsSeason ? (
-                  <div className="flex items-baseline gap-3 border-b border-line pb-3 not-first:mt-10 max-sm:not-first:mt-7">
-                    <h2 className="text-heading">{entry.period}</h2>
-                    <span className="text-small text-muted">{inSeason}개 프로젝트</span>
-                  </div>
+                  <GroupHeading
+                    title={entry.period}
+                    count={`${inSeason}개 프로젝트`}
+                    className="not-first:mt-10 max-sm:not-first:mt-7"
+                  />
                 ) : null}
                 <div hidden={!isVisible(entry)} className="min-w-0 motion-safe:animate-fade">
                   {entry.node}

@@ -10,6 +10,8 @@ import { parseSeasonName, seasonName } from "@/lib/seasons/name";
 import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
 import { sessionAnchor, todayInKorea } from "@/lib/studio/timeline";
 
+import { GroupHeading } from "@/components/ui/GroupHeading";
+
 import { StudioGate } from "./StudioGate";
 
 /**
@@ -89,16 +91,16 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
         const rows = sessions.filter((session) => session.season === season);
         return (
           <section key={season} className="grid gap-3" aria-label={season}>
-            <h2 className="flex items-center gap-2 text-heading text-ink">
-              <span
-                className={clsx("size-2.5 rounded-full", PROGRAMS[slug].tone.accent)}
-                aria-hidden="true"
-              />
-              {season}
-              <span className="text-small font-semibold text-muted tabular-nums">
-                {rows.length}회
-              </span>
-            </h2>
+            <GroupHeading
+              title={season}
+              count={`${rows.length}회`}
+              marker={
+                <span
+                  className={clsx("size-2.5 shrink-0 rounded-full", PROGRAMS[slug].tone.accent)}
+                  aria-hidden="true"
+                />
+              }
+            />
             <ol className="grid divide-y divide-soft-line rounded-[20px] border border-line bg-surface">
               {rows.map((session) => (
                 <li
