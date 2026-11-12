@@ -30,7 +30,7 @@ import { signedInMember } from "@/lib/members/signed-in";
 import { UPLOAD_BUCKET } from "@/lib/storage/public-url";
 import { removeObjects } from "@/lib/storage/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
-import { PROGRAMS, sessionNumber } from "@/lib/studio/programs";
+import { PROGRAMS } from "@/lib/studio/programs";
 import { MEMBER_GRADES, type MemberGrade } from "@/lib/types";
 import { avatarUploadSchema, idSchema, profileSchema } from "@/lib/validators";
 import { type Rank, isRank, toRank } from "@/lib/ranks";
@@ -89,42 +89,45 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
   const won = unwrap(
     await db
       .from("aikuthon_award_members")
-      .select("aikuthon_awards(rank, team_name, aikuthons(id, edition, name, task_title, starts_on))")
+      .select(
+        "aikuthon_awards(rank, team_name, aikuthons(id, edition, name, task_title, starts_on))",
+      )
       .eq("member_id", memberId),
   );
   const awards = (won ?? [])
     .map((entry) => entry.aikuthon_awards)
     .filter((award) => isRank(award.rank))
     .sort((a, b) => b.aikuthons.starts_on.localeCompare(a.aikuthons.starts_on))
-    .map(
-      (award): ProfileAward => ({
-        anchor: `aikuthon-${award.aikuthons.edition ?? award.aikuthons.id}`,
-        event: award.aikuthons.name,
-        task: award.aikuthons.task_title,
-        month: award.aikuthons.starts_on.slice(0, 7).replace("-", "."),
-        rank: award.rank as Rank,
-        teamName: award.team_name,
-      }),
-    );
+    .map((award): ProfileAward => ({
+      anchor: `aikuthon-${award.aikuthons.edition ?? award.aikuthons.id}`,
+      event: award.aikuthons.name,
+      task: award.aikuthons.task_title,
+      month: award.aikuthons.starts_on.slice(0, 7).replace("-", "."),
+      rank: award.rank as Rank,
+      teamName: award.team_name,
+    }));
 
   const lectured = unwrap(
     await db
       .from("session_talk_speakers")
-      .select("session_talks(title, activity_sessions(title, kind, held_on, seasons(name)))")
+      .select(
+        "session_talks(title, activity_sessions(title, kind, held_on, number, program_runs(seasons(name))))",
+      )
       .eq("member_id", memberId),
   );
   const lectures = (lectured ?? [])
     .map((entry) => entry.session_talks)
     .filter((talk) => talk.activity_sessions.kind === PROGRAMS.deepintodeep.kind)
     .sort((a, b) => b.activity_sessions.held_on.localeCompare(a.activity_sessions.held_on))
-    .map(
-      (talk): ProfileLecture => ({
-        season: talk.activity_sessions.seasons.name,
-        number: sessionNumber(talk.activity_sessions.title),
-        topic: talk.title,
-        date: talk.activity_sessions.held_on,
-      }),
-    );
+    .map((talk): ProfileLecture => ({
+      // A lecture belongs to its run's season; its number is stored, not read from the title.
+      season: talk.activity_sessions.program_runs?.seasons.name ?? "",
+      number: talk.activity_sessions.number
+        ? `${talk.activity_sessions.number}회`
+        : talk.activity_sessions.title,
+      topic: talk.title,
+      date: talk.activity_sessions.held_on,
+    }));
 
   return {
     projects,
@@ -173,7 +176,9 @@ export async function getPublicProfile(memberId: unknown): Promise<ActionResult<
   try {
     const page = await loadPage(createAdminClient(), parsed.data);
     if (!page) return { ok: false, message: NOT_FOUND };
-    return page.profile.isPublic ? { ok: true, message: "", data: page } : { ok: false, message: NOT_PUBLIC };
+    return page.profile.isPublic
+      ? { ok: true, message: "", data: page }
+      : { ok: false, message: NOT_PUBLIC };
   } catch (error) {
     console.error("[profile]", error);
     return FAILED;
@@ -196,7 +201,9 @@ export async function getProfileForViewer(memberId: unknown): Promise<ActionResu
 export async function memberExists(memberId: unknown): Promise<boolean> {
   const parsed = idSchema.safeParse(memberId);
   if (!parsed.success) return false;
-  const row = unwrap(await createAdminClient().from("members").select("id").eq("id", parsed.data).maybeSingle());
+  const row = unwrap(
+    await createAdminClient().from("members").select("id").eq("id", parsed.data).maybeSingle(),
+  );
   return Boolean(row);
 }
 

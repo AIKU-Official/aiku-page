@@ -193,8 +193,9 @@ for session in sessions:
 
 # --- DeepIntoDeep: each season page's curriculum ------------------------------
 seasons = {s["name"]: s["id"] for s in db.get("/rest/v1/seasons?select=id,name")}
-d2d_sessions = db.get("/rest/v1/activity_sessions?select=id,title,season_id&kind=eq.deepintodeep")
-number = lambda title: (re.search(r"(\d+)\s*(회|강)", title) or [None, None])[1]
+# DeepIntoDeep sessions by run season and number (both stored; nothing read from titles).
+d2d_sessions = db.get("/rest/v1/activity_sessions?select=id,title,number,program_runs(seasons(name))&kind=eq.deepintodeep")
+number = lambda text: (re.search(r"(\d+)\s*(회|강)", text) or [None, None])[1]
 
 d2d_pages = []
 cursor = None
@@ -213,15 +214,14 @@ while True:
     cursor = page["next_cursor"]
 
 for season_name, page_id in sorted(d2d_pages):
-    season_id = seasons.get(season_name)
     tables = [b for b in children(page_id) if b["type"] == "table"]
-    if not season_id or not tables:
+    if not tables:
         report["커리큘럼 표가 없는 D2D 시즌"].append(season_name)
         continue
-    in_season = [s for s in d2d_sessions if s["season_id"] == season_id]
+    in_run = [s for s in d2d_sessions if s["program_runs"] and s["program_runs"]["seasons"]["name"] == season_name]
     by_number = defaultdict(list)
-    for s in in_season:
-        by_number[number(s["title"])].append(s)
+    for s in in_run:
+        by_number[str(s["number"])].append(s)
     for row in children(tables[0]["id"]):
         cells = text(row)
         lecture = number(cells[0]) if cells else None

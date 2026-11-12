@@ -13,7 +13,6 @@ import {
   ATTENDANCE_LABELS,
   formatDay,
   formatPoints,
-  SESSION_KIND_LABELS,
   type AttendanceStatus,
 } from "@/lib/activity/calendar";
 import { useMemberAccount } from "@/lib/auth/member";
@@ -167,7 +166,7 @@ function SessionDetail({ session }: { session: ActivitySession }) {
   return (
     <>
       <p className="text-label text-muted">
-        {formatDay(session.date)} · {SESSION_KIND_LABELS[session.kind]}
+        {formatDay(session.date)} · {session.kindLabel}
       </p>
       <p className="font-semibold text-ink">{session.title}</p>
       <p className="flex items-center gap-1.5 text-body">
@@ -276,8 +275,7 @@ function PointsPanel({ activity }: { activity: Activity }) {
         <p className="text-small text-muted">이 기간의 상벌점 기록이 없습니다.</p>
       )}
       <p className="text-label text-muted">
-        점수는 두 시즌(한 학기)마다 0점으로 초기화됩니다. 기록이 잘못되었으면 운영진에게
-        알려주세요.
+        점수는 두 시즌(한 학기)마다 0점으로 초기화됩니다. 기록이 잘못되었으면 운영진에게 알려주세요.
       </p>
     </div>
   );

@@ -8,19 +8,6 @@ export type AttendanceKind = "deepintodeep" | "seminar" | "momentum" | "event" |
 export type SessionKind =
   AttendanceKind | "conference" | "exchange" | "academic" | "holiday" | "notice";
 
-export const SESSION_KIND_LABELS: Record<SessionKind, string> = {
-  deepintodeep: "DeepIntoDeep",
-  seminar: "세미나",
-  momentum: "모멘텀",
-  event: "필수 행사",
-  afterparty: "필수 뒤풀이",
-  conference: "컨퍼런스",
-  exchange: "교류",
-  academic: "학사일정",
-  holiday: "공휴일",
-  notice: "공지",
-};
-
 export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
   present: "출석",
   excused_late: "인정 지각",

@@ -2,7 +2,8 @@
 // maintenance scripts. Must stay free of server-only imports.
 
 export const IMAGE_EXTENSIONS = [".gif", ".jpeg", ".jpg", ".png", ".webp"] as const;
-export const PRESENTATION_EXTENSIONS = [".pdf", ".ppt", ".pptx"] as const;
+// Slides are kept as PDF only (CLAUDE.md), so they open anywhere without Office.
+export const PRESENTATION_EXTENSIONS = [".pdf"] as const;
 
 export const CONTENT_TYPES: Record<string, string> = {
   ".gif": "image/gif",
@@ -11,8 +12,6 @@ export const CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
   ".webp": "image/webp",
   ".pdf": "application/pdf",
-  ".ppt": "application/vnd.ms-powerpoint",
-  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 };
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -51,7 +50,8 @@ export function createObjectKey(
   scope: UploadScope,
   entityId: string,
   fileName: string,
-  random: string = Math.random().toString(16).slice(2, 8),
+  // 64 random bits: the bucket is public, so a key must not be guessable.
+  random: string = crypto.randomUUID().replace(/-/g, "").slice(0, 16),
   now: number = Date.now(),
 ): string {
   return `${scope}/${entityId}/${now}-${random}-${asciiBaseName(fileName)}${fileExtension(fileName)}`;

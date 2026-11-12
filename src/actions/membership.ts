@@ -87,12 +87,16 @@ async function verifyAndLink(
   // Accounts are free to create, so the per-account attempt limit alone would
   // let someone guess a student ID across many accounts. Once several other
   // accounts have failed for the same person, a match is held for review too.
+  // The generation as typed, by key when it is one AIKU has (else none).
+  const generationId =
+    unwrap(await db.from("generations").select("id").eq("name", generation).maybeSingle())?.id ??
+    null;
   const failedElsewhere = unwrap(
     await db
       .from("member_signup_requests")
       .select("user_id")
       .eq("name", name)
-      .eq("generation_name", generation)
+      .filter("generation_id", generationId ? "eq" : "is", generationId ?? null)
       .neq("user_id", user.id),
   );
   const suspicious = (failedElsewhere?.length ?? 0) >= MAX_FAILED_ACCOUNTS_PER_PERSON;
@@ -112,7 +116,7 @@ async function verifyAndLink(
       user_id: user.id,
       email: user.email,
       name,
-      generation_name: generation,
+      generation_id: generationId,
       attempts: (request?.attempts ?? 0) + 1,
     }),
   );

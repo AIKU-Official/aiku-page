@@ -9,7 +9,7 @@ import { PersonName } from "@/components/projects/PersonName";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
 import { parseSeasonName, seasonName } from "@/lib/seasons/name";
-import { programHref, sessionNumber, type ProgramSlug } from "@/lib/studio/programs";
+import { programHref, type ProgramSlug } from "@/lib/studio/programs";
 import { sessionAnchor, todayInKorea } from "@/lib/studio/timeline";
 
 import { GroupHeading } from "@/components/ui/GroupHeading";
@@ -155,7 +155,7 @@ function SessionCard({
     >
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[1.375rem] font-bold text-ink tabular-nums">
-          {sessionNumber(session.title)}
+          {session.number ? `${session.number}회` : session.title}
         </span>
         <span className={clsx("text-small tabular-nums", upcoming ? "text-muted" : "text-body")}>
           {formatDay(session.date)}

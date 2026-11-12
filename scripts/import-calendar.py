@@ -10,7 +10,8 @@ decide the kind (see KINDS). The season is the stored season whose dates
 hold the day (made by the database if missing, when applying).
 
 Rows are keyed by their Notion page id, so running this again updates rather
-than duplicates. A row of a kind that already has an entry on the same day
+than duplicates. The database sets each entry's season from its date, and a
+program session's run and number (activity_sessions_derive). A row of a kind that already has an entry on the same day
 from the attendance import (keyed "<kind>:<date>") is that entry: it gains the
 Notion id, the Notion title and end date, and keeps its attendance and the
 date attendance was taken on (where the two disagree, the sheet wins).
@@ -54,7 +55,6 @@ def kind_of(tags):
     return UNTAGGED if not tags else None
 
 
-season_id = db.season_of_date(apply)
 existing = db.get("/rest/v1/activity_sessions?select=id,kind,held_on,source_key,notion_page_id")
 by_notion = {s["notion_page_id"]: s for s in existing if s["notion_page_id"]}
 by_day = {(s["kind"], s["held_on"]): s for s in existing if not s["notion_page_id"]}
@@ -86,7 +86,6 @@ for row in notion.query_all(SCHEDULE):
         "title": title,
         "held_on": start,
         "ends_on": end if end and end > start else None,
-        "season_id": season_id(start),
     }
     match = by_notion.get(row["id"]) or by_day.pop((kind, start), None)
     plan.append((entry, match))
@@ -107,7 +106,8 @@ if apply:
                 entry = {k: v for k, v in entry.items() if k not in ("held_on", "season_id")}
             db.request("PATCH", f"/rest/v1/activity_sessions?id=eq.{match['id']}", entry)
         else:
-            db.upsert("activity_sessions", entry | {"source_key": "notion:" + entry["notion_page_id"]}, "source_key")
+            # A Notion row is keyed by its page id; season, run and number follow from the database.
+            db.upsert("activity_sessions", {k: v for k, v in entry.items() if k != "season_id"}, "notion_page_id")
     # Profiles list lectures by session; rebuild them now rather than within the hour.
     db.refresh_pages(["members"])
     print(f"{len(plan)}개를 반영했습니다.")

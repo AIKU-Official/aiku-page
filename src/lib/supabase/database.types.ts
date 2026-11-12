@@ -42,6 +42,8 @@ export type Database = {
           id: string
           kind: string
           notion_page_id: string | null
+          number: number | null
+          run_id: string | null
           season_id: string
           source_key: string | null
           title: string
@@ -53,6 +55,8 @@ export type Database = {
           id?: string
           kind: string
           notion_page_id?: string | null
+          number?: number | null
+          run_id?: string | null
           season_id: string
           source_key?: string | null
           title: string
@@ -64,11 +68,27 @@ export type Database = {
           id?: string
           kind?: string
           notion_page_id?: string | null
+          number?: number | null
+          run_id?: string | null
           season_id?: string
           source_key?: string | null
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "activity_sessions_kind_fkey"
+            columns: ["kind"]
+            isOneToOne: false
+            referencedRelation: "session_kinds"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "activity_sessions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "program_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "activity_sessions_season_id_fkey"
             columns: ["season_id"]
@@ -152,6 +172,7 @@ export type Database = {
       aikuthon_award_members: {
         Row: {
           award_id: string
+          created_at: string
           id: string
           member_id: string | null
           name: string
@@ -159,6 +180,7 @@ export type Database = {
         }
         Insert: {
           award_id: string
+          created_at?: string
           id?: string
           member_id?: string | null
           name: string
@@ -166,6 +188,7 @@ export type Database = {
         }
         Update: {
           award_id?: string
+          created_at?: string
           id?: string
           member_id?: string | null
           name?: string
@@ -191,18 +214,21 @@ export type Database = {
       aikuthon_awards: {
         Row: {
           aikuthon_id: string
+          created_at: string
           id: string
           rank: number
           team_name: string
         }
         Insert: {
           aikuthon_id: string
+          created_at?: string
           id?: string
           rank: number
           team_name?: string
         }
         Update: {
           aikuthon_id?: string
+          created_at?: string
           id?: string
           rank?: number
           team_name?: string
@@ -220,6 +246,7 @@ export type Database = {
       aikuthon_partners: {
         Row: {
           aikuthon_id: string
+          created_at: string
           id: string
           name: string
           role: string
@@ -227,6 +254,7 @@ export type Database = {
         }
         Insert: {
           aikuthon_id: string
+          created_at?: string
           id?: string
           name: string
           role: string
@@ -234,6 +262,7 @@ export type Database = {
         }
         Update: {
           aikuthon_id?: string
+          created_at?: string
           id?: string
           name?: string
           role?: string
@@ -285,18 +314,21 @@ export type Database = {
       aikuthon_tracks: {
         Row: {
           aikuthon_id: string
+          created_at: string
           id: string
           name: string
           sort_order: number
         }
         Insert: {
           aikuthon_id: string
+          created_at?: string
           id?: string
           name: string
           sort_order?: number
         }
         Update: {
           aikuthon_id?: string
+          created_at?: string
           id?: string
           name?: string
           sort_order?: number
@@ -396,18 +428,21 @@ export type Database = {
       }
       attendance: {
         Row: {
+          created_at: string
           member_id: string
           reason: string
           session_id: string
           status: string
         }
         Insert: {
+          created_at?: string
           member_id: string
           reason?: string
           session_id: string
           status: string
         }
         Update: {
+          created_at?: string
           member_id?: string
           reason?: string
           session_id?: string
@@ -435,6 +470,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          number: number
           sort_order: number
           updated_at: string
         }
@@ -442,6 +478,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          number: number
           sort_order?: number
           updated_at?: string
         }
@@ -449,6 +486,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          number?: number
           sort_order?: number
           updated_at?: string
         }
@@ -610,7 +648,7 @@ export type Database = {
           attempts: number
           created_at: string
           email: string | null
-          generation_name: string
+          generation_id: string | null
           name: string
           updated_at: string
           user_id: string
@@ -619,7 +657,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           email?: string | null
-          generation_name: string
+          generation_id?: string | null
           name: string
           updated_at?: string
           user_id: string
@@ -628,12 +666,20 @@ export type Database = {
           attempts?: number
           created_at?: string
           email?: string | null
-          generation_name?: string
+          generation_id?: string | null
           name?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "member_signup_requests_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       member_student_ids: {
         Row: {
@@ -847,7 +893,54 @@ export type Database = {
           session_kind?: string | null
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "point_rules_session_kind_fkey"
+            columns: ["session_kind"]
+            isOneToOne: false
+            referencedRelation: "session_kinds"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      program_runs: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          notion_page_id: string | null
+          season_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          notion_page_id?: string | null
+          season_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          notion_page_id?: string | null
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_runs_kind_fkey"
+            columns: ["kind"]
+            isOneToOne: false
+            referencedRelation: "session_kinds"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "program_runs_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_members: {
         Row: {
@@ -896,16 +989,19 @@ export type Database = {
       }
       project_tags: {
         Row: {
+          created_at: string
           project_id: string
           sort_order: number
           tag_id: string
         }
         Insert: {
+          created_at?: string
           project_id: string
           sort_order?: number
           tag_id: string
         }
         Update: {
+          created_at?: string
           project_id?: string
           sort_order?: number
           tag_id?: string
@@ -1022,8 +1118,39 @@ export type Database = {
         }
         Relationships: []
       }
+      session_kinds: {
+        Row: {
+          code: string
+          has_talks: boolean
+          has_tracks: boolean
+          label: string
+          runs_in: string | null
+          sort_order: number
+          takes_attendance: boolean
+        }
+        Insert: {
+          code: string
+          has_talks?: boolean
+          has_tracks?: boolean
+          label: string
+          runs_in?: string | null
+          sort_order?: number
+          takes_attendance?: boolean
+        }
+        Update: {
+          code?: string
+          has_talks?: boolean
+          has_tracks?: boolean
+          label?: string
+          runs_in?: string | null
+          sort_order?: number
+          takes_attendance?: boolean
+        }
+        Relationships: []
+      }
       session_talk_speakers: {
         Row: {
+          created_at: string
           id: string
           member_id: string | null
           name: string
@@ -1031,6 +1158,7 @@ export type Database = {
           talk_id: string
         }
         Insert: {
+          created_at?: string
           id?: string
           member_id?: string | null
           name: string
@@ -1038,6 +1166,7 @@ export type Database = {
           talk_id: string
         }
         Update: {
+          created_at?: string
           id?: string
           member_id?: string | null
           name?: string
@@ -1163,7 +1292,10 @@ export type Database = {
         Args: { entry: Database["public"]["Tables"]["admin_change_log"]["Row"] }
         Returns: undefined
       }
-      generation_number: { Args: { p_name: string }; Returns: number }
+      program_run_for: {
+        Args: { p_day: string; p_kind: string }
+        Returns: string
+      }
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string }
         Returns: undefined

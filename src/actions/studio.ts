@@ -19,9 +19,18 @@ export type StudioEvent = {
   /** Last day, for an entry over several days; null for one day. */
   until: string | null;
   title: string;
+  /** What its bar shows: "12회" for a numbered program session, else the title. */
+  label: string;
   kind: SessionKind | "aikuthon";
-  /** The season it belongs to, "26-2", for links to the season's sessions. */
+  /** The kind's name (session_kinds.label). */
+  kindLabel: string;
+  /**
+   * The season it belongs to: a program session's run season ("26-2" for a
+   * July Seminar), else the season of its date. For links to its season.
+   */
   season: string;
+  /** Whether it belongs to the current season's programs. */
+  current: boolean;
 };
 
 export type StudioHome = {
@@ -71,15 +80,19 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
     const until = monthEnd(today, 4);
 
     const [sessionRows, aikuthonRows, projectCount] = await Promise.all([
+      // Everything from the season's start (or still running then) to the
+      // months the calendar reaches.
       db
         .from("activity_sessions")
-        .select("title, kind, held_on, ends_on, season_id, seasons(name)")
-        .gte("held_on", from)
+        .select(
+          "title, kind, held_on, ends_on, number, seasons(name), session_kinds(label), program_runs(season_id, seasons(name))",
+        )
+        .or(`held_on.gte.${from},ends_on.gte.${from}`)
         .lte("held_on", until),
       db
         .from("aikuthons")
         .select("name, starts_on, ends_on, seasons(name)")
-        .gte("starts_on", from)
+        .or(`starts_on.gte.${from},ends_on.gte.${from}`)
         .lte("starts_on", until),
       current
         ? db
@@ -95,8 +108,11 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
         date: row.held_on,
         until: row.ends_on,
         title: row.title,
+        label: row.number ? `${row.number}회` : row.title,
         kind: row.kind as SessionKind,
-        season: row.seasons.name,
+        kindLabel: row.session_kinds.label,
+        season: row.program_runs?.seasons.name ?? row.seasons.name,
+        current: Boolean(current && row.program_runs?.season_id === current.id),
       })),
       // An AIKUTHON that attendance was taken for is already a session that day.
       ...(unwrap(aikuthonRows) ?? [])
@@ -105,13 +121,17 @@ export async function getStudioHome(accessToken: unknown): Promise<ActionResult<
           date: row.starts_on,
           until: row.ends_on && row.ends_on > row.starts_on ? row.ends_on : null,
           title: row.name,
+          label: row.name,
           kind: "aikuthon" as const,
+          kindLabel: "AIKUTHON",
           season: row.seasons.name,
+          current: false,
         })),
     ].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, "ko"));
 
+    // A program's count is its run in the current season.
     const count = (kind: SessionKind) =>
-      sessions.filter((row) => row.kind === kind && row.season_id === current?.id).length;
+      events.filter((event) => event.kind === kind && event.current).length;
     return {
       ok: true,
       message: "",
@@ -144,9 +164,11 @@ export type ProgramSession = {
   date: string;
   until: string | null;
   title: string;
-  /** Its season's stored name, "26-여름". */
+  /** The "12" of "12회"; null for an unnumbered session (an OT kept with the program). */
+  number: number | null;
+  /** Its run's season, "26-여름" (a July Seminar is in 26-2). */
   season: string;
-  /** Its season's place in time; smaller is newer. */
+  /** That season's place in time; smaller is newer. */
   seasonOrder: number;
   talks: ProgramTalk[];
 };
@@ -166,7 +188,7 @@ export async function getProgramSessions(
         await db
           .from("activity_sessions")
           .select(
-            `title, held_on, ends_on, seasons(name, sort_order), session_talks(title, keywords, sort_order, tags(name, abbreviation), session_talk_speakers(name, sort_order, ${PERSON_MEMBER_SELECT}))`,
+            `title, held_on, ends_on, number, program_runs!inner(seasons(name, sort_order)), session_talks(title, keywords, sort_order, tags(name, abbreviation), session_talk_speakers(name, sort_order, ${PERSON_MEMBER_SELECT}))`,
           )
           .eq("kind", PROGRAMS[slug].kind)
           .order("held_on", { ascending: false }),
@@ -180,8 +202,9 @@ export async function getProgramSessions(
         date: row.held_on,
         until: row.ends_on,
         title: row.title,
-        season: row.seasons.name,
-        seasonOrder: row.seasons.sort_order,
+        number: row.number,
+        season: row.program_runs.seasons.name,
+        seasonOrder: row.program_runs.seasons.sort_order,
         talks: bySort(row.session_talks).map((talk) => ({
           title: talk.title,
           keywords: talk.keywords,

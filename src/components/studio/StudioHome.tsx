@@ -33,9 +33,10 @@ export function StudioHome() {
 function Dashboard({ data }: { data: StudioHomeData }) {
   const { season, events, counts } = data;
   const today = todayInKorea();
-  // The next session of a program from today on, for "다음" on its card.
+  // The next session of a program in the current season, for "다음" on its card.
+  // The next session of a program in the current season, for "다음" on its card.
   const next = (kind: StudioEvent["kind"]) =>
-    events.find((event) => event.kind === kind && event.date >= today);
+    events.find((event) => event.kind === kind && event.current && event.date >= today);
 
   const cards = [
     ...(["deepintodeep", "momentum", "seminar"] as const).map((slug) => {
@@ -48,7 +49,11 @@ function Dashboard({ data }: { data: StudioHomeData }) {
         href: programHref(slug, season),
         card: PROGRAMS[slug].tone.card,
         text: PROGRAMS[slug].tone.text,
-        note: upcoming ? `다음 · ${formatDay(upcoming.date)}` : "이번 시즌 일정 끝",
+        note: upcoming
+          ? `다음 · ${formatDay(upcoming.date)}`
+          : counts[slug]
+            ? "이번 시즌 일정 끝"
+            : "이번 시즌 일정 없음",
       };
     }),
     {

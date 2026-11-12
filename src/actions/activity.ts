@@ -14,6 +14,8 @@ export type ActivitySession = {
   date: string;
   title: string;
   kind: AttendanceKind;
+  /** The kind's name (session_kinds.label). */
+  kindLabel: string;
   status: AttendanceStatus;
   /** Why an excused late or absence was excused; "" when none was recorded. */
   reason: string;
@@ -91,7 +93,9 @@ export async function getActivity(
       db.from("seasons").select("id, year, term"),
       db
         .from("attendance")
-        .select("status, reason, activity_sessions(title, kind, held_on, season_id)")
+        .select(
+          "status, reason, activity_sessions(title, kind, held_on, season_id, session_kinds(label))",
+        )
         .eq("member_id", memberId),
       db
         .from("member_point_entries")
@@ -132,6 +136,7 @@ export async function getActivity(
           date: mark.activity_sessions.held_on,
           title: mark.activity_sessions.title,
           kind: mark.activity_sessions.kind as AttendanceKind,
+          kindLabel: mark.activity_sessions.session_kinds.label,
           status: mark.status as AttendanceStatus,
           reason: mark.reason,
         }))

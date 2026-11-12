@@ -9,7 +9,7 @@ import { EventPill } from "@/components/studio/EventPill";
 import { SeasonTicker } from "@/components/studio/SeasonTicker";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
-import { programHref, PROGRAMS, sessionNumber, type ProgramSlug } from "@/lib/studio/programs";
+import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
 import { addDays, monthEnd, sessionAnchor, timelineDays, weekStart } from "@/lib/studio/timeline";
 
 type Lane = { kinds: StudioEvent["kind"][]; label: string; tone: string; accent: string };
@@ -45,19 +45,6 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const DAY_WIDTH = 76; // px: room for "16회" or a short title on one day
 const LABEL_WIDTH = 140;
 const ROW_HEIGHT = 56;
-const KIND_NAMES: Record<StudioEvent["kind"], string> = {
-  deepintodeep: "DeepIntoDeep",
-  momentum: "Momentum",
-  seminar: "Seminar",
-  event: "행사",
-  afterparty: "뒤풀이",
-  conference: "컨퍼런스",
-  exchange: "교류",
-  aikuthon: "AIKUTHON",
-  academic: "학사일정",
-  holiday: "공휴일",
-  notice: "공지",
-};
 const DAY_MS = 86_400_000;
 
 /** Where an entry leads: its session on the program's page, AIKUTHON's page, or nowhere. */
@@ -311,7 +298,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
               .map((event) => (
                 <EventPill
                   key={`${event.kind}-${event.date}-${event.title}`}
-                  label={sessionNumber(event.title)}
+                  label={event.label}
                   href={hrefOf(event)}
                   tone={lane.tone}
                   faded={(event.until ?? event.date) < today}
@@ -333,7 +320,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
           point={point}
           className="grid w-[260px] gap-1 card px-4 py-3.5 shadow-[0_12px_32px_rgb(29_29_29/0.14)]"
         >
-          <span className="text-label font-semibold text-muted">{KIND_NAMES[hovered.kind]}</span>
+          <span className="text-label font-semibold text-muted">{hovered.kindLabel}</span>
           <span className="font-semibold text-ink">{hovered.title}</span>
           <span className="text-small text-body tabular-nums">
             {formatDay(hovered.date)}
