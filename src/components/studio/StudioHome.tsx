@@ -47,7 +47,8 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
         value: counts[slug],
         unit: "회",
         href: programHref(slug, semester),
-        dot: PROGRAMS[slug].tone.accent,
+        card: PROGRAMS[slug].tone.card,
+        text: PROGRAMS[slug].tone.text,
         note: upcoming ? `다음 · ${formatDay(upcoming.date)}` : "이번 학기 일정 끝",
       };
     }),
@@ -57,7 +58,8 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
       value: counts.projects,
       unit: "개",
       href: `/projects${hashForFilter(season)}`,
-      dot: "bg-ink",
+      card: "border-line bg-linear-to-bl from-surface-soft to-white to-70%",
+      text: "text-ink",
       note: `${season} 프로젝트 보기`,
     },
   ];
@@ -75,12 +77,14 @@ function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string 
             <li key={card.key}>
               <Link
                 href={card.href}
-                className="group grid gap-3 rounded-[20px] border border-line bg-surface p-5 transition-colors hover:border-line-strong hover:bg-surface-soft max-sm:p-4"
+                className={clsx(
+                  "group grid gap-3 rounded-[20px] border p-5 transition-[border-color,box-shadow] hover:shadow-[0_8px_24px_rgb(29_29_29/0.06)] max-sm:p-4",
+                  card.card,
+                )}
               >
-                <span className="flex items-center gap-2 text-small font-semibold text-body">
-                  <span className={clsx("size-2 rounded-full", card.dot)} aria-hidden="true" />
+                <span className={clsx("flex items-center gap-2 text-small font-bold", card.text)}>
                   {card.label}
-                  <ArrowRightIcon className="ml-auto size-4 text-muted transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRightIcon className="ml-auto size-4 opacity-60 transition-transform group-hover:translate-x-0.5" />
                 </span>
                 <span className="flex items-baseline gap-1">
                   <span className="text-[2rem] leading-none font-bold text-ink tabular-nums">

@@ -15,6 +15,10 @@ export type ProgramTone = {
   chip: string;
   /** Recolours the site's green inside it (globals.css); "" keeps the AIKU green. */
   scope: string;
+  /** The diagonal tint of the medal and officer cards, in the program's colour. */
+  card: string;
+  /** The program's name in its colour. */
+  text: string;
 };
 
 export const PROGRAMS: Record<
@@ -29,6 +33,8 @@ export const PROGRAMS: Record<
       accent: "bg-amber-400",
       chip: "bg-amber-100 text-amber-800 border-amber-400/50",
       scope: "accent-deepintodeep",
+      card: "border-amber-800/10 bg-linear-to-bl from-amber-100/60 to-white to-70%",
+      text: "text-amber-800",
     },
   },
   momentum: {
@@ -39,6 +45,8 @@ export const PROGRAMS: Record<
       accent: "bg-sky-400",
       chip: "bg-sky-100 text-sky-800 border-sky-400/50",
       scope: "accent-momentum",
+      card: "border-sky-800/10 bg-linear-to-bl from-sky-100/70 to-white to-70%",
+      text: "text-sky-800",
     },
   },
   seminar: {
@@ -49,6 +57,8 @@ export const PROGRAMS: Record<
       accent: "bg-green-500",
       chip: "bg-green-100 text-green-800 border-green-400/60",
       scope: "",
+      card: "border-green-800/10 bg-linear-to-bl from-green-100/70 to-white to-70%",
+      text: "text-green-800",
     },
   },
 };
