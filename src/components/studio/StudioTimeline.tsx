@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 
 import type { StudioEvent } from "@/actions/studio";
 import { CursorTip, useCursorPoint } from "@/components/ui/CursorTip";
-import { YearTicker } from "@/components/studio/YearTicker";
+import { SeasonTicker } from "@/components/studio/SeasonTicker";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { formatDay } from "@/lib/activity/calendar";
 import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
@@ -291,12 +291,12 @@ export function StudioTimeline({
           {/* Lane names and the corner stay at the left; the days pass under a fade. */}
           <div
             className={clsx(
-              "sticky left-0 z-3 flex items-end border-b border-line bg-surface pb-2.5 pl-3",
+              "sticky left-0 z-3 flex items-center justify-center border-b border-line bg-surface",
               fade,
             )}
             style={{ gridRow: 1, gridColumn: 1 }}
           >
-            <YearTicker scroller={scroller} days={days} dayWidth={DAY_WIDTH} />
+            <SeasonTicker scroller={scroller} days={days} dayWidth={DAY_WIDTH} />
           </div>
           {LANES.map((lane, row) => (
             <div

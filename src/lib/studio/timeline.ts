@@ -54,3 +54,14 @@ export function monthEnd(iso: string, months: number): string {
   const date = toDate(iso);
   return toIso(new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months + 1, 0)));
 }
+
+/**
+ * The season a day falls in, as the calendar's corner shows it: "2026-W"
+ * (January–February, winter break), "2026-1" (March–June), "2026-S"
+ * (July–August, summer) and "2026-2" (September–December).
+ */
+export function seasonCode(iso: string): string {
+  const month = Number(iso.slice(5, 7));
+  const term = month <= 2 ? "W" : month <= 6 ? "1" : month <= 8 ? "S" : "2";
+  return `${iso.slice(0, 4)}-${term}`;
+}
