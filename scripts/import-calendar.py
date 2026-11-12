@@ -18,6 +18,8 @@ date attendance was taken on (where the two disagree, the sheet wins).
 Skipped and reported: rows without a date or title, AIKUTHON rows (the
 aikuthons table is the record of those), and rows whose tags are unknown.
 """
+import datetime
+import re
 from collections import Counter
 
 from aiku_db import NotionApi, SupabaseRest, read_env, script_args
@@ -48,6 +50,10 @@ KINDS = [
 UNTAGGED = "event"
 
 
+def date_of(iso):
+    return datetime.date.fromisoformat(iso[:10])
+
+
 def kind_of(tags):
     for tag, kind in KINDS:
         if tag in tags:
@@ -55,7 +61,7 @@ def kind_of(tags):
     return UNTAGGED if not tags else None
 
 
-existing = db.get("/rest/v1/activity_sessions?select=id,kind,held_on,source_key,notion_page_id")
+existing = db.get("/rest/v1/activity_sessions?select=id,kind,held_on,source_key,notion_page_id,number")
 by_notion = {s["notion_page_id"]: s for s in existing if s["notion_page_id"]}
 by_day = {(s["kind"], s["held_on"]): s for s in existing if not s["notion_page_id"]}
 
@@ -88,6 +94,18 @@ for row in notion.query_all(SCHEDULE):
         "ends_on": end if end and end > start else None,
     }
     match = by_notion.get(row["id"]) or by_day.pop((kind, start), None)
+    if not match:
+        # A numbered session the sheet took attendance for on another day close
+        # by (it was moved) is the same session: link it, keep the sheet's date.
+        wanted = re.search(r"(\d+)\s*(?:회|강)\s*$", title)
+        near = [
+            s for s in by_day.values()
+            if wanted and s["kind"] == kind and s["number"] == int(wanted.group(1))
+            and abs((date_of(s["held_on"]) - date_of(start)).days) <= 14
+        ]
+        if len(near) == 1:
+            match = by_day.pop((near[0]["kind"], near[0]["held_on"]))
+            skipped.append(f"날짜가 다른 같은 회차에 연결 (출결 날짜 {match['held_on']}를 따름): {title} {start}")
     plan.append((entry, match))
     kinds[kind] += 1
 
