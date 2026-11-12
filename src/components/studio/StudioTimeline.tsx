@@ -97,7 +97,7 @@ export function StudioTimeline({ events, today }: { events: StudioEvent[]; today
       <div className="overflow-x-auto rounded-[20px] border border-line bg-surface">
         <div
           className="grid min-w-[56rem]"
-          style={{ gridTemplateColumns: `7.5rem repeat(${TIMELINE_DAYS}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `8.75rem repeat(${TIMELINE_DAYS}, minmax(0, 1fr))` }}
         >
           {/* Day header: weekday and date; weekends muted, today marked. */}
           <div className="border-b border-soft-line" />

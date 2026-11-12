@@ -6,11 +6,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getProgramSessions, type ProgramSession } from "@/actions/studio";
 import { formatDay } from "@/lib/activity/calendar";
 import { programHref, PROGRAMS, type ProgramSlug } from "@/lib/studio/programs";
+import { todayInKorea } from "@/lib/studio/timeline";
 
 import { StudioGate } from "./StudioGate";
-
-/** Today in Korea as "2026-11-13", the same on every device. */
-const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
 
 /**
  * One program across every semester: semester filters (?season=26-2, kept
@@ -36,7 +34,7 @@ function ProgramList({ slug, sessions }: { slug: ProgramSlug; sessions: ProgramS
   const wanted = params.get("season");
   const selected = wanted && semesters.includes(wanted) ? wanted : null;
   const shown = selected ? [selected] : semesters;
-  const now = today();
+  const now = todayInKorea();
 
   const choose = (semester: string | null) =>
     router.replace(semester ? programHref(slug, semester) : pathname, { scroll: false });

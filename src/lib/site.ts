@@ -1,3 +1,5 @@
+import { PROGRAMS } from "@/lib/studio/programs";
+
 export const siteName = "AIKU";
 export const siteTitle = "AIKU | 고려대학교 딥러닝 학회";
 export const siteDescription = "고려대학교 딥러닝 학회 AIKU 공식 웹사이트입니다.";
@@ -15,6 +17,8 @@ export type NavItem = {
   alsoActiveOn?: string[];
   /** Current only on this exact path, not on the pages under it. */
   exact?: boolean;
+  /** A program's colour scope (globals.css): its selected state takes that colour. */
+  accent?: string;
 };
 
 export const navItems: NavItem[] = [
@@ -34,9 +38,12 @@ export const navItems: NavItem[] = [
  */
 export const studioNavItems: NavItem[] = [
   { href: "/studio", label: "Studio", prefetch: false, exact: true },
-  { href: "/studio/deepintodeep", label: "DeepIntoDeep", prefetch: false },
-  { href: "/studio/momentum", label: "Momentum", prefetch: false },
-  { href: "/studio/seminar", label: "Seminar", prefetch: false },
+  ...(["deepintodeep", "momentum", "seminar"] as const).map((slug) => ({
+    href: `/studio/${slug}`,
+    label: PROGRAMS[slug].label,
+    prefetch: false,
+    accent: PROGRAMS[slug].tone.scope,
+  })),
   { href: "/projects", label: "Projects" },
   { href: "/aikuthon", label: "AIKUTHON" },
   { href: "/members", label: "Members" },

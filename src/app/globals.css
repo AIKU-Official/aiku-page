@@ -396,6 +396,49 @@
 }
 
 /*
+ * A program's own colour (AIKU Studio): inside an accent scope the site's
+ * green scale is swapped for the program's, so every green mark there (the
+ * selected menu item, eyebrows, chips, the hero panel) takes the program's
+ * colour with no change to the components. Seminar keeps the AIKU green,
+ * so it has no scope.
+ */
+@utility accent-deepintodeep {
+  --color-green-50: #fffaeb;
+  --color-green-100: #fdf1cf;
+  --color-green-200: #fbe39a;
+  --color-green-300: #f7d468;
+  --color-green-400: #f2c335;
+  --color-green-500: #ebb315;
+  --color-green-600: #d69f07;
+  --color-green-700: #8a6000; /* labels on white, 5.4:1 */
+  --color-green-800: #7d5200;
+  --color-green-900: #5c3c00;
+}
+
+@utility accent-momentum {
+  --color-green-50: #f2f8fe;
+  --color-green-100: #e4f1fc;
+  --color-green-200: #c3e0f8;
+  --color-green-300: #93c8f2;
+  --color-green-400: #5fb4ec;
+  --color-green-500: #3a9de3;
+  --color-green-600: #2585cc;
+  --color-green-700: #1d6aa8; /* labels on white, 5.6:1 */
+  --color-green-800: #1c5a94;
+  --color-green-900: #17456f;
+}
+
+/* A page hero tinted with the accent in scope, its faint wordmark white. */
+@utility page-hero-accent {
+  background-image: linear-gradient(to bottom, var(--color-green-50), var(--color-green-200));
+
+  &::after {
+    background: url("/assets/aiku-logo-white.png") center / contain no-repeat;
+    opacity: 0.55;
+  }
+}
+
+/*
  * Rendered project markdown. Kept as plain CSS because the content is
  * generated and can only be styled through descendant selectors. Tailwind's
  * preflight removes default margins and list styles, so they are set here.

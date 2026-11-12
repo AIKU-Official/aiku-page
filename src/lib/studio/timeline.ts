@@ -41,3 +41,7 @@ export function rangeLabel(start: string, count = TIMELINE_DAYS): string {
   };
   return `${label(start)} – ${label(addDays(start, count - 1))}`;
 }
+
+/** Today in Korea as "2026-11-13", the same on every device. */
+export const todayInKorea = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());

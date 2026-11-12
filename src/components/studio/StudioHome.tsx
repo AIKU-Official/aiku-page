@@ -1,17 +1,22 @@
 "use client";
 
+import clsx from "clsx";
 import Link from "next/link";
 
-import { getStudioHome, type StudioHome as StudioHomeData } from "@/actions/studio";
+import {
+  getStudioHome,
+  type StudioEvent,
+  type StudioHome as StudioHomeData,
+} from "@/actions/studio";
 import { MyActivity } from "@/components/profile/MyActivity";
+import { ArrowRightIcon } from "@/components/ui/icons";
+import { formatDay } from "@/lib/activity/calendar";
 import { hashForFilter } from "@/lib/projects/filter";
 import { programHref, PROGRAMS } from "@/lib/studio/programs";
+import { todayInKorea } from "@/lib/studio/timeline";
 
 import { StudioGate } from "./StudioGate";
 import { StudioTimeline } from "./StudioTimeline";
-
-/** Today in Korea as "2026-11-13", the same on every device. */
-const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
 
 /**
  * The first page of AIKU Studio: what is coming up this semester, the
@@ -28,74 +33,65 @@ export function StudioHome() {
 
 function Dashboard({ data, memberId }: { data: StudioHomeData; memberId: string }) {
   const { semester, season, events, counts } = data;
-  const programs = [
+  const today = todayInKorea();
+  // The next session of a program from today on, for "다음" on its card.
+  const next = (kind: StudioEvent["kind"]) =>
+    events.find((event) => event.kind === kind && event.date >= today);
+
+  const cards = [
+    ...(["deepintodeep", "momentum", "seminar"] as const).map((slug) => {
+      const upcoming = next(PROGRAMS[slug].kind);
+      return {
+        key: slug,
+        label: PROGRAMS[slug].label,
+        value: counts[slug],
+        unit: "회",
+        href: programHref(slug, semester),
+        dot: PROGRAMS[slug].tone.accent,
+        note: upcoming ? `다음 · ${formatDay(upcoming.date)}` : "이번 학기 일정 끝",
+      };
+    }),
     {
-      label: "DeepIntoDeep",
-      value: counts.deepintodeep,
-      unit: "회",
-      href: programHref("deepintodeep", semester),
-      accent: PROGRAMS.deepintodeep.tone.accent,
-    },
-    {
+      key: "projects",
       label: "Projects",
       value: counts.projects,
       unit: "개",
       href: `/projects${hashForFilter(season)}`,
-      accent: "bg-ink",
-    },
-    {
-      label: "Momentum",
-      value: counts.momentum,
-      unit: "회",
-      href: programHref("momentum", semester),
-    },
-    {
-      label: "Seminar",
-      value: counts.seminar,
-      unit: "회",
-      href: programHref("seminar", semester),
-      accent: PROGRAMS.seminar.tone.accent,
+      dot: "bg-ink",
+      note: `${season} 프로젝트 보기`,
     },
   ];
 
   return (
-    <div className="grid gap-10 max-sm:gap-8">
-      <StudioTimeline events={events} today={today()} />
+    <div className="grid gap-12 max-sm:gap-9">
+      <StudioTimeline events={events} today={today} />
 
       <section className="grid gap-4" aria-labelledby="studio-semester">
         <h2 id="studio-semester" className="text-[1.25rem] font-bold text-ink">
           {semester}학기
         </h2>
         <ul className="grid grid-cols-4 gap-3 max-lg:grid-cols-2">
-          {programs.map((program) => {
-            const body = (
-              <>
-                <span className={`h-1 w-8 rounded-full ${program.accent}`} aria-hidden="true" />
-                <span className="text-label font-semibold tracking-[0.04em] text-muted uppercase">
-                  {program.label}
+          {cards.map((card) => (
+            <li key={card.key}>
+              <Link
+                href={card.href}
+                className="group grid gap-3 rounded-[20px] border border-line bg-surface p-5 transition-colors hover:border-line-strong hover:bg-surface-soft max-sm:p-4"
+              >
+                <span className="flex items-center gap-2 text-small font-semibold text-body">
+                  <span className={clsx("size-2 rounded-full", card.dot)} aria-hidden="true" />
+                  {card.label}
+                  <ArrowRightIcon className="ml-auto size-4 text-muted transition-transform group-hover:translate-x-0.5" />
                 </span>
-                <span className="text-[1.75rem] font-bold text-ink tabular-nums">
-                  {program.value}
-                  <span className="ml-0.5 text-small font-semibold text-muted">{program.unit}</span>
+                <span className="flex items-baseline gap-1">
+                  <span className="text-[2rem] leading-none font-bold text-ink tabular-nums">
+                    {card.value}
+                  </span>
+                  <span className="text-small font-semibold text-muted">{card.unit}</span>
                 </span>
-              </>
-            );
-            const box = "grid gap-2 rounded-[20px] border border-line bg-surface px-5 py-4";
-            return (
-              <li key={program.label}>
-                {program.href ? (
-                  <Link
-                    href={program.href}
-                    className={`${box} transition-colors hover:border-line-strong hover:bg-surface-soft`}
-                  >
-                    {body}
-                  </Link>
-                ) : (
-                  <div className={box}>{body}</div>
-                )}
-              </li>
-            );
-          })}
+                <span className="text-label text-muted">{card.note}</span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </section>
 

@@ -68,6 +68,7 @@ export function SiteHeader() {
       className={clsx(
         "inline-flex h-9 items-center rounded-full px-3.5 font-medium transition-[background-color,color] hover:bg-surface-soft hover:text-ink aria-[current=page]:bg-green-100 aria-[current=page]:font-semibold aria-[current=page]:text-green-800 max-lg:h-12 max-lg:rounded-control max-lg:px-3 max-lg:text-[1.0625rem]",
         item.utility ? "text-small text-muted" : "text-[0.9375rem] text-body",
+        item.accent,
       )}
     >
       {item.label}

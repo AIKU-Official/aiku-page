@@ -9,14 +9,24 @@ type PageHeroProps = {
   lead?: ReactNode;
   /** Right-aligned content such as the admin logout button. */
   aside?: ReactNode;
+  /**
+   * Tinted with the colour in scope (a program's accent, globals.css) instead
+   * of grey, with the faint wordmark in white.
+   */
+  accent?: boolean;
 };
 
-export function PageHero({ eyebrow, title, lead, aside }: PageHeroProps) {
+export function PageHero({ eyebrow, title, lead, aside, accent }: PageHeroProps) {
   return (
     // On wider screens the minimum height fits a two-line title with a two-line
     // lead, so the line under the hero sits at the same place on every page.
     // On phones the hero is as tall as its text plus the padding.
-    <section className="page-hero-watermark relative min-h-[412px] overflow-hidden border-b border-soft-line bg-linear-to-b from-white to-surface-soft max-lg:min-h-[335px] max-sm:min-h-0">
+    <section
+      className={clsx(
+        "page-hero-watermark relative min-h-[412px] overflow-hidden border-b border-soft-line max-lg:min-h-[335px] max-sm:min-h-0",
+        accent ? "page-hero-accent" : "bg-linear-to-b from-white to-surface-soft",
+      )}
+    >
       <div
         className={clsx(
           "relative z-1 site-container pt-28 pb-20 max-lg:pt-20 max-lg:pb-14 max-sm:pt-10 max-sm:pb-10",

@@ -29,11 +29,12 @@ export async function generateMetadata({
 export default async function ProgramPage({ params }: PageProps<"/studio/[program]">) {
   const { program } = await params;
   if (!isProgram(program)) notFound();
-  const { label, lead } = PROGRAMS[program];
+  const { label, lead, tone } = PROGRAMS[program];
 
+  // The page takes the program's colour in place of the AIKU green.
   return (
-    <>
-      <PageHero eyebrow="Studio" title={label} lead={lead} />
+    <div className={tone.scope}>
+      <PageHero eyebrow="Studio" title={label} lead={lead} accent />
       <Section>
         <div className="site-container">
           {/* The semester filter reads the address, which needs a boundary on a static page. */}
@@ -42,6 +43,6 @@ export default async function ProgramPage({ params }: PageProps<"/studio/[progra
           </Suspense>
         </div>
       </Section>
-    </>
+    </div>
   );
 }
