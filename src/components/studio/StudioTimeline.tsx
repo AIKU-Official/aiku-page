@@ -185,7 +185,9 @@ export function StudioTimeline({
               aria-hidden="true"
               className={clsx(
                 day.weekday === 1 && "border-l border-soft-line",
-                day.iso < today && "bg-surface-soft",
+                // The wash fades out over the last day before today rather than stopping at a line.
+                day.iso < addDays(today, -1) && "bg-surface-soft",
+                day.iso === addDays(today, -1) && "bg-linear-to-r from-surface-soft to-transparent",
               )}
               style={{ gridRow: `2 / ${LANES.length + 2}`, gridColumn: i + 2 }}
             />
