@@ -31,7 +31,12 @@ function step(history: ChangeHistory, changes: Change[]): ChangeHistory {
 /** Where a displayed row comes from: an existing row (by key) or a pending addition (by ref). */
 export type RowTarget = { table: string; key: Row } | { table: string; ref: string };
 
-export function addRow(history: ChangeHistory, table: string, ref: string, values: Row): ChangeHistory {
+export function addRow(
+  history: ChangeHistory,
+  table: string,
+  ref: string,
+  values: Row,
+): ChangeHistory {
   return step(history, [...history.changes, { op: "insert", table, ref, values }]);
 }
 
@@ -60,7 +65,10 @@ export function editRow(history: ChangeHistory, target: RowTarget, patch: Row): 
       ),
     );
   }
-  return step(history, [...history.changes, { op: "update", table, key: target.key, values: patch }]);
+  return step(history, [
+    ...history.changes,
+    { op: "update", table, key: target.key, values: patch },
+  ]);
 }
 
 export function deleteRow(history: ChangeHistory, target: RowTarget): ChangeHistory {
@@ -72,7 +80,8 @@ export function deleteRow(history: ChangeHistory, target: RowTarget): ChangeHist
     );
   }
   const others = history.changes.filter(
-    (change) => !(change.op === "update" && change.table === table && sameKey(change.key, target.key)),
+    (change) =>
+      !(change.op === "update" && change.table === table && sameKey(change.key, target.key)),
   );
   return step(history, [...others, { op: "delete", table, key: target.key }]);
 }
@@ -80,7 +89,11 @@ export function deleteRow(history: ChangeHistory, target: RowTarget): ChangeHist
 export function undo(history: ChangeHistory): ChangeHistory {
   const previous = history.past.at(-1);
   if (!previous) return history;
-  return { changes: previous, past: history.past.slice(0, -1), future: [history.changes, ...history.future] };
+  return {
+    changes: previous,
+    past: history.past.slice(0, -1),
+    future: [history.changes, ...history.future],
+  };
 }
 
 export function redo(history: ChangeHistory): ChangeHistory {
@@ -94,7 +107,12 @@ export type RowState = "clean" | "edited" | "deleted" | "new";
 export type DisplayRow = { row: Row; state: RowState; target: RowTarget; edited: Set<string> };
 
 /** The table's rows as they will be after the pending changes: additions first. */
-export function displayRows(table: string, rows: Row[], primaryKey: string[], changes: Change[]): DisplayRow[] {
+export function displayRows(
+  table: string,
+  rows: Row[],
+  primaryKey: string[],
+  changes: Change[],
+): DisplayRow[] {
   const mine = changes.filter((change) => change.table === table);
   const added: DisplayRow[] = mine
     .filter((change): change is Extract<Change, { op: "insert" }> => change.op === "insert")
@@ -108,7 +126,8 @@ export function displayRows(table: string, rows: Row[], primaryKey: string[], ch
     const key = keyOf(row, primaryKey);
     const removed = mine.some((change) => change.op === "delete" && sameKey(change.key, key));
     const update = mine.find(
-      (change): change is Extract<Change, { op: "update" }> => change.op === "update" && sameKey(change.key, key),
+      (change): change is Extract<Change, { op: "update" }> =>
+        change.op === "update" && sameKey(change.key, key),
     );
     return {
       row: update ? { ...row, ...update.values } : row,

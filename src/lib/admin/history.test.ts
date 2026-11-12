@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { formatSavedAt, summarize, viewEntry, type LogEntry } from "./history";
+import { loginIdToEmail } from "@/lib/auth/login-id";
+
+import { formatSavedAt, revertBlocked, summarize, viewEntry, type LogEntry } from "./history";
 
 const entry = (partial: Partial<LogEntry>): LogEntry => ({
   id: 1,
@@ -56,5 +58,25 @@ describe("viewEntry", () => {
 describe("formatSavedAt", () => {
   it("shows Korean time whatever the machine's zone", () => {
     expect(formatSavedAt("2026-11-12T17:14:00Z")).toBe("11월 13일 오전 2:14");
+  });
+});
+
+describe("revertBlocked", () => {
+  it("blocks undoing a rejected AIKU ID sign-up, whose login was deleted", () => {
+    const rejected = entry({
+      op: "delete",
+      table_name: "member_signup_requests",
+      old_row: { user_id: "u", email: loginIdToEmail("someone") },
+    });
+    expect(revertBlocked([rejected])).toMatch(/되돌릴 수 없습니다/);
+  });
+
+  it("allows other saves, including a rejected Google sign-up", () => {
+    const google = entry({
+      op: "delete",
+      table_name: "member_signup_requests",
+      old_row: { user_id: "u", email: "someone@gmail.com" },
+    });
+    expect(revertBlocked([google, entry({ op: "update" })])).toBeNull();
   });
 });

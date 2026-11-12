@@ -7,7 +7,14 @@ import { revertBatch } from "@/actions/db-admin";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Pill } from "@/components/ui/Pill";
-import { type Batch, formatSavedAt, OP_WORDS, summarize, viewEntry } from "@/lib/admin/history";
+import {
+  type Batch,
+  formatSavedAt,
+  OP_WORDS,
+  revertBlocked,
+  summarize,
+  viewEntry,
+} from "@/lib/admin/history";
 
 /**
  * The latest saves from the canvas: when, who, what changed, and a way to
@@ -81,7 +88,11 @@ export function ChangeHistory({ batches }: { batches: Batch[] }) {
                         {summarize(batch.entries)}
                       </p>
                     </div>
-                    {undo ? null : (
+                    {undo ? null : revertBlocked(batch.entries) ? (
+                      <span className="text-label text-muted" title={revertBlocked(batch.entries)!}>
+                        되돌릴 수 없음
+                      </span>
+                    ) : (
                       <Button
                         variant="secondary"
                         size="sm"

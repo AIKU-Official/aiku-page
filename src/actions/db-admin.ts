@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { ActionError, adminAction, unwrap } from "@/lib/actions/admin-action";
 import type { ActionResult } from "@/lib/actions/result";
+import { type LogEntry, revertBlocked } from "@/lib/admin/history";
 import { loadSchema } from "@/lib/admin/schema";
 import type { Json, Row } from "@/lib/admin/schema-types";
 import { LABEL_COLUMNS, rowsHidden } from "@/lib/admin/table-policy";
@@ -167,6 +168,11 @@ export async function revertBatch(input: unknown): Promise<ActionResult> {
   return adminAction(
     { schema: z.string().uuid(), input, revalidate: [...CONTENT_KINDS] },
     async (batch, db, session) => {
+      const entries = unwrap(
+        await db.from("admin_change_log").select("table_name, op, old_row").eq("batch_id", batch),
+      ) as LogEntry[] | null;
+      const blocked = revertBlocked(entries ?? []);
+      if (blocked) throw new ActionError(blocked);
       const { data, error } = await db.rpc("admin_revert_batch", {
         p_batch: batch,
         p_member: session.memberId,

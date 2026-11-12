@@ -1,6 +1,7 @@
 // The database schema as the admin canvas sees it. Safe to import from client code.
 
-export type ColumnKind = "uuid" | "text" | "integer" | "number" | "boolean" | "date" | "timestamp" | "json" | "array";
+export type ColumnKind =
+  "uuid" | "text" | "integer" | "number" | "boolean" | "date" | "timestamp" | "json" | "array";
 
 export type SchemaColumn = {
   name: string;

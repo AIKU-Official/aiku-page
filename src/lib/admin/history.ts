@@ -1,6 +1,8 @@
 // The admin canvas's change history, turned into what the 변경 기록 list
 // shows: per save, which rows changed and how. Pure, safe to import anywhere.
 
+import { emailToLoginId } from "@/lib/auth/login-id";
+
 import { formatValue } from "./changes";
 import type { Json, Row } from "./schema-types";
 import { LABEL_COLUMNS, rowsHidden } from "./table-policy";
@@ -85,3 +87,20 @@ const SAVED_AT = new Intl.DateTimeFormat("ko-KR", {
 
 /** "11월 13일 오전 2:14", in Korean time on the server and in every browser alike. */
 export const formatSavedAt = (iso: string) => SAVED_AT.format(new Date(iso));
+
+/**
+ * Why a save cannot be undone, or null. Rejecting an AIKU ID sign-up deletes
+ * the login with it (see commitChanges), and a deleted login cannot be put
+ * back, so restoring the request would fail.
+ */
+export function revertBlocked(entries: LogEntry[]): string | null {
+  const removedLogin = entries.some(
+    (entry) =>
+      entry.op === "delete" &&
+      entry.table_name === "member_signup_requests" &&
+      Boolean(emailToLoginId(String(entry.old_row?.email ?? ""))),
+  );
+  return removedLogin
+    ? "AIKU ID 가입 요청을 거절한 변경은 로그인 계정이 함께 지워져서 되돌릴 수 없습니다."
+    : null;
+}

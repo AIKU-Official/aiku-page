@@ -108,6 +108,8 @@ if apply:
             db.request("PATCH", f"/rest/v1/activity_sessions?id=eq.{match['id']}", entry)
         else:
             db.upsert("activity_sessions", entry | {"source_key": "notion:" + entry["notion_page_id"]}, "source_key")
+    # Profiles list lectures by session; rebuild them now rather than within the hour.
+    db.refresh_pages(["members"])
     print(f"{len(plan)}개를 반영했습니다.")
 else:
     print("미리보기입니다. 쓰려면 --apply를 붙이세요.")

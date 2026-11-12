@@ -206,8 +206,16 @@ season_id = db.season_of_date(apply)
 marks = sum(len(s["rows"]) for s in sessions.values())
 if apply:
     for (kind, day), s in sorted(sessions.items(), key=lambda kv: kv[0][1]):
-        saved = db.upsert("activity_sessions", {"source_key": f"{kind}:{day}", "kind": kind, "title": s["title"],
-                                                "held_on": day, "season_id": season_id(day)}, "source_key")
+        # The session of this kind on this day, whoever made it (the calendar
+        # import may have come first); a session from Notion keeps Notion's title.
+        found = db.get(f"/rest/v1/activity_sessions?select=id,notion_page_id&kind=eq.{kind}&held_on=eq.{day}")
+        if found:
+            fields = {"source_key": f"{kind}:{day}"} | ({} if found[0]["notion_page_id"] else {"title": s["title"]})
+            db.request("PATCH", f"/rest/v1/activity_sessions?id=eq.{found[0]['id']}", fields)
+            saved = found[0]
+        else:
+            saved = db.upsert("activity_sessions", {"source_key": f"{kind}:{day}", "kind": kind, "title": s["title"],
+                                                    "held_on": day, "season_id": season_id(day)}, "source_key")
         db.delete("attendance", f"session_id=eq.{saved['id']}")
         if s["rows"]:
             db.insert("attendance", [{"session_id": saved["id"], "member_id": mid, "status": st, "reason": rs}
@@ -220,6 +228,8 @@ if apply:
         if e["members"]:
             db.insert("point_event_members", [{"event_id": saved["id"], "member_id": mid} for mid in e["members"]])
 
+if apply:
+    db.refresh_pages(["members"])
 print(f"{'applied' if apply else 'dry run'}: {len(sessions)} sessions, {marks} attendance marks, {len(events)} point events")
 report["unmatched"] = sorted(report["unmatched"])
 json.dump(report, open("data/activity/import-report.json", "w"), ensure_ascii=False, indent=2)

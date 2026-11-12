@@ -63,7 +63,7 @@ export const PROGRAMS: Record<
   },
 };
 
-export const isProgram = (slug: string): slug is ProgramSlug => slug in PROGRAMS;
+export const isProgram = (slug: string): slug is ProgramSlug => Object.hasOwn(PROGRAMS, slug);
 
 /** "/studio/seminar?season=26-2". */
 export const programHref = (slug: ProgramSlug, semester?: string) =>

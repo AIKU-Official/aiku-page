@@ -21,13 +21,17 @@ describe("pending changes", () => {
   it("merges edits to one row into one update", () => {
     let history = editRow(emptyHistory, { table: "t", key: { id: "a" } }, { name: "A1" });
     history = editRow(history, { table: "t", key: { id: "a" } }, { name: "A2" });
-    expect(history.changes).toEqual([{ op: "update", table: "t", key: { id: "a" }, values: { name: "A2" } }]);
+    expect(history.changes).toEqual([
+      { op: "update", table: "t", key: { id: "a" }, values: { name: "A2" } },
+    ]);
   });
 
   it("drops an added row when it is deleted, and edits additions in place", () => {
     let history = addRow(emptyHistory, "t", "r1", { id: "c", name: "New" });
     history = editRow(history, { table: "t", ref: "r1" }, { name: "Newer" });
-    expect(history.changes).toEqual([{ op: "insert", table: "t", ref: "r1", values: { id: "c", name: "Newer" } }]);
+    expect(history.changes).toEqual([
+      { op: "insert", table: "t", ref: "r1", values: { id: "c", name: "Newer" } },
+    ]);
     history = deleteRow(history, { table: "t", ref: "r1" });
     expect(history.changes).toEqual([]);
   });
@@ -63,6 +67,10 @@ describe("pending changes", () => {
       ["Beta", "deleted"],
     ]);
     expect(countByTable(history.changes)).toEqual({ t: 3 });
-    expect(toPayload(history.changes)[0]).toEqual({ op: "insert", table: "t", values: { id: "c", name: "New" } });
+    expect(toPayload(history.changes)[0]).toEqual({
+      op: "insert",
+      table: "t",
+      values: { id: "c", name: "New" },
+    });
   });
 });

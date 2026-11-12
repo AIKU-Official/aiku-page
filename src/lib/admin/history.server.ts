@@ -3,6 +3,7 @@ import "server-only";
 import { type AdminDb, unwrap } from "@/lib/actions/admin-action";
 
 import type { Batch } from "./history";
+import { rowsHidden } from "./table-policy";
 
 const HISTORY_SIZE = 30;
 
@@ -21,5 +22,12 @@ export async function loadHistory(db: AdminDb): Promise<Batch[]> {
       .order("id", { referencedTable: "admin_change_log", ascending: true })
       .limit(HISTORY_SIZE),
   );
-  return (rows ?? []) as unknown as Batch[];
+  // Rows of secret tables (student ID hashes) stay in the database for undo
+  // but are never sent to the browser.
+  return ((rows ?? []) as unknown as Batch[]).map((batch) => ({
+    ...batch,
+    entries: batch.entries.map((entry) =>
+      rowsHidden(entry.table_name) ? { ...entry, old_row: null, new_row: null } : entry,
+    ),
+  }));
 }

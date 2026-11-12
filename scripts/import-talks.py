@@ -96,7 +96,10 @@ def speaker_rows(names):
         name, generation = clean_name(raw)
         found = members.get(name, [])
         if generation:
-            found = [m for m in found if m[1] == generation] or found
+            same = [m for m in found if m[1] == generation]
+            if found and not same:
+                report["적힌 기수의 회원이 없어 연결하지 않음"].append(f"{raw} (명단: {', '.join(m[1] for m in found)})")
+            found = same
         if len(found) > 1:
             report["이름이 같은 회원이 여럿이라 연결하지 않음"].append(name)
         elif not found:
@@ -263,6 +266,8 @@ if apply:
         if keep:
             quoted = ",".join(f'"{k}"' for k in keep)
             db.delete("session_talks", f"session_id=eq.{session['id']}&source_key=not.in.({quoted})")
+    # Profiles list lectures by session; rebuild them now rather than within the hour.
+    db.refresh_pages(["members"])
     print("\n반영했습니다.")
 else:
     print("\n미리보기입니다. 쓰려면 --apply를 붙이세요.")
