@@ -2,20 +2,13 @@
 
 import Link from "next/link";
 
-import { getStudioHome, type StudioEvent } from "@/actions/studio";
+import { getStudioHome } from "@/actions/studio";
 import { MyActivity } from "@/components/profile/MyActivity";
 import { Notice } from "@/components/ui/Notice";
-import { Pill } from "@/components/ui/Pill";
-import { formatDay, SESSION_KIND_LABELS } from "@/lib/activity/calendar";
+import { StudioTimeline } from "./StudioTimeline";
 import { useMemberAccount } from "@/lib/auth/member";
 import { useSignedInData } from "@/lib/auth/signed-in-data";
 import { hashForFilter } from "@/lib/projects/filter";
-
-const KIND_LABELS: Record<StudioEvent["kind"], string> = {
-  ...SESSION_KIND_LABELS,
-  aikuthon: "AIKUTHON",
-};
-const UPCOMING = 8;
 
 /** Today in Korea as "2026-11-13", the same on every device. */
 const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
@@ -67,81 +60,59 @@ export function StudioHome() {
   }
 
   const { semester, season, events, counts } = state.data;
-  const now = today();
-  const upcoming = events.filter((event) => event.date >= now).slice(0, UPCOMING);
   const programs = [
-    { label: "프로젝트", value: `${counts.projects}개`, href: `/projects${hashForFilter(season)}` },
-    { label: "DeepIntoDeep", value: `${counts.deepintodeep}회` },
-    { label: "모멘텀", value: `${counts.momentum}회` },
-    { label: "세미나", value: `${counts.seminar}회` },
+    { label: "DeepIntoDeep", value: counts.deepintodeep, unit: "회" },
+    {
+      label: "Projects",
+      value: counts.projects,
+      unit: "개",
+      href: `/projects${hashForFilter(season)}`,
+    },
+    { label: "Momentum", value: counts.momentum, unit: "회" },
+    { label: "Seminar", value: counts.seminar, unit: "회" },
   ];
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] items-start gap-12 max-lg:grid-cols-1 max-lg:gap-10">
-      <section className="grid gap-4" aria-labelledby="studio-upcoming">
-        <h2 id="studio-upcoming" className="text-heading">
-          다가오는 일정
+    <div className="grid gap-10 max-sm:gap-8">
+      <StudioTimeline events={events} today={today()} />
+
+      <section className="grid gap-4" aria-labelledby="studio-semester">
+        <h2 id="studio-semester" className="text-[1.25rem] font-bold text-ink">
+          {semester}학기
         </h2>
-        {upcoming.length ? (
-          <ol className="grid divide-y divide-soft-line rounded-[20px] border border-line bg-surface">
-            {upcoming.map((event) => (
-              <li
-                key={`${event.date}-${event.title}`}
-                className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-center gap-4 px-5 py-4 max-sm:grid-cols-1 max-sm:gap-1 max-sm:px-4"
-              >
-                <span className="text-small font-semibold text-ink tabular-nums">
-                  {formatDay(event.date)}
+        <ul className="grid grid-cols-4 gap-3 max-lg:grid-cols-2">
+          {programs.map((program) => {
+            const body = (
+              <>
+                <span className="text-label font-semibold tracking-[0.04em] text-muted uppercase">
+                  {program.label}
                 </span>
-                <span className="flex min-w-0 flex-wrap items-center gap-2">
-                  <Pill>{KIND_LABELS[event.kind]}</Pill>
-                  <span className="min-w-0 truncate text-body">{event.title}</span>
+                <span className="text-[1.75rem] font-bold text-ink tabular-nums">
+                  {program.value}
+                  <span className="ml-0.5 text-small font-semibold text-muted">{program.unit}</span>
                 </span>
+              </>
+            );
+            const box = "grid gap-2 rounded-[20px] border border-line bg-surface px-5 py-4";
+            return (
+              <li key={program.label}>
+                {program.href ? (
+                  <Link
+                    href={program.href}
+                    className={`${box} transition-colors hover:border-line-strong hover:bg-surface-soft`}
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={box}>{body}</div>
+                )}
               </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="rounded-[20px] border border-line bg-surface-soft px-5 py-6 text-center text-small text-muted">
-            {semester}학기에 남은 일정이 없습니다.
-          </p>
-        )}
+            );
+          })}
+        </ul>
       </section>
 
-      <div className="grid gap-8">
-        <section className="grid gap-4" aria-labelledby="studio-semester">
-          <h2 id="studio-semester" className="text-heading">
-            {semester}학기 활동
-          </h2>
-          <ul className="grid grid-cols-2 gap-3">
-            {programs.map((program) => {
-              const body = (
-                <>
-                  <span className="text-small text-muted">{program.label}</span>
-                  <span className="text-[1.375rem] font-bold text-ink tabular-nums">
-                    {program.value}
-                  </span>
-                </>
-              );
-              return (
-                <li key={program.label}>
-                  {program.href ? (
-                    <Link
-                      href={program.href}
-                      className="grid gap-1 rounded-[20px] border border-line bg-surface px-5 py-4 transition-colors hover:border-line-strong hover:bg-surface-soft"
-                    >
-                      {body}
-                    </Link>
-                  ) : (
-                    <div className="grid gap-1 rounded-[20px] border border-line bg-surface px-5 py-4">
-                      {body}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-        <MyActivity memberId={member.id} />
-      </div>
+      <MyActivity memberId={member.id} />
     </div>
   );
 }
