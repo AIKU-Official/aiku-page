@@ -108,6 +108,17 @@ export function StudioTimeline({
   const weeks = Math.floor((Date.parse(last) - Date.parse(first)) / DAY_MS / 7) + 1;
   const days = timelineDays(first, weeks * 7);
   const column = (iso: string) => days.findIndex((day) => day.iso === iso);
+  // Every day a public holiday covers, for the header's colour.
+  const holidays = new Set(
+    events
+      .filter((event) => event.kind === "holiday")
+      .flatMap((event) =>
+        timelineDays(
+          event.date,
+          Math.round((Date.parse(event.until ?? event.date) - Date.parse(event.date)) / DAY_MS) + 1,
+        ).map((day) => day.iso),
+      ),
+  );
 
   const scrollToDay = (iso: string, behavior: ScrollBehavior = "smooth") =>
     scroller.current?.scrollTo({ left: Math.max(0, column(iso)) * DAY_WIDTH, behavior });
@@ -210,34 +221,45 @@ export function StudioTimeline({
             </div>
           ) : null}
 
-          {/* Day header: the month on its first day, weekday, date. */}
-          {days.map((day, i) => (
-            <div
-              key={`day-${day.iso}`}
-              className={clsx(
-                "grid justify-items-center gap-0.5 border-b border-line pt-3 pb-2.5 text-[0.6875rem] tabular-nums",
-                day.weekday === 0 || day.weekday === 6 ? "text-muted/60" : "text-muted",
-              )}
-              style={{ gridRow: 1, gridColumn: i + 2 }}
-            >
-              <span className="h-3.5 font-semibold text-body">
-                {day.monthStart || i === 0 ? `${Number(day.iso.slice(5, 7))}월` : ""}
-              </span>
-              <span>{WEEKDAYS[day.weekday]}</span>
-              <span
-                className={clsx(
-                  "inline-flex size-6 items-center justify-center rounded-full text-small font-semibold",
-                  day.iso === today
-                    ? "bg-ink text-white"
-                    : day.iso < today
-                      ? "text-muted"
-                      : "text-ink",
-                )}
+          {/* Day header: the month on its first day, weekday, date. Sundays and
+              holidays in the site's red, Saturdays in its deep sky, both soft;
+              past days a step fainter. */}
+          {days.map((day, i) => {
+            const tone =
+              day.weekday === 0 || holidays.has(day.iso)
+                ? "text-danger"
+                : day.weekday === 6
+                  ? "text-sky-800"
+                  : null;
+            const past = day.iso < today;
+            return (
+              <div
+                key={`day-${day.iso}`}
+                className="grid justify-items-center gap-0.5 border-b border-line pt-3 pb-2.5 text-[0.6875rem] tabular-nums"
+                style={{ gridRow: 1, gridColumn: i + 2 }}
               >
-                {day.day}
-              </span>
-            </div>
-          ))}
+                <span className="h-3.5 font-semibold text-body">
+                  {day.monthStart || i === 0 ? `${Number(day.iso.slice(5, 7))}월` : ""}
+                </span>
+                <span className={clsx(tone ?? "text-muted", past ? "opacity-45" : "opacity-75")}>
+                  {WEEKDAYS[day.weekday]}
+                </span>
+                <span
+                  className={clsx(
+                    "inline-flex size-6 items-center justify-center rounded-full text-small font-semibold",
+                    day.iso === today
+                      ? "bg-ink text-white"
+                      : clsx(
+                          tone ?? (past ? "text-muted" : "text-ink"),
+                          tone && (past ? "opacity-50" : "opacity-85"),
+                        ),
+                  )}
+                >
+                  {day.day}
+                </span>
+              </div>
+            );
+          })}
 
           {/* Lane names and the corner stay at the left; the days pass under a fade. */}
           <div
