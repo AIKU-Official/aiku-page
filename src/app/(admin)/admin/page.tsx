@@ -1,56 +1,27 @@
 import type { Metadata } from "next";
 
-import { MembersPanel } from "@/components/admin/MembersPanel";
-import { NewsPanel } from "@/components/admin/NewsPanel";
-import { ProjectPanel } from "@/components/admin/ProjectPanel";
-import { SignupRequestsPanel } from "@/components/admin/SignupRequestsPanel";
+import { SchemaCanvas } from "@/components/admin/canvas/SchemaCanvas";
 import { PageHero } from "@/components/layout/PageHero";
-import { Section } from "@/components/layout/Section";
+import { loadSchema } from "@/lib/admin/schema";
 import { requireAdmin } from "@/lib/auth/session";
-import { getGenerations, getNews, getProjectArchive } from "@/lib/data/public";
-import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export const metadata: Metadata = {
   title: "관리자",
-  description: "AIKU 소식, 프로젝트, 멤버를 관리하는 페이지입니다.",
+  description: "AIKU 데이터베이스를 직접 보고 고치는 페이지입니다.",
 };
 
 export default async function AdminPage() {
   await requireAdmin();
-
-  const [news, { seasons, projects }, generations, signups] = await Promise.all([
-    getNews(),
-    getProjectArchive(),
-    getGenerations(),
-    createAdminClient()
-      .from("member_signup_requests")
-      .select("user_id, email, name, generation_name, attempts")
-      .order("created_at"),
-  ]);
-  if (signups.error) throw new Error(`가입 요청을 불러오지 못했습니다: ${signups.error.message}`);
-  const signupRequests = signups.data.map((row) => ({
-    userId: row.user_id,
-    email: row.email,
-    name: row.name,
-    generationName: row.generation_name,
-    attempts: row.attempts,
-  }));
+  const schema = await loadSchema();
 
   return (
     <>
       <PageHero
         eyebrow="Admin"
-        title="AIKU 콘텐츠 관리"
-        lead="소식, 프로젝트, 멤버를 등록하고 수정합니다. 저장한 내용은 홈, 프로젝트, Members 페이지에 바로 반영됩니다."
+        title="AIKU 데이터 관리"
+        lead="표를 눌러 행을 추가하고 고치고 지웁니다. 바꾼 내용은 DB 업데이트를 눌러야 실제로 저장되고, 사이트에 바로 반영됩니다."
       />
-      <Section>
-        <div className="site-container grid gap-16">
-          <NewsPanel news={news} />
-          <ProjectPanel seasons={seasons} projects={projects} />
-          <MembersPanel generations={generations} />
-          <SignupRequestsPanel requests={signupRequests} generations={generations} />
-        </div>
-      </Section>
+      <SchemaCanvas schema={schema} />
     </>
   );
 }

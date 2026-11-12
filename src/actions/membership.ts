@@ -16,7 +16,6 @@ import {
   linkAccountSchema,
   memberSignupSchema,
   passwordSignupSchema,
-  signupDecisionSchema,
 } from "@/lib/validators";
 
 /** Sign-up is closed for an account after this many failed verifications. */
@@ -300,41 +299,4 @@ export async function getLinkedLogins(accessToken: string): Promise<ActionResult
     console.error("[member link]", error);
     return { ok: false, message: "요청을 처리하지 못했습니다." };
   }
-}
-
-/** Admin: accept a pending request as the chosen member. */
-export async function approveSignupRequest(input: unknown): Promise<ActionResult> {
-  return adminAction({ schema: signupDecisionSchema, input }, async ({ userId, memberId }, db) => {
-    const request = unwrap(
-      await db.from("member_signup_requests").select("user_id").eq("user_id", userId).maybeSingle(),
-    );
-    if (!request) throw new ActionError("가입 요청을 찾을 수 없습니다.");
-    unwrap(await db.from("member_accounts").upsert({ user_id: userId, member_id: memberId }), {
-      "23503": "멤버 또는 계정을 찾을 수 없습니다.",
-    });
-    unwrap(await db.from("member_signup_requests").delete().eq("user_id", userId));
-    return { message: "가입 요청을 승인했습니다." };
-  });
-}
-
-/**
- * Admin: discard a pending request. A Google / GitHub visitor may submit again;
- * an unverified AIKU ID account is removed with it, which frees the ID.
- */
-export async function rejectSignupRequest(input: unknown): Promise<ActionResult> {
-  return adminAction({ schema: idSchema, input }, async (userId, db) => {
-    const deleted = unwrap(
-      await db
-        .from("member_signup_requests")
-        .delete()
-        .eq("user_id", userId)
-        .select("user_id, email"),
-    );
-    if (!deleted?.length) throw new ActionError("가입 요청을 찾을 수 없습니다.");
-    if (emailToLoginId(deleted[0]?.email)) {
-      const { error } = await db.auth.admin.deleteUser(userId);
-      if (error) throw error;
-    }
-    return { message: "가입 요청을 거절했습니다." };
-  });
 }

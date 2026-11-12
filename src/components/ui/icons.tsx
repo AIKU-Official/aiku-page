@@ -66,6 +66,53 @@ export const CollapseIcon = (props: IconProps) => (
   </svg>
 );
 
+export const UndoIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+  </svg>
+);
+
+export const RedoIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="m15 14 5-5-5-5" />
+    <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+  </svg>
+);
+
+export const PlusIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+export const MinusIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M5 12h14" />
+  </svg>
+);
+
+/** Four corners: fit everything in view. */
+export const FitIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
+  </svg>
+);
+
+export const KeyIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <circle cx="8" cy="15" r="4" />
+    <path d="m10.8 12.2 8.2-8.2M16 7l3 3M14 9l2 2" />
+  </svg>
+);
+
+export const LinkIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+    <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+  </svg>
+);
+
 export const DownloadIcon = (props: IconProps) => (
   <svg {...base} {...props}>
     <path d="M12 4v11" />

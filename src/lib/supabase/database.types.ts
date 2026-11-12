@@ -973,6 +973,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_apply_changes: { Args: { p_changes: Json }; Returns: number }
       generation_number: { Args: { p_name: string }; Returns: number }
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string }

@@ -38,94 +38,6 @@ const groupName = (label: string) =>
 
 export const idSchema = z.uuid("대상을 찾을 수 없습니다.");
 
-export const reorderSchema = z.array(idSchema).min(1, "순서를 바꿀 항목이 없습니다.");
-
-// News ---------------------------------------------------------------------
-
-export const newsSchema = z.object({
-  id: idSchema.optional(),
-  date: z
-    .string()
-    .trim()
-    .refine(
-      (value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value),
-      "날짜 형식이 올바르지 않습니다.",
-    )
-    .transform((value) => value || null),
-  title: required("소식 제목을 입력하세요."),
-  summary: text(2000),
-  linkUrl: text(500)
-    .refine(
-      (value) => value === "" || /^(https?:\/\/\S+|\/\S*)$/i.test(value),
-      "링크 URL은 https:// 또는 /로 시작해야 합니다.",
-    )
-    .transform((value) => value || null),
-  linkLabel: text(40).transform((value) => value || "보기"),
-});
-
-// Seasons & projects -------------------------------------------------------
-
-export const seasonNameSchema = z
-  .string()
-  .trim()
-  .refine(
-    (value) => parseSeasonName(value) !== null,
-    "분기 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요.",
-  );
-
-/** Uploaded file reference: Storage key plus the original file name. */
-const uploadedFile = z.object({ path: z.string().min(1), name: text(255) });
-
-export const projectSchema = z.object({
-  id: idSchema,
-  isNew: z.boolean(),
-  seasonId: z.uuid("시즌을 먼저 추가하고 선택하세요."),
-  title: required("프로젝트명을 입력하세요."),
-  /** Typed as "#NLP #LLM" or "NLP, LLM"; stored as a list. */
-  tags: text(300)
-    .transform(parseTags)
-    .pipe(
-      z
-        .array(z.string().max(40, "태그는 40자 이하로 입력하세요."))
-        .max(12, "태그는 12개까지 넣을 수 있습니다."),
-    ),
-  oneLine: text(300),
-  /** "" for none, else the place at the AIKU Conference. */
-  awardRank: z
-    .enum(["", "1", "2", "3"], "수상 등수를 선택하세요.")
-    .transform((value) => (value ? (Number(value) as Rank) : null)),
-  githubUrl: optionalHttpUrl("GitHub 링크"),
-  markdown: z.string().max(100_000, "프로젝트 설명이 너무 깁니다."),
-  /** New deck to attach (replaces the current one). */
-  presentation: uploadedFile.nullable(),
-  removePresentation: z.boolean(),
-  addImages: z.array(z.string().min(1)).max(30),
-  removeImages: z.array(z.string().min(1)).max(100),
-});
-
-// Generations & members ----------------------------------------------------
-
-export const generationNameSchema = groupName("기수");
-
-export const memberSchema = z.object({
-  id: idSchema,
-  isNew: z.boolean(),
-  generationId: z.uuid("기수를 먼저 추가하고 선택하세요."),
-  name: required("이름을 입력하세요.", 60),
-  department: text(60),
-  grade: z.enum(MEMBER_GRADES, "등급을 선택하세요."),
-  gradePinned: z.boolean(),
-  /** Typed as "8기 회장", several separated by commas; parsed into titles. */
-  position: text(200).transform((value, context) => {
-    const positions = parsePositions(value);
-    if (!positions) {
-      context.addIssue({ code: "custom", message: POSITION_FORMAT_MESSAGE });
-      return z.NEVER;
-    }
-    return positions;
-  }),
-});
-
 // Member sign-up ------------------------------------------------------------
 
 const identityFields = {
@@ -168,8 +80,6 @@ export const linkAccountSchema = z.object({
   memberToken: z.string().min(1, "로그인이 필요합니다."),
   accountToken: z.string().min(1, "로그인이 필요합니다."),
 });
-
-export const signupDecisionSchema = z.object({ userId: idSchema, memberId: idSchema });
 
 // Member profile -------------------------------------------------------------
 

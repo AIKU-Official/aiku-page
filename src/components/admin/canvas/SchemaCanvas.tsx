@@ -1,0 +1,409 @@
+"use client";
+
+import clsx from "clsx";
+import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+
+import { commitChanges, getTableRows } from "@/actions/db-admin";
+import { FitIcon, MinusIcon, PlusIcon, RedoIcon, UndoIcon } from "@/components/ui/icons";
+import {
+  countByTable,
+  emptyHistory,
+  redo,
+  toPayload,
+  undo,
+  type ChangeHistory,
+} from "@/lib/admin/changes";
+import { bounds, columnY, initialLayout, NODE_WIDTH, type Point } from "@/lib/admin/layout";
+import type { Row, Schema } from "@/lib/admin/schema-types";
+
+import { TableNode } from "./TableNode";
+import { TablePeek } from "./TablePeek";
+import { useCanvasView } from "./useCanvasView";
+
+const LAYOUT_KEY = "aiku-admin-layout-v2";
+const CLICK_SLOP = 4;
+
+// Fades all four edges of the canvas into the page, so it has no hard border.
+/** The first view shows the whole schema only if it is still readable at this scale. */
+const OPENING_SCALE = 0.5;
+
+/** Grid spacing on screen: 24 canvas units, doubled while zoomed out so the dots stay apart. */
+function gridStep(scale: number) {
+  let step = 24 * scale;
+  while (step < 14) step *= 2;
+  return step;
+}
+
+const EDGE_FADE = {
+  maskImage:
+    "linear-gradient(to right, transparent, #000 56px, #000 calc(100% - 56px), transparent), linear-gradient(to bottom, transparent, #000 56px, #000 calc(100% - 56px), transparent)",
+  maskComposite: "intersect",
+  WebkitMaskComposite: "source-in",
+} as const;
+
+type Drag =
+  | { kind: "pan"; startX: number; startY: number; viewX: number; viewY: number; moved: boolean }
+  | { kind: "node"; name: string; startX: number; startY: number; origin: Point; moved: boolean };
+
+/**
+ * The admin page: the whole database drawn like a schema diagram on an
+ * unbounded canvas. Tables are nodes, foreign keys are edges; a node opens
+ * its rows to add, edit or delete. Changes wait here until "DB 업데이트",
+ * which applies them all in one transaction; undo, redo and 취소 work on the
+ * waiting changes.
+ */
+export function SchemaCanvas({ schema }: { schema: Schema }) {
+  const router = useRouter();
+  const canvas = useRef<HTMLDivElement>(null);
+  const { view, viewRef, setView, zoomAt, zoomBy, fit } = useCanvasView(canvas);
+  const byName = useMemo(() => new Map(schema.map((table) => [table.name, table])), [schema]);
+
+  const [positions, setPositions] = useState<Record<string, Point>>(() => initialLayout(schema));
+  const [history, setHistory] = useState<ChangeHistory>(emptyHistory);
+  const [rows, setRows] = useState<Record<string, Row[]>>({});
+  const [open, setOpen] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "error" | "info"; message: string } | null>(null);
+  const drag = useRef<Drag | null>(null);
+  const pinch = useRef(new Map<number, { x: number; y: number }>());
+
+  // Saved arrangement, if the admin moved nodes before.
+  useLayoutEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? "{}") as Record<string, Point>;
+      const merged = { ...initialLayout(schema), ...saved };
+      // localStorage exists only in the browser, so the saved arrangement is applied after mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPositions(merged);
+      fit(bounds(schema, merged), OPENING_SCALE);
+    } catch {
+      fit(bounds(schema, initialLayout(schema)), OPENING_SCALE);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per schema; fit is recreated every render
+  }, [schema]);
+
+  const pendingCount = history.changes.length;
+  const pendingByTable = useMemo(() => countByTable(history.changes), [history.changes]);
+
+  // Leaving with unapplied changes asks first.
+  useEffect(() => {
+    if (!pendingCount) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [pendingCount]);
+
+  // ⌘Z / Ctrl+Z undo, with Shift redo, unless typing in a field.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const typing = (event.target as HTMLElement | null)?.closest("input, textarea, select");
+      if (typing || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "z") return;
+      event.preventDefault();
+      setHistory((current) => (event.shiftKey ? redo(current) : undo(current)));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const loadRows = useCallback(async (name: string) => {
+    const result = await getTableRows(name);
+    if (result.ok) setRows((current) => ({ ...current, [name]: result.data }));
+    else setNotice({ tone: "error", message: result.message });
+  }, []);
+
+  const openTable = (name: string) => {
+    setOpen(name);
+    if (!rows[name]) void loadRows(name);
+  };
+
+  // Pointer handling: drag the background to pan, drag a node to move it,
+  // tap a node to open it, two fingers to pinch-zoom.
+  const onPointerDown = (event: ReactPointerEvent<HTMLElement>, node?: string) => {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    pinch.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    canvas.current?.setPointerCapture(event.pointerId);
+    if (pinch.current.size > 1) {
+      drag.current = null;
+      return;
+    }
+    drag.current = node
+      ? { kind: "node", name: node, startX: event.clientX, startY: event.clientY, origin: positions[node], moved: false }
+      : { kind: "pan", startX: event.clientX, startY: event.clientY, viewX: viewRef.current.x, viewY: viewRef.current.y, moved: false };
+  };
+
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const points = pinch.current;
+    if (points.has(event.pointerId) && points.size === 2) {
+      const [a, b] = [...points.values()];
+      const before = Math.hypot(a.x - b.x, a.y - b.y);
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      const [c, d] = [...points.values()];
+      const after = Math.hypot(c.x - d.x, c.y - d.y);
+      if (before > 0) zoomAt(after / before, (c.x + d.x) / 2, (c.y + d.y) / 2);
+      return;
+    }
+    if (points.has(event.pointerId)) points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const current = drag.current;
+    if (!current) return;
+    const dx = event.clientX - current.startX;
+    const dy = event.clientY - current.startY;
+    if (!current.moved && Math.hypot(dx, dy) < CLICK_SLOP) return;
+    current.moved = true;
+    if (current.kind === "pan") {
+      setView((value) => ({ ...value, x: current.viewX + dx, y: current.viewY + dy }));
+    } else {
+      const scale = viewRef.current.scale;
+      setPositions((value) => ({
+        ...value,
+        [current.name]: { x: current.origin.x + dx / scale, y: current.origin.y + dy / scale },
+      }));
+    }
+  };
+
+  const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pinch.current.delete(event.pointerId);
+    const current = drag.current;
+    drag.current = null;
+    if (!current) return;
+    if (current.kind === "node") {
+      if (!current.moved) openTable(current.name);
+      else {
+        try {
+          localStorage.setItem(LAYOUT_KEY, JSON.stringify(positions));
+        } catch {
+          // Private windows may refuse storage; the arrangement just is not kept.
+        }
+      }
+    }
+  };
+
+  const commit = async () => {
+    setBusy(true);
+    setNotice(null);
+    const result = await commitChanges(toPayload(history.changes));
+    setBusy(false);
+    if (!result.ok) {
+      setNotice({ tone: "error", message: result.message });
+      return;
+    }
+    setHistory(emptyHistory);
+    setRows({});
+    setNotice({ tone: "info", message: result.message });
+    if (open) void loadRows(open);
+    router.refresh();
+  };
+
+  const discard = () => {
+    if (window.confirm(`반영하지 않은 변경 ${pendingCount}건을 모두 버릴까요?`)) {
+      setHistory(emptyHistory);
+      setNotice(null);
+    }
+  };
+
+  const edges = useMemo(() => {
+    const list: { id: string; d: string; source: string; target: string }[] = [];
+    for (const table of schema) {
+      const from = positions[table.name];
+      if (!from) continue;
+      for (const column of table.columns) {
+        const ref = column.references;
+        const target = ref && byName.get(ref.table);
+        const to = ref && positions[ref.table];
+        if (!ref || !target || !to) continue;
+        const sy = from.y + columnY(table, column.name);
+        const ty = to.y + columnY(target, ref.column);
+        const leftward = from.x > to.x;
+        const sx = leftward ? from.x : from.x + NODE_WIDTH;
+        const tx = leftward ? to.x + NODE_WIDTH : to.x;
+        const bend = Math.max(48, Math.abs(tx - sx) / 2) * (leftward ? -1 : 1);
+        list.push({
+          id: `${table.name}.${column.name}`,
+          d: `M ${sx} ${sy} C ${sx + bend} ${sy}, ${tx - bend} ${ty}, ${tx} ${ty}`,
+          source: table.name,
+          target: ref.table,
+        });
+      }
+    }
+    return list;
+  }, [schema, positions, byName]);
+
+  const openTableSchema = open ? byName.get(open) : undefined;
+
+  return (
+    <div className="relative">
+      <div
+        ref={canvas}
+        onPointerDown={(event) => onPointerDown(event)}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        aria-label="DB 스키마 캔버스"
+        className="relative h-[calc(100dvh-var(--header-height)-2rem)] min-h-[32rem] w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing"
+        style={{
+          ...EDGE_FADE,
+          backgroundImage: "radial-gradient(circle, var(--color-line-strong) 1px, transparent 1.4px)",
+          backgroundSize: `${gridStep(view.scale)}px ${gridStep(view.scale)}px`,
+          backgroundPosition: `${view.x}px ${view.y}px`,
+        }}
+      >
+        <div
+          className="absolute top-0 left-0 origin-top-left"
+          style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
+        >
+          <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
+            {edges.map((edge) => {
+              const lit = hovered === edge.source || hovered === edge.target;
+              return (
+                <path
+                  key={edge.id}
+                  d={edge.d}
+                  fill="none"
+                  strokeWidth={lit ? 2 : 1.25}
+                  className={lit ? "stroke-green-500" : "stroke-line-strong"}
+                />
+              );
+            })}
+          </svg>
+          {schema.map((table) =>
+            positions[table.name] ? (
+              <TableNode
+                key={table.name}
+                table={table}
+                position={positions[table.name]}
+                pending={pendingByTable[table.name] ?? 0}
+                highlighted={hovered === table.name || open === table.name}
+                onHover={setHovered}
+                onPointerDown={onPointerDown}
+              />
+            ) : null,
+          )}
+        </div>
+      </div>
+
+      {/* Zoom controls, outside the faded layer so they stay crisp. */}
+      <div className="absolute bottom-6 left-6 flex flex-col overflow-hidden rounded-control border border-line bg-surface shadow-[0_6px_18px_rgb(29_29_29/0.08)] max-sm:bottom-24 max-sm:left-4">
+        {[
+          { label: "확대", icon: <PlusIcon className="size-4" />, onClick: () => zoomBy(1.2) },
+          { label: "축소", icon: <MinusIcon className="size-4" />, onClick: () => zoomBy(1 / 1.2) },
+          { label: "전체 보기", icon: <FitIcon className="size-4" />, onClick: () => fit(bounds(schema, positions)) },
+        ].map((control) => (
+          <button
+            key={control.label}
+            type="button"
+            aria-label={control.label}
+            title={control.label}
+            onClick={control.onClick}
+            className="inline-flex size-9 items-center justify-center text-body transition-colors not-last:border-b not-last:border-soft-line hover:bg-surface-soft hover:text-ink"
+          >
+            {control.icon}
+          </button>
+        ))}
+      </div>
+
+      <ChangeToolbar
+        pending={pendingCount}
+        canUndo={history.past.length > 0}
+        canRedo={history.future.length > 0}
+        busy={busy}
+        onUndo={() => setHistory(undo)}
+        onRedo={() => setHistory(redo)}
+        onDiscard={discard}
+        onCommit={commit}
+      />
+
+      {notice ? (
+        <p
+          role={notice.tone === "error" ? "alert" : "status"}
+          className={clsx(
+            "absolute top-6 left-1/2 max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 rounded-control px-4 py-2.5 text-small shadow-[0_6px_18px_rgb(29_29_29/0.08)]",
+            notice.tone === "error" ? "bg-danger-soft text-danger" : "bg-surface text-body",
+          )}
+        >
+          {notice.message}
+        </p>
+      ) : null}
+
+      {openTableSchema ? (
+        <TablePeek
+          key={openTableSchema.name}
+          table={openTableSchema}
+          schema={schema}
+          rows={rows[openTableSchema.name]}
+          history={history}
+          onHistory={setHistory}
+          origin={() => canvas.current?.querySelector(`[data-node="${openTableSchema.name}"]`)?.getBoundingClientRect()}
+          onClose={() => setOpen(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** DB 업데이트, undo, redo and 취소, floating at the bottom of the canvas. */
+function ChangeToolbar({
+  pending,
+  canUndo,
+  canRedo,
+  busy,
+  onUndo,
+  onRedo,
+  onDiscard,
+  onCommit,
+}: {
+  pending: number;
+  canUndo: boolean;
+  canRedo: boolean;
+  busy: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  onDiscard: () => void;
+  onCommit: () => void;
+}) {
+  const iconButton =
+    "inline-flex size-10 items-center justify-center rounded-control text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-35";
+  return (
+    <div
+      role="toolbar"
+      aria-label="변경 사항"
+      className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-[14px] border border-line bg-surface p-1.5 shadow-[0_10px_30px_rgb(29_29_29/0.12)] max-sm:bottom-4"
+    >
+      <button type="button" aria-label="되돌리기" title="되돌리기 (⌘Z)" disabled={!canUndo || busy} onClick={onUndo} className={iconButton}>
+        <UndoIcon className="size-[1.125rem]" />
+      </button>
+      <button type="button" aria-label="다시 실행" title="다시 실행 (⇧⌘Z)" disabled={!canRedo || busy} onClick={onRedo} className={iconButton}>
+        <RedoIcon className="size-[1.125rem]" />
+      </button>
+      <span className="mx-1 h-6 w-px bg-line" aria-hidden="true" />
+      <button
+        type="button"
+        disabled={!pending || busy}
+        onClick={onDiscard}
+        className="inline-flex h-10 items-center rounded-control px-3.5 text-small font-semibold text-body transition-colors hover:bg-surface-soft hover:text-ink disabled:pointer-events-none disabled:opacity-35"
+      >
+        취소
+      </button>
+      <button
+        type="button"
+        disabled={!pending || busy}
+        onClick={onCommit}
+        className="inline-flex h-10 items-center gap-2 rounded-control bg-ink px-4 text-small font-semibold text-white transition-colors hover:bg-ink-hover disabled:pointer-events-none disabled:opacity-35"
+      >
+        {busy ? "반영 중…" : "DB 업데이트"}
+        {pending && !busy ? (
+          <span className="rounded-full bg-white/20 px-1.5 text-label tabular-nums">{pending}</span>
+        ) : null}
+      </button>
+    </div>
+  );
+}
