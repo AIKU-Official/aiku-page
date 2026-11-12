@@ -99,7 +99,7 @@ export function TablePeek({
       originRadius="12px"
       onClose={onClose}
       blend="fade"
-      expandable
+      expandable={false}
       // Widens when a row is open, so the editor gets its own room on the right
       // instead of squeezing the rows.
       width={current ? "max-w-[1440px]" : "max-w-[960px]"}
