@@ -10,6 +10,7 @@ import {
   type ProjectPersonMember,
   type Season,
 } from "@/lib/types";
+import { type Rank, isRank, toRank } from "@/lib/ranks";
 
 export const mapSeason = (row: Pick<Tables<"seasons">, "id" | "name">): Season => ({
   id: row.id,
@@ -71,7 +72,7 @@ export const mapProject = (
   presentationName: row.presentation_name,
   imagePaths: row.image_paths,
   oneLine: row.one_line,
-  awardRank: row.award_rank === 1 || row.award_rank === 2 || row.award_rank === 3 ? row.award_rank : null,
+  awardRank: toRank(row.award_rank),
   people: [...(row.project_members ?? [])]
     .sort(
       (a, b) =>
@@ -161,10 +162,10 @@ export const mapAikuthon = (row: AikuthonRow): Aikuthon => ({
   tags: tagNames(row.aikuthon_tags),
   competitionUrl: row.competition_url,
   awards: [...row.aikuthon_awards]
-    .filter((award) => award.rank === 1 || award.rank === 2 || award.rank === 3)
+    .filter((award) => isRank(award.rank))
     .sort((a, b) => a.rank - b.rank)
     .map((award) => ({
-      rank: award.rank as 1 | 2 | 3,
+      rank: award.rank as Rank,
       teamName: award.team_name,
       people: [...award.aikuthon_award_members]
         .sort((a, b) => a.sort_order - b.sort_order)

@@ -72,7 +72,7 @@ export function ProfileView() {
     );
   }
 
-  const { subject, profile, projects, awards } = state.page;
+  const { subject, profile, projects, awards } = state.data;
   return (
     <div className="grid gap-10 max-sm:gap-8">
       <ProfileContent subject={subject} profile={profile} projects={projects} awards={awards} />

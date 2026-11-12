@@ -10,8 +10,9 @@ import { ProfileModal } from "@/components/profile/ProfileModal";
 import { Avatar } from "@/components/ui/Avatar";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS, type ProjectPerson } from "@/lib/types";
+import { pillClassName as pill } from "@/components/ui/Pill";
+import { isPhone } from "@/lib/ui/viewport";
 
-const pill = "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
 const CARD_WIDTH = 270;
 
 /**
@@ -53,7 +54,7 @@ export function PersonName({ person }: { person: ProjectPerson }) {
             event.stopPropagation();
             setPoint(null);
             // Phones open the profile's page, as member cards do.
-            if (window.matchMedia("(width < 561px)").matches) {
+            if (isPhone()) {
               router.push(`/members/${member.id}`);
               return;
             }

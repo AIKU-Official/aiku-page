@@ -12,7 +12,9 @@ is rewritten to point at them. Participants are linked to roster members by
 name; names that cannot be matched with confidence stay as plain text and are
 listed in the report (data/notion/import-report.json).
 """
-import json, os, re, sys, mimetypes, unicodedata, urllib.request, urllib.error, urllib.parse
+import json, os, re, unicodedata
+
+from aiku_db import SupabaseRest, script_args
 
 ROOT = "data/notion/projects"
 BUCKET = "aiku-uploads"
@@ -50,23 +52,8 @@ KNOWN_AWARDS = {
     "LAPD: Large language model Alignment through Persona Dynamics": None,
 }
 
-env_file, apply = sys.argv[1], "--apply" in sys.argv
-env = dict(l.strip().split("=", 1) for l in open(env_file) if "=" in l and not l.startswith("#"))
-URL = env["NEXT_PUBLIC_SUPABASE_URL"].strip('"')
-KEY = (env.get("SUPABASE_SECRET_KEY") or env["SUPABASE_SERVICE_ROLE_KEY"]).strip('"')
-
-
-def call(method, path, body=None, headers=None, raw=None):
-    h = {"apikey": KEY, "Authorization": "Bearer " + KEY, **(headers or {})}
-    data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
-    if raw is None and body is not None:
-        h["Content-Type"] = "application/json"
-    req = urllib.request.Request(URL + path, method=method, data=data, headers=h)
-    try:
-        text = urllib.request.urlopen(req, timeout=300).read().decode()
-        return json.loads(text) if text else None
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"{method} {path.split('?')[0]} failed: {e.code} {e.read().decode()[:300]}")
+env_file, apply = script_args()
+db = SupabaseRest.from_env_file(env_file, timeout=300)
 
 
 def clean_name(raw):
@@ -100,7 +87,7 @@ def main():
     if os.path.exists("data/notion/member-overrides.json"):
         member_overrides = json.load(open("data/notion/member-overrides.json"))
 
-    members = call("GET", "/rest/v1/members?select=id,name,generations(name)")
+    members = db.request("GET", "/rest/v1/members?select=id,name,generations(name)")
     by_name = {}
     for m in members:
         by_name.setdefault(m["name"], []).append(m)
@@ -128,7 +115,7 @@ def main():
         return name, None, "unmatched"
 
     report = {"projects": [], "unmatched_people": {}, "uncertain_people": {}, "skipped_files": [], "missing_final": []}
-    seasons = {s["name"]: s["id"] for s in call("GET", "/rest/v1/seasons?select=id,name")}
+    seasons = {s["name"]: s["id"] for s in db.request("GET", "/rest/v1/seasons?select=id,name")}
     wanted = set()
     plan = []
     for item in work:
@@ -167,10 +154,10 @@ def main():
     if apply:
         for name in ordered:
             if name not in seasons:
-                seasons[name] = call("POST", "/rest/v1/seasons", {"name": name}, {"Prefer": "return=representation"})[0]["id"]
+                seasons[name] = db.request("POST", "/rest/v1/seasons", {"name": name}, prefer="return=representation")[0]["id"]
         # The database orders seasons by year and term; nothing to set here.
 
-    existing = {p["notion_page_id"]: p["id"] for p in call("GET", "/rest/v1/projects?select=id,notion_page_id&notion_page_id=not.is.null")}
+    existing = {p["notion_page_id"]: p["id"] for p in db.request("GET", "/rest/v1/projects?select=id,notion_page_id&notion_page_id=not.is.null")}
 
     for order, p in enumerate(sorted(plan, key=lambda p: (p["rank"] or 9, p["title"]))):
         meta, d = p["meta"], p["dir"]
@@ -208,10 +195,10 @@ def main():
         if apply:
             pid = existing.get(meta["notion_id"])
             if pid:
-                call("PATCH", f"/rest/v1/projects?id=eq.{pid}", row)
+                db.request("PATCH", f"/rest/v1/projects?id=eq.{pid}", row)
             else:
-                pid = call("POST", "/rest/v1/projects", row, {"Prefer": "return=representation"})[0]["id"]
-            call("POST", "/rest/v1/rpc/set_project_tags", {"p_project_id": pid, "p_names": tags})
+                pid = db.request("POST", "/rest/v1/projects", row, prefer="return=representation")[0]["id"]
+            db.request("POST", "/rest/v1/rpc/set_project_tags", {"p_project_id": pid, "p_names": tags})
             for image in meta["images"]:
                 path = os.path.join(d, image["file"])
                 ext = os.path.splitext(path)[1].lower()
@@ -219,7 +206,7 @@ def main():
                     report["skipped_files"].append(f"{p['title']}: {image['file']}")
                     continue
                 key = f"projects/{pid}/{os.path.basename(path)}"
-                call("POST", f"/storage/v1/object/{BUCKET}/{key}", raw=open(path, "rb").read(),
+                db.request("POST", f"/storage/v1/object/{BUCKET}/{key}", raw=open(path, "rb").read(),
                      headers={"Content-Type": IMAGE_TYPES[ext], "x-upsert": "true"})
                 markdown = markdown.replace(f"({image['file']})", f"({key})")
             update = {"markdown": markdown}
@@ -235,7 +222,7 @@ def main():
                         break
             if choice and os.path.getsize(os.path.join(d, choice["file"])) <= MAX_BYTES:
                 key = f"projects/{pid}/{os.path.basename(choice['file'])}"
-                call("POST", f"/storage/v1/object/{BUCKET}/{key}", raw=open(os.path.join(d, choice["file"]), "rb").read(),
+                db.request("POST", f"/storage/v1/object/{BUCKET}/{key}", raw=open(os.path.join(d, choice["file"]), "rb").read(),
                      headers={"Content-Type": "application/pdf", "x-upsert": "true"})
                 update.update({"presentation_path": key, "presentation_name": choice["name"]})
             else:
@@ -246,11 +233,11 @@ def main():
             stale = [f"projects/{pid}/{os.path.basename(x['file'])}" for x in listed
                      if x["file"].lower().endswith((".ppt", ".pptx"))]
             if stale:
-                call("DELETE", f"/storage/v1/object/{BUCKET}", {"prefixes": stale})
-            call("PATCH", f"/rest/v1/projects?id=eq.{pid}", update)
-            call("DELETE", f"/rest/v1/project_members?project_id=eq.{pid}")
+                db.request("DELETE", f"/storage/v1/object/{BUCKET}", {"prefixes": stale})
+            db.request("PATCH", f"/rest/v1/projects?id=eq.{pid}", update)
+            db.request("DELETE", f"/rest/v1/project_members?project_id=eq.{pid}")
             if people:
-                call("POST", "/rest/v1/project_members", [{**person, "project_id": pid} for person in people])
+                db.request("POST", "/rest/v1/project_members", [{**person, "project_id": pid} for person in people])
             print(f"  {p['season']:6} {p['title'][:40]}", flush=True)
         report["projects"].append(entry)
 

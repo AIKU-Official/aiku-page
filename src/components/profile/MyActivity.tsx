@@ -8,7 +8,6 @@ import {
   type ActivitySemester as Activity,
   type ActivitySession,
 } from "@/actions/activity";
-import { currentAccessToken } from "@/components/profile/useMyProfile";
 import { CenterPeek } from "@/components/ui/CenterPeek";
 import {
   ATTENDANCE_LABELS,
@@ -18,6 +17,7 @@ import {
   type AttendanceStatus,
 } from "@/lib/activity/calendar";
 import { useMemberAccount } from "@/lib/auth/member";
+import { useSignedInData } from "@/lib/auth/signed-in-data";
 
 const TONES: Record<AttendanceStatus, string> = {
   present: "bg-attend-present",
@@ -38,21 +38,10 @@ type Tip = { x: number; y: number; index: number };
 export function MyActivity({ memberId }: { memberId: string }) {
   const account = useMemberAccount();
   const isMe = Boolean(account?.member && account.member.id === memberId);
-  const [semesters, setSemesters] = useState<Activity[]>([]);
+  const [state] = useSignedInData(isMe ? memberId : null, getMyActivity);
+  const semesters = state.status === "ready" ? state.data : [];
   // 0 is the newest semester; ">" moves towards it, "<" back in time.
   const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    if (!isMe) return;
-    let cancelled = false;
-    void (async () => {
-      const result = await getMyActivity(await currentAccessToken());
-      if (!cancelled && result.ok) setSemesters(result.data);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isMe]);
 
   const activity = semesters[page];
   if (!isMe || !activity) return null;

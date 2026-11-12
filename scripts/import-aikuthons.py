@@ -9,40 +9,18 @@ this again updates the events and replaces their awards rather than adding
 copies; partners, tracks and awards are replaced each time. Winners are linked to roster members by exact name when the roster has
 exactly one member of that name; others stay as names and are reported.
 """
-import json, sys, urllib.request, urllib.error, urllib.parse
+import json
 
-env_file, apply = sys.argv[1], "--apply" in sys.argv
-env = dict(l.strip().split("=", 1) for l in open(env_file) if "=" in l and not l.startswith("#"))
-URL = env["NEXT_PUBLIC_SUPABASE_URL"].strip('"')
-KEY = (env.get("SUPABASE_SECRET_KEY") or env["SUPABASE_SERVICE_ROLE_KEY"]).strip('"')
+from aiku_db import SupabaseRest, script_args, season_name
 
-
-def call(method, path, body=None, prefer=None):
-    headers = {"apikey": KEY, "Authorization": "Bearer " + KEY, "Content-Type": "application/json"}
-    if prefer:
-        headers["Prefer"] = prefer
-    req = urllib.request.Request(URL + path, method=method, headers=headers,
-                                 data=json.dumps(body).encode() if body is not None else None)
-    try:
-        text = urllib.request.urlopen(req, timeout=60).read().decode()
-        return json.loads(text) if text else None
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"{method} {path.split('?')[0]} failed: {e.code} {e.read().decode()[:300]}")
+env_file, apply = script_args()
+db = SupabaseRest.from_env_file(env_file)
 
 
 events = json.load(open("data/aikuthon/aikuthons.json"))
-seasons = {s["name"]: s["id"] for s in call("GET", "/rest/v1/seasons?select=id,name")}
-
-
-def season_name(starts_on):
-    """The season an event was held in: Jan–Feb winter, Mar–Jun 1st semester,
-    Jul–Aug summer, Sep–Dec 2nd semester. Named like "26-여름"."""
-    year, month = int(starts_on[:4]), int(starts_on[5:7])
-    term = "겨울" if month <= 2 else "1" if month <= 6 else "여름" if month <= 8 else "2"
-    return f"{year % 100:02d}-{term}"
-
+season_id = db.season_ids(apply)
 roster = {}
-for m in call("GET", "/rest/v1/members?select=id,name"):
+for m in db.get("/rest/v1/members?select=id,name"):
     roster.setdefault(m["name"], []).append(m["id"])
 unmatched, linked = set(), 0
 
@@ -50,13 +28,7 @@ for event in events:
     row = {k: event[k] for k in ("edition", "kind", "format", "name", "starts_on", "date_precision", "ends_on", "venue",
                                  "mode", "overnight", "team_size_min", "team_size_max", "platform",
                                  "task_title", "task_description", "metric", "competition_url")}
-    season = season_name(event["starts_on"])
-    if season not in seasons:
-        # Early seasons had no projects; the event still needs its season.
-        seasons[season] = (call("POST", "/rest/v1/seasons", {"name": season}, "return=representation")[0]["id"]
-                           if apply else None)
-        print(f"  new season {season}")
-    row["season_id"] = seasons[season]
+    row["season_id"] = season_id(season_name(event["starts_on"]))
     partners = [{"name": p["name"], "role": p["role"], "sort_order": i} for i, p in enumerate(event["partners"])]
     tracks = [{"name": name, "sort_order": i} for i, name in enumerate(event["tracks"])]
     row["source_key"] = event["key"]
@@ -73,19 +45,17 @@ for event in events:
         awards.append(({"rank": award["rank"], "team_name": award["team"]}, people))
 
     if apply:
-        saved = call("POST", "/rest/v1/aikuthons?on_conflict=source_key", row,
-                     "resolution=merge-duplicates,return=representation")[0]
-        call("POST", "/rest/v1/rpc/set_aikuthon_tags", {"p_aikuthon_id": saved["id"], "p_names": event["tags"]})
+        saved = db.upsert("aikuthons", row, "source_key")
+        db.rpc("set_aikuthon_tags", {"p_aikuthon_id": saved["id"], "p_names": event["tags"]})
         for table, children in (("aikuthon_partners", partners), ("aikuthon_tracks", tracks)):
-            call("DELETE", f"/rest/v1/{table}?aikuthon_id=eq.{saved['id']}")
+            db.delete(table, f"aikuthon_id=eq.{saved['id']}")
             if children:
-                call("POST", f"/rest/v1/{table}", [{**c, "aikuthon_id": saved["id"]} for c in children])
-        call("DELETE", f"/rest/v1/aikuthon_awards?aikuthon_id=eq.{saved['id']}")
+                db.insert(table, [{**c, "aikuthon_id": saved["id"]} for c in children])
+        db.delete("aikuthon_awards", f"aikuthon_id=eq.{saved['id']}")
         for award, people in awards:
-            created = call("POST", "/rest/v1/aikuthon_awards", {**award, "aikuthon_id": saved["id"]},
-                           "return=representation")[0]
+            created = db.insert("aikuthon_awards", {**award, "aikuthon_id": saved["id"]}, returning=True)[0]
             if people:
-                call("POST", "/rest/v1/aikuthon_award_members", [{**p, "award_id": created["id"]} for p in people])
+                db.insert("aikuthon_award_members", [{**p, "award_id": created["id"]} for p in people])
     print(f"  {event['starts_on']}  {event['name']}  ({len(awards)} awards)")
 
 print(f"{'applied' if apply else 'dry run'}: {len(events)} events, {linked} winners linked to members, "

@@ -8,6 +8,7 @@ import { UPLOAD_SCOPES } from "@/lib/storage/keys";
 import { MEMBER_GRADES } from "@/lib/types";
 
 import { parseSeasonName } from "@/lib/seasons/name";
+import type { Rank } from "@/lib/ranks";
 
 // Input schemas for the admin Server Actions. Messages reuse the legacy
 // server's Korean wording. Empty optional fields arrive as "" and become null.
@@ -92,7 +93,7 @@ export const projectSchema = z.object({
   /** "" for none, else the place at the AIKU Conference. */
   awardRank: z
     .enum(["", "1", "2", "3"], "수상 등수를 선택하세요.")
-    .transform((value) => (value ? (Number(value) as 1 | 2 | 3) : null)),
+    .transform((value) => (value ? (Number(value) as Rank) : null)),
   githubUrl: optionalHttpUrl("GitHub 링크"),
   markdown: z.string().max(100_000, "프로젝트 설명이 너무 깁니다."),
   /** New deck to attach (replaces the current one). */

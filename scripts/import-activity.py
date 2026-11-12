@@ -18,14 +18,15 @@ Sessions are keyed by kind and date, point events by their Notion page id, so
 running this again updates rather than duplicates. Names are matched to the
 roster exactly; the aliases below are spelling fixes and are reported.
 """
-import datetime, json, re, sys, urllib.error, urllib.request
+import datetime
+import json
+import re
 
-env_file, apply = sys.argv[1], "--apply" in sys.argv
-env = dict(l.strip().split("=", 1) for l in open(env_file) if "=" in l and not l.startswith("#"))
-local = dict(l.strip().split("=", 1) for l in open(".env.local") if "=" in l and not l.startswith("#"))
-URL = env["NEXT_PUBLIC_SUPABASE_URL"].strip('"')
-KEY = env["SUPABASE_SECRET_KEY"].strip('"')
-NOTION = local["NOTION_TOKEN"].strip('"')
+from aiku_db import NotionApi, SupabaseRest, read_env, script_args, season_name
+
+env_file, apply = script_args()
+db = SupabaseRest.from_env_file(env_file)
+notion = NotionApi(read_env(".env.local")["NOTION_TOKEN"])
 LEDGER = "399a7930-e09c-800b-bde8-fc527acdf308"
 YEAR = 2026
 
@@ -49,33 +50,6 @@ MANUAL_RULES = {"특별 행사 참여": "special_event", "D2D 강의 진행": "d
 KIND_TITLE = {"deepintodeep": "DeepIntoDeep", "seminar": "Seminar", "momentum": "Momentum"}
 
 
-def call(method, path, body=None, prefer=None):
-    headers = {"apikey": KEY, "Authorization": "Bearer " + KEY, "Content-Type": "application/json"}
-    if prefer:
-        headers["Prefer"] = prefer
-    req = urllib.request.Request(URL + path, method=method, headers=headers,
-                                 data=json.dumps(body).encode() if body is not None else None)
-    try:
-        text = urllib.request.urlopen(req, timeout=60).read().decode()
-        return json.loads(text) if text else None
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"{method} {path.split('?')[0]} failed: {e.code} {e.read().decode()[:300]}")
-
-
-def notion(path, body=None):
-    req = urllib.request.Request("https://api.notion.com/v1/" + path, method="POST" if body is not None else "GET",
-                                 headers={"Authorization": "Bearer " + NOTION, "Notion-Version": "2022-06-28",
-                                          "Content-Type": "application/json"},
-                                 data=json.dumps(body).encode() if body is not None else None)
-    return json.load(urllib.request.urlopen(req, timeout=60))
-
-
-def season_name(day):
-    month = int(day[5:7])
-    term = "겨울" if month <= 2 else "1" if month <= 6 else "여름" if month <= 8 else "2"
-    return f"{int(day[2:4]):02d}-{term}"
-
-
 def serial_date(value):
     return (datetime.date(1899, 12, 30) + datetime.timedelta(days=int(float(value)))).isoformat()
 
@@ -84,7 +58,7 @@ report = {"aliases": {}, "namesakes": {}, "unmatched": set(), "overrides": [], "
           "project_check": [], "estimated_dates": ["HYSKAI 2026-10-10"]}
 
 roster = {}
-for m in call("GET", "/rest/v1/members?select=id,name,grade,generations(name)"):
+for m in db.get("/rest/v1/members?select=id,name,grade,generations(name)"):
     roster.setdefault(m["name"], []).append(m)
 
 
@@ -151,21 +125,14 @@ seminar_days = sorted(d for k, d in sessions if k == "seminar")
 
 # 2. The Notion ledger -----------------------------------------------------------------
 
-rows, cursor = [], None
-while True:
-    body = {"page_size": 100, **({"start_cursor": cursor} if cursor else {})}
-    page = notion(f"databases/{LEDGER}/query", body)
-    rows += page["results"]
-    if not page.get("has_more"):
-        break
-    cursor = page["next_cursor"]
+rows = notion.query_all(LEDGER)
 
 notion_members = {}
 
 
 def notion_member(page_id):
     if page_id not in notion_members:
-        props = notion(f"pages/{page_id}")["properties"]
+        props = notion.request(f"pages/{page_id}")["properties"]
         name = "".join(x["plain_text"] for x in next(v for v in props.values() if v["type"] == "title")["title"])
         gen = "".join(x["plain_text"] for x in props.get("기수", {}).get("rich_text", []))
         gen = (gen.strip() + "기") if gen.strip().isdigit() else gen.strip() or None
@@ -233,34 +200,29 @@ for (kind, day), s in sessions.items():
 
 # 3. Write -------------------------------------------------------------------------------
 
-seasons = {s["name"]: s["id"] for s in call("GET", "/rest/v1/seasons?select=id,name")}
+season_ids = db.season_ids(apply)
 
 
 def season_id(day):
-    name = season_name(day)
-    if name not in seasons:
-        seasons[name] = call("POST", "/rest/v1/seasons", {"name": name}, "return=representation")[0]["id"] if apply else None
-    return seasons[name]
+    return season_ids(season_name(day))
 
 
 marks = sum(len(s["rows"]) for s in sessions.values())
 if apply:
     for (kind, day), s in sorted(sessions.items(), key=lambda kv: kv[0][1]):
-        saved = call("POST", "/rest/v1/activity_sessions?on_conflict=source_key",
-                     {"source_key": f"{kind}:{day}", "kind": kind, "title": s["title"], "held_on": day,
-                      "season_id": season_id(day)}, "resolution=merge-duplicates,return=representation")[0]
-        call("DELETE", f"/rest/v1/attendance?session_id=eq.{saved['id']}")
+        saved = db.upsert("activity_sessions", {"source_key": f"{kind}:{day}", "kind": kind, "title": s["title"],
+                                                "held_on": day, "season_id": season_id(day)}, "source_key")
+        db.delete("attendance", f"session_id=eq.{saved['id']}")
         if s["rows"]:
-            call("POST", "/rest/v1/attendance", [{"session_id": saved["id"], "member_id": mid, "status": st, "reason": rs}
-                                                 for mid, (st, rs) in s["rows"].items()])
+            db.insert("attendance", [{"session_id": saved["id"], "member_id": mid, "status": st, "reason": rs}
+                                     for mid, (st, rs) in s["rows"].items()])
     for e in events:
         day = e["held_on"] or "2026-10-01"
-        saved = call("POST", "/rest/v1/point_events?on_conflict=source_key",
-                     {k: e[k] for k in ("source_key", "rule_code", "title", "quantity", "held_on")} | {"season_id": season_id(day)},
-                     "resolution=merge-duplicates,return=representation")[0]
-        call("DELETE", f"/rest/v1/point_event_members?event_id=eq.{saved['id']}")
+        saved = db.upsert("point_events", {k: e[k] for k in ("source_key", "rule_code", "title", "quantity", "held_on")}
+                          | {"season_id": season_id(day)}, "source_key")
+        db.delete("point_event_members", f"event_id=eq.{saved['id']}")
         if e["members"]:
-            call("POST", "/rest/v1/point_event_members", [{"event_id": saved["id"], "member_id": mid} for mid in e["members"]])
+            db.insert("point_event_members", [{"event_id": saved["id"], "member_id": mid} for mid in e["members"]])
 
 print(f"{'applied' if apply else 'dry run'}: {len(sessions)} sessions, {marks} attendance marks, {len(events)} point events")
 report["unmatched"] = sorted(report["unmatched"])

@@ -14,34 +14,20 @@ import {
   filterStatusText,
   hashForFilter,
 } from "@/lib/projects/filter";
+import { RANK_TONES, RANKS, rankLabel } from "@/components/ui/ranks";
+import type { Rank } from "@/lib/ranks";
 
 export type ArchiveEntry = {
   id: string;
   period: string;
   /** Server-rendered project card. */
-  awardRank: 1 | 2 | 3 | null;
+  awardRank: Rank | null;
   tags: string[];
   node: ReactNode;
 };
 
 /** Seasons listed at first in the full view, and added by each "더보기". */
 const SEASONS_PER_STEP = 2;
-
-// Prize filters wear their medal colour: an outline when off, filled with a firm edge when on.
-const RANK_CHIPS = {
-  1: {
-    off: "border-amber-800/25 bg-surface text-amber-800 hover:bg-amber-100/50",
-    on: "border-amber-800/70 bg-amber-100 text-amber-800 ring-1 ring-amber-800/70",
-  },
-  2: {
-    off: "border-silver-800/25 bg-surface text-silver-800 hover:bg-silver-100/60",
-    on: "border-silver-800/70 bg-silver-100 text-silver-800 ring-1 ring-silver-800/70",
-  },
-  3: {
-    off: "border-bronze-800/25 bg-surface text-bronze-800 hover:bg-bronze-100/50",
-    on: "border-bronze-800/70 bg-bronze-100 text-bronze-800 ring-1 ring-bronze-800/70",
-  },
-} as const;
 
 const chipClassName = (active: boolean) =>
   clsx(
@@ -158,7 +144,7 @@ export function ProjectArchive({
                 수상 · 태그
               </p>
               <div className="flex flex-wrap gap-2" role="group" aria-label="수상·태그 필터">
-                {([1, 2, 3] as const).map((rank) => (
+                {RANKS.map((rank) => (
                   <button
                     key={rank}
                     type="button"
@@ -166,10 +152,10 @@ export function ProjectArchive({
                     onClick={() => setRanks((current) => toggled(current, rank))}
                     className={clsx(
                       "inline-flex h-10 items-center justify-center rounded-full border px-4 text-small font-semibold transition-[border-color,background-color,scale] active:scale-[0.97]",
-                      RANK_CHIPS[rank][ranks.includes(rank) ? "on" : "off"],
+                      RANK_TONES[rank].chip[ranks.includes(rank) ? "on" : "off"],
                     )}
                   >
-                    {rank}등
+                    {rankLabel(rank)}
                   </button>
                 ))}
                 <button

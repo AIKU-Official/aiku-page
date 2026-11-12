@@ -30,6 +30,7 @@ import { removeObjects } from "@/lib/storage/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { MEMBER_GRADES, type MemberGrade } from "@/lib/types";
 import { avatarUploadSchema, idSchema, profileSchema } from "@/lib/validators";
+import { type Rank, isRank, toRank } from "@/lib/ranks";
 
 export type ProfilePage = {
   subject: ProfileSubject;
@@ -75,7 +76,7 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
         title: entry.projects.title,
         season: entry.projects.seasons.name,
         role: entry.role === "leader" ? "leader" : "member",
-        awardRank: rank === 1 || rank === 2 || rank === 3 ? rank : null,
+        awardRank: toRank(rank),
         oneLine: entry.projects.one_line,
       };
     });
@@ -88,7 +89,7 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
   );
   const awards = (won ?? [])
     .map((entry) => entry.aikuthon_awards)
-    .filter((award) => award.rank === 1 || award.rank === 2 || award.rank === 3)
+    .filter((award) => isRank(award.rank))
     .sort((a, b) => b.aikuthons.starts_on.localeCompare(a.aikuthons.starts_on))
     .map(
       (award): ProfileAward => ({
@@ -96,7 +97,7 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
         event: award.aikuthons.name,
         task: award.aikuthons.task_title,
         month: award.aikuthons.starts_on.slice(0, 7).replace("-", "."),
-        rank: award.rank as 1 | 2 | 3,
+        rank: award.rank as Rank,
         teamName: award.team_name,
       }),
     );

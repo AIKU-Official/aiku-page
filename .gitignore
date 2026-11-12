@@ -39,3 +39,6 @@ supabase/.temp/
 Thumbs.db
 *.log
 *.pem
+
+# Python bytecode from the import scripts
+__pycache__/

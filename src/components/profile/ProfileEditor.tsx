@@ -13,7 +13,8 @@ import {
   TextField,
   type Status,
 } from "@/components/admin/ui";
-import { currentAccessToken, useMyProfile } from "@/components/profile/useMyProfile";
+import { useMyProfile } from "@/components/profile/useMyProfile";
+import { currentAccessToken } from "@/lib/auth/signed-in-data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { refreshMemberAccount, useMemberAccount } from "@/lib/auth/member";
@@ -541,5 +542,5 @@ export function ProfileEditor() {
       </p>
     );
   }
-  return <EditorForm page={state.page} />;
+  return <EditorForm page={state.data} />;
 }

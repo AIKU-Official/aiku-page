@@ -20,15 +20,8 @@ import type {
 } from "@/lib/members/profile";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS } from "@/lib/types";
-
-const AWARD_TONES = {
-  1: "bg-amber-100 text-amber-800",
-  2: "bg-silver-100 text-silver-800",
-  3: "bg-bronze-100 text-bronze-800",
-} as const;
-
-const pillClassName =
-  "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
+import { pillClassName } from "@/components/ui/Pill";
+import { RankPill } from "@/components/ui/ranks";
 
 function IconLink({
   href,
@@ -227,11 +220,7 @@ export function ProfileContent({
                         <span className="mt-0.5 block text-small text-muted">{project.oneLine}</span>
                       ) : null}
                     </span>
-                    {project.awardRank ? (
-                      <span className={clsx(pillClassName, AWARD_TONES[project.awardRank])}>
-                        {project.awardRank}등
-                      </span>
-                    ) : null}
+                    {project.awardRank ? <RankPill rank={project.awardRank} /> : null}
                     {project.role === "leader" ? (
                       <span className={clsx(pillClassName, "bg-surface-soft text-body")}>팀장</span>
                     ) : null}
@@ -262,9 +251,7 @@ export function ProfileContent({
                         <span className="mt-0.5 block text-small text-muted">{award.task}</span>
                       ) : null}
                     </span>
-                    <span className={clsx(pillClassName, AWARD_TONES[award.rank])}>
-                      {award.rank}등
-                    </span>
+                    <RankPill rank={award.rank} />
                   </Link>
                 </li>
               ))}

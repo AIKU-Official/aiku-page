@@ -1,4 +1,5 @@
 import type { MemberGrade } from "@/lib/types";
+import type { Rank } from "@/lib/ranks";
 
 // Member-written profile (table member_profiles). Safe to import from client code.
 
@@ -40,7 +41,7 @@ export type ProfileProject = {
   title: string;
   season: string;
   role: "leader" | "member";
-  awardRank: 1 | 2 | 3 | null;
+  awardRank: Rank | null;
   /** The project's one-line summary; "" when it has none. */
   oneLine: string;
 };
@@ -54,7 +55,7 @@ export type ProfileAward = {
   task: string;
   /** "2026.08". */
   month: string;
-  rank: 1 | 2 | 3;
+  rank: Rank;
   teamName: string;
 };
 

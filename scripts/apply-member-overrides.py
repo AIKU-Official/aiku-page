@@ -9,29 +9,19 @@ file, so a full re-import keeps them).
 Only exact, unique roster names are linked; anything else is reported.
 Members already on the project are left as they are.
 """
-import json, sys, urllib.error, urllib.parse, urllib.request
+import json
 
-env_file, apply = sys.argv[1], "--apply" in sys.argv
-env = dict(l.strip().split("=", 1) for l in open(env_file) if "=" in l and not l.startswith("#"))
-URL, KEY = env["NEXT_PUBLIC_SUPABASE_URL"].strip('"'), env["SUPABASE_SECRET_KEY"].strip('"')
+from aiku_db import SupabaseRest, script_args
 
-
-def call(method, path, body=None):
-    req = urllib.request.Request(URL + path, method=method, data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"apikey": KEY, "Authorization": "Bearer " + KEY, "Content-Type": "application/json"})
-    try:
-        text = urllib.request.urlopen(req, timeout=60).read().decode()
-        return json.loads(text) if text else None
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"{method} {path.split('?')[0]} failed: {e.code} {e.read().decode()[:300]}")
-
+env_file, apply = script_args()
+db = SupabaseRest.from_env_file(env_file)
 
 roster = {}
-for m in call("GET", "/rest/v1/members?select=id,name"):
+for m in db.get("/rest/v1/members?select=id,name"):
     roster.setdefault(m["name"], []).append(m["id"])
 
 for page_id, entry in json.load(open("data/notion/member-overrides.json")).items():
-    project = call("GET", f"/rest/v1/projects?select=id,title,project_members(name,member_id,sort_order)&notion_page_id=eq.{page_id}")
+    project = db.get(f"/rest/v1/projects?select=id,title,project_members(name,member_id,sort_order)&notion_page_id=eq.{page_id}")
     if not project:
         print(f"  no project for {entry['title']}")
         continue
@@ -49,5 +39,5 @@ for page_id, entry in json.load(open("data/notion/member-overrides.json")).items
         added.append({"project_id": project["id"], "name": name, "member_id": ids[0], "role": "member", "sort_order": order})
         order += 1
     if added and apply:
-        call("POST", "/rest/v1/project_members", added)
+        db.insert("project_members", added)
     print(f"  {project['title']}: {'added' if apply else 'would add'} {', '.join(a['name'] for a in added) or 'nobody'}")

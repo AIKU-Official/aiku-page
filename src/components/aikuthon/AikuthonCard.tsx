@@ -6,15 +6,9 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FieldTags } from "@/components/ui/FieldTags";
 import { ArrowUpRightIcon } from "@/components/ui/icons";
 import type { Aikuthon } from "@/lib/types";
+import { Pill } from "@/components/ui/Pill";
+import { RankPill } from "@/components/ui/ranks";
 
-const pill = "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
-
-// Medal colours and labels, as on prize-winning projects.
-const RANKS = {
-  1: { label: "1등", tone: "bg-amber-100 text-amber-800" },
-  2: { label: "2등", tone: "bg-silver-100 text-silver-800" },
-  3: { label: "3등", tone: "bg-bronze-100 text-bronze-800" },
-} as const;
 
 /** "데이터톤 · 무박 2일 · Kaggle". */
 function formatRun(event: Aikuthon): string {
@@ -71,7 +65,7 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
               {formatDates(event.startsOn, event.endsOn, event.datePrecision)}
             </Eyebrow>
             {replaces ? (
-              <span className={clsx(pill, "bg-surface-soft text-body")}>제{event.edition}회 대체</span>
+              <Pill>제{event.edition}회 대체</Pill>
             ) : null}
           </div>
           <h3 className="mt-2 text-[1.5rem] leading-[1.3] font-extrabold tracking-[-0.025em] max-sm:text-[1.1875rem]">
@@ -120,9 +114,7 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
           <ul className="grid gap-2.5" aria-label="수상">
             {event.awards.map((award) => (
               <li key={award.rank} className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                <span className={clsx(pill, "self-center", RANKS[award.rank].tone)}>
-                  {RANKS[award.rank].label}
-                </span>
+                <RankPill rank={award.rank} className="self-center" />
                 {award.teamName ? (
                   // Long team names are cut with "…" at about 12 characters; the
                   // full name shows on hover.

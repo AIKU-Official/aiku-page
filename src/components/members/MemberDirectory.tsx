@@ -21,6 +21,7 @@ import { MEMBER_GRADE_LABELS, MEMBER_GRADES, type Generation, type Member } from
 
 import { MemberCard } from "./MemberCard";
 import { gradeBorderClassName, gradeDotClassName, gradeToneClassName } from "./tones";
+import { isPhone } from "@/lib/ui/viewport";
 
 const subscribeToHash = (onChange: () => void) => {
   window.addEventListener("hashchange", onChange);
@@ -57,7 +58,7 @@ export function MemberDirectory({ generations }: { generations: Generation[] }) 
   } | null>(null);
   const openFrom = (member: Member, card: HTMLElement) => {
     // Phones open the profile's own page, as project cards do.
-    if (window.matchMedia("(width < 561px)").matches) {
+    if (isPhone()) {
       router.push(`/members/${member.id}`);
       return;
     }

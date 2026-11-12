@@ -1,3 +1,5 @@
+import type { Rank } from "@/lib/ranks";
+
 // App-facing content types (camelCase). Rows from Supabase are converted in
 // lib/data/mappers.ts. File fields hold Storage object paths inside the
 // aiku-uploads bucket; build URLs with lib/storage/public-url.ts.
@@ -23,7 +25,7 @@ export type Project = {
   /** One sentence shown on the card. */
   oneLine: string;
   /** 1, 2 or 3 for projects placed at the AIKU Conference; null otherwise. */
-  awardRank: 1 | 2 | 3 | null;
+  awardRank: Rank | null;
   /** Participants, leaders first. */
   people: ProjectPerson[];
 };
@@ -135,7 +137,7 @@ export type AikuthonPartner = {
 };
 
 export type AikuthonAward = {
-  rank: 1 | 2 | 3;
+  rank: Rank;
   teamName: string;
   people: ProjectPerson[];
 };

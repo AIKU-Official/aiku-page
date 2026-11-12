@@ -34,6 +34,38 @@ export const ChevronDownIcon = (props: IconProps) => (
   </svg>
 );
 
+export const ChevronLeftIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="m15 5-7 7 7 7" />
+  </svg>
+);
+
+export const ChevronRightIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="m9 5 7 7-7 7" />
+  </svg>
+);
+
+export const CloseIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="m6 6 12 12M18 6 6 18" />
+  </svg>
+);
+
+/** Two corners pointing out: open larger. */
+export const ExpandIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M14 4h6v6M10 20H4v-6" />
+  </svg>
+);
+
+/** Two corners pointing in: back to the smaller size. */
+export const CollapseIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M10 4v6H4M14 20v-6h6" />
+  </svg>
+);
+
 export const DownloadIcon = (props: IconProps) => (
   <svg {...base} {...props}>
     <path d="M12 4v11" />

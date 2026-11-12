@@ -13,41 +13,13 @@ import {
 import { createPortal } from "react-dom";
 import Link from "next/link";
 
-const subscribeNothing = () => () => {};
+import { CloseIcon, CollapseIcon, ExpandIcon } from "@/components/ui/icons";
+import { PeekMotion, type PeekOrigin } from "@/components/ui/peek-motion";
 
-// Decelerating curve of the kind used for sheets and zoom transitions.
-const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
-const OPEN_MS = 560;
-const CLOSE_MS = 420;
+const subscribeNothing = () => () => {};
 
 const controlClassName =
   "inline-flex size-10 cursor-pointer items-center justify-center rounded-full bg-surface text-body shadow-[0_2px_10px_rgb(29_29_29/0.14)] transition-colors hover:text-ink";
-
-type Origin = () => DOMRect | null | undefined;
-type Motion = { shell: Keyframe; panel: Keyframe } | null;
-
-/**
- * The state in which the panel coincides with its origin: moved onto the
- * origin's corner and clipped to its size. Nothing is scaled, so the content
- * keeps its real size and position throughout; only the visible window grows.
- */
-function atOrigin(shell: HTMLElement, origin: Origin | undefined, radius: string): Motion {
-  const from = origin?.();
-  if (!from || !from.width || !from.height) return null;
-  // Layout box rather than getBoundingClientRect, which would include the
-  // transform of an animation in progress. The offset parent is the
-  // full-window layer, so these are window coordinates.
-  const width = shell.offsetWidth;
-  const height = shell.offsetHeight;
-  const right = Math.max(0, width - from.width);
-  const bottom = Math.max(0, height - from.height);
-  return {
-    shell: {
-      transform: `translate(${from.left - shell.offsetLeft}px, ${from.top - shell.offsetTop}px)`,
-    },
-    panel: { clipPath: `inset(0px ${right}px ${bottom}px 0px round ${radius})` },
-  };
-}
 
 /**
  * A panel opened over the page, centred with the page blurred behind it; on
@@ -76,7 +48,7 @@ export function CenterPeek({
   /** Called once the closing animation has finished. */
   onClose: () => void;
   /** Current rectangle of the element this panel opens from. */
-  origin?: Origin;
+  origin?: PeekOrigin;
   /** Corner radius of that element. */
   originRadius?: string;
   /** When set, the expand control opens this page instead of filling the window. */
@@ -104,112 +76,29 @@ export function CenterPeek({
     () => false,
   );
 
-  const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const fullRadius = () =>
-    panel.current ? getComputedStyle(panel.current).borderTopLeftRadius : "0px";
-
-  // Parts marked data-peek-origin-only belong to the origin's look (a card's
-  // tint, say): they fade away as the panel opens and return as it closes.
-  // Parts marked data-peek-panel-only are the reverse: absent while the panel
-  // still looks like its origin, faded in as it opens.
-  const fadeOriginOnly = (to: 0 | 1, duration: number) => {
-    const run = (selector: string, keyframes: Keyframe[]) =>
-      panel.current?.querySelectorAll<HTMLElement>(selector).forEach((element) => {
-        element.animate(keyframes, { duration, easing: "ease-out", fill: "forwards" });
-      });
-    // Staggered, never both at once: on opening the card's look fades out in
-    // the first part while the panel is still small, and the panel's content
-    // rises in once there is room for it; closing runs the other way round.
-    if (to === 0) {
-      run("[data-peek-origin-only]", [
-        { opacity: 1 },
-        { opacity: 0, offset: 0.28 },
-        { opacity: 0 },
-      ]);
-      run("[data-peek-panel-only]", [
-        { opacity: 0, transform: "translateY(10px)" },
-        { opacity: 0, transform: "translateY(10px)", offset: 0.22 },
-        { opacity: 1, transform: "none", offset: 0.75 },
-        { opacity: 1, transform: "none" },
-      ]);
-    } else {
-      run("[data-peek-panel-only]", [{ opacity: 1 }, { opacity: 0, offset: 0.35 }, { opacity: 0 }]);
-      run("[data-peek-origin-only]", [
-        { opacity: 0 },
-        { opacity: 0, offset: 0.45 },
-        { opacity: 1 },
-      ]);
-    }
-  };
+  const motion = () =>
+    shell.current && panel.current
+      ? new PeekMotion(
+          { shell: shell.current, panel: panel.current, backdrop: backdrop.current, controls: controls.current },
+          origin,
+          originRadius,
+        )
+      : null;
 
   useLayoutEffect(() => {
-    if (!mounted || !shell.current || !panel.current || entered.current) return;
+    if (!mounted || entered.current) return;
     entered.current = true;
-    if (reducedMotion()) {
-      fadeOriginOnly(0, 0);
-      return;
-    }
-    fadeOriginOnly(0, OPEN_MS);
-    const options = { duration: OPEN_MS, easing: EASING } as const;
-    const start = atOrigin(shell.current, origin, originRadius);
-    if (start) {
-      shell.current.animate([start.shell, { transform: "none" }], options);
-      panel.current.animate(
-        [start.panel, { clipPath: `inset(0px 0px 0px 0px round ${fullRadius()})` }],
-        options,
-      );
-    } else {
-      shell.current.animate(
-        [
-          { transform: "translateY(16px)", opacity: 0 },
-          { transform: "none", opacity: 1 },
-        ],
-        options,
-      );
-    }
-    backdrop.current?.animate([{ opacity: 0 }, { opacity: 1 }], options);
-    closeButton.current?.animate(
-      [{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }],
-      options,
-    );
+    motion()?.open();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the portal mounts
   }, [mounted]);
 
   const close = useCallback(() => {
     if (closing.current) return;
     closing.current = true;
-    if (!shell.current || !panel.current || reducedMotion()) {
-      onClose();
-      return;
-    }
-    // Back to the top, where the panel looks like its origin again.
-    panel.current.scrollTop = 0;
-    fadeOriginOnly(1, CLOSE_MS);
-    const options = { duration: CLOSE_MS, easing: EASING, fill: "forwards" } as const;
-    const end = atOrigin(shell.current, origin, originRadius);
-    let last: Animation;
-    if (end) {
-      shell.current.animate([{ transform: "none" }, end.shell], options);
-      last = panel.current.animate(
-        [{ clipPath: `inset(0px 0px 0px 0px round ${fullRadius()})` }, end.panel],
-        options,
-      );
-    } else {
-      last = shell.current.animate(
-        [
-          { transform: "none", opacity: 1 },
-          { transform: "translateY(16px)", opacity: 0 },
-        ],
-        options,
-      );
-    }
-    backdrop.current?.animate([{ opacity: 1 }, { opacity: 0 }], options);
-    closeButton.current?.animate(
-      [{ opacity: 1 }, { opacity: 0, offset: 0.3 }, { opacity: 0 }],
-      options,
-    );
-    last.onfinish = onClose;
-    last.oncancel = onClose;
+    const current = motion();
+    if (current) current.close(onClose);
+    else onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- motion() reads refs, not state
   }, [onClose, origin, originRadius]);
 
   useEffect(() => {
@@ -267,18 +156,7 @@ export function CenterPeek({
               title="페이지로 열기"
               className={clsx(controlClassName, "max-sm:hidden")}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 16 16"
-                className="size-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M9.5 2.5h4v4m-7 7h-4v-4" />
-              </svg>
+              <ExpandIcon className="size-4" />
             </Link>
           ) : expandable ? (
             <button
@@ -288,22 +166,7 @@ export function CenterPeek({
               aria-pressed={expanded}
               className={clsx(controlClassName, "max-sm:hidden")}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 16 16"
-                className="size-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {expanded ? (
-                  <path d="M6.5 2.5v4h-4m11 3h-4v4" />
-                ) : (
-                  <path d="M9.5 2.5h4v4m-7 7h-4v-4" />
-                )}
-              </svg>
+              {expanded ? <CollapseIcon className="size-4" /> : <ExpandIcon className="size-4" />}
             </button>
           ) : null}
           <button
@@ -313,17 +176,7 @@ export function CenterPeek({
             aria-label="닫기"
             className={controlClassName}
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 16 16"
-              className="size-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            >
-              <path d="m3.5 3.5 9 9m0-9-9 9" />
-            </svg>
+            <CloseIcon className="size-4" />
           </button>
         </div>
         <div

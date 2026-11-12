@@ -10,6 +10,9 @@ import { FieldTags } from "@/components/ui/FieldTags";
 import type { ProjectPerson } from "@/lib/types";
 
 import { PersonName } from "./PersonName";
+import { RANK_TONES, RankPill } from "@/components/ui/ranks";
+import { isPhone } from "@/lib/ui/viewport";
+import type { Rank } from "@/lib/ranks";
 
 type ProjectEntryProps = {
   id: string;
@@ -17,7 +20,7 @@ type ProjectEntryProps = {
   title: string;
   tags: string[];
   oneLine: string;
-  awardRank: 1 | 2 | 3 | null;
+  awardRank: Rank | null;
   people: ProjectPerson[];
   /** Server-rendered resource links. */
   resources: ReactNode;
@@ -25,40 +28,11 @@ type ProjectEntryProps = {
   body: ReactNode;
 };
 
-// Gold, silver and bronze: the tag, and a faint diagonal wash that starts at
-// the top right of the card and fades to white.
-const AWARDS = {
-  1: {
-    label: "1등",
-    pill: "bg-amber-100 text-amber-800",
-    card: "border-amber-800/10 bg-linear-to-bl from-amber-100/45 to-white to-70%",
-  },
-  2: {
-    label: "2등",
-    pill: "bg-silver-100 text-silver-800",
-    card: "border-silver-800/10 bg-linear-to-bl from-silver-100/55 to-white to-70%",
-  },
-  3: {
-    label: "3등",
-    pill: "bg-bronze-100 text-bronze-800",
-    card: "border-bronze-800/10 bg-linear-to-bl from-bronze-100/45 to-white to-70%",
-  },
-} as const;
-
 function Heading({ period, awardRank }: Pick<ProjectEntryProps, "period" | "awardRank">) {
   return (
     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 max-sm:min-h-9">
       <Eyebrow spacing="none">{period || "AIKU"}</Eyebrow>
-      {awardRank ? (
-        <span
-          className={clsx(
-            "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap",
-            AWARDS[awardRank].pill,
-          )}
-        >
-          {AWARDS[awardRank].label}
-        </span>
-      ) : null}
+      {awardRank ? <RankPill rank={awardRank} /> : null}
     </div>
   );
 }
@@ -155,7 +129,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
   const router = useRouter();
   const openPanel = () => {
     // Phones get the project's own page: a panel over a small screen is just a page without an address.
-    if (window.matchMedia("(width < 561px)").matches) {
+    if (isPhone()) {
       router.push(`/projects/${id}`);
       return;
     }
@@ -172,7 +146,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
         className={clsx(
           "relative reveal scroll-mt-[calc(var(--header-height)+24px)] card transition-[translate,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-[0_14px_36px_rgb(29_29_29/0.09)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-green-500",
           cardPadding,
-          awardRank ? AWARDS[awardRank].card : "hover:border-line-strong",
+          awardRank ? RANK_TONES[awardRank].card : "hover:border-line-strong",
           // While open, the panel is this card: the original steps out of view.
           open && "invisible",
         )}
@@ -196,7 +170,7 @@ export function ProjectEntry({ id, body, ...face }: ProjectEntryProps) {
               style={tintSize}
               className={clsx(
                 "pointer-events-none absolute top-0 left-0 -z-10 rounded-card",
-                AWARDS[awardRank].card,
+                RANK_TONES[awardRank].card,
               )}
             />
           ) : null}

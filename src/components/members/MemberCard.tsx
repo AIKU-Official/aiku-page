@@ -11,6 +11,7 @@ import {
   positionCardClassName,
   positionToneClassName,
 } from "./tones";
+import { pillClassName as pill } from "@/components/ui/Pill";
 
 /** Directory entry laid out like a name card: picture on the left, name and tags beside it. */
 export function MemberCard({
@@ -23,7 +24,6 @@ export function MemberCard({
   onOpen?: (card: HTMLElement) => void;
   style?: CSSProperties;
 }) {
-  const pill = "inline-flex h-6 items-center rounded-full px-2.5 text-label whitespace-nowrap";
 
   return (
     <article
