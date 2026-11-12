@@ -163,8 +163,7 @@ def main():
         for name in ordered:
             if name not in seasons:
                 seasons[name] = call("POST", "/rest/v1/seasons", {"name": name}, {"Prefer": "return=representation"})[0]["id"]
-        for index, name in enumerate(ordered):
-            call("PATCH", f"/rest/v1/seasons?id=eq.{seasons[name]}", {"sort_order": index})
+        # The database orders seasons by year and term; nothing to set here.
 
     existing = {p["notion_page_id"]: p["id"] for p in call("GET", "/rest/v1/projects?select=id,notion_page_id&notion_page_id=not.is.null")}
 
@@ -175,7 +174,7 @@ def main():
         # Tags from Notion; for pages without any, the ones chosen from the write-up.
         fields = meta.get("fields") or tag_overrides.get(meta["notion_id"], [])
         tags = list(dict.fromkeys(TAG_SPELLING.get(f, f) for f in fields))
-        row = {"season_id": seasons.get(p["season"]), "title": p["title"], "tags": tags, "markdown": markdown,
+        row = {"season_id": seasons.get(p["season"]), "title": p["title"], "markdown": markdown,
                "github_url": p["github"], "one_line": p["one_line"], "award_rank": p["rank"], "notion_page_id": meta["notion_id"], "sort_order": order}
         entry = {"title": p["title"], "season": p["season"], "award_rank": p["rank"], "award_text": p["award_text"],
                  "images": len(meta["images"]), "chars": len(markdown)}
@@ -206,6 +205,7 @@ def main():
                 call("PATCH", f"/rest/v1/projects?id=eq.{pid}", row)
             else:
                 pid = call("POST", "/rest/v1/projects", row, {"Prefer": "return=representation"})[0]["id"]
+            call("POST", "/rest/v1/rpc/set_project_tags", {"p_project_id": pid, "p_names": tags})
             for image in meta["images"]:
                 path = os.path.join(d, image["file"])
                 ext = os.path.splitext(path)[1].lower()

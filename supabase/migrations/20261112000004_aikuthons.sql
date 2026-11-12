@@ -2,9 +2,12 @@
 -- companies that ran it with AIKU, its tracks, its awards, and the people on
 -- each awarded team.
 --
---   aikuthons ──< aikuthon_partners
---             ──< aikuthon_tracks
---             ──< aikuthon_awards ──< aikuthon_award_members >── members
+--   seasons ──< aikuthons ──< aikuthon_partners
+--                         ──< aikuthon_tracks
+--                         ──< aikuthon_awards ──< aikuthon_award_members >── members
+--
+-- An event belongs to the season it was held in, like a project. Its field
+-- tags are added with the shared tag table in the next migration.
 --
 -- Joint datathons held with other societies are listed with the editions
 -- (`kind = 'joint'`), because the society counts them in its history. A joint
@@ -17,6 +20,8 @@
 
 create table public.aikuthons (
   id uuid primary key default gen_random_uuid(),
+  -- RESTRICT: a season with events cannot be deleted.
+  season_id uuid not null references public.seasons (id) on delete restrict,
   -- 1, 2, … for numbered editions, including a joint event held in an edition's
   -- place; null for a joint event that did not take an edition's number.
   edition smallint unique,
@@ -41,8 +46,6 @@ create table public.aikuthons (
   task_title text not null default '',
   task_description text not null default '',
   metric text not null default '',
-  -- Fields of the task, in the same vocabulary as projects.tags.
-  tags text[] not null default '{}',
   -- Public competition page; invitation-only links are not stored.
   competition_url text constraint aikuthons_competition_url_http check (competition_url ~* '^https?://'),
   -- Key of the source record this row was imported from; makes the import repeatable.
@@ -53,6 +56,7 @@ create table public.aikuthons (
 );
 
 create index aikuthons_starts_on_idx on public.aikuthons (starts_on desc);
+create index aikuthons_season_idx on public.aikuthons (season_id);
 
 create trigger aikuthons_set_updated_at before update on public.aikuthons
   for each row execute function public.set_updated_at();

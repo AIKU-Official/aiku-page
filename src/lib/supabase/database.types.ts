@@ -134,6 +134,39 @@ export type Database = {
           },
         ]
       }
+      aikuthon_tags: {
+        Row: {
+          aikuthon_id: string
+          sort_order: number
+          tag_id: string
+        }
+        Insert: {
+          aikuthon_id: string
+          sort_order?: number
+          tag_id: string
+        }
+        Update: {
+          aikuthon_id?: string
+          sort_order?: number
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aikuthon_tags_aikuthon_id_fkey"
+            columns: ["aikuthon_id"]
+            isOneToOne: false
+            referencedRelation: "aikuthons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aikuthon_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aikuthon_tracks: {
         Row: {
           aikuthon_id: string
@@ -178,9 +211,9 @@ export type Database = {
           name: string
           overnight: boolean | null
           platform: string
+          season_id: string
           source_key: string | null
           starts_on: string
-          tags: string[]
           task_description: string
           task_title: string
           team_size_max: number | null
@@ -202,9 +235,9 @@ export type Database = {
           name: string
           overnight?: boolean | null
           platform?: string
+          season_id: string
           source_key?: string | null
           starts_on: string
-          tags?: string[]
           task_description?: string
           task_title?: string
           team_size_max?: number | null
@@ -226,9 +259,9 @@ export type Database = {
           name?: string
           overnight?: boolean | null
           platform?: string
+          season_id?: string
           source_key?: string | null
           starts_on?: string
-          tags?: string[]
           task_description?: string
           task_title?: string
           team_size_max?: number | null
@@ -236,7 +269,15 @@ export type Database = {
           updated_at?: string
           venue?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "aikuthons_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       generations: {
         Row: {
@@ -597,6 +638,39 @@ export type Database = {
           },
         ]
       }
+      project_tags: {
+        Row: {
+          project_id: string
+          sort_order: number
+          tag_id: string
+        }
+        Insert: {
+          project_id: string
+          sort_order?: number
+          tag_id: string
+        }
+        Update: {
+          project_id?: string
+          sort_order?: number
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tags_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           award_rank: number | null
@@ -611,7 +685,6 @@ export type Database = {
           presentation_path: string | null
           season_id: string
           sort_order: number
-          tags: string[]
           title: string
           updated_at: string
         }
@@ -628,7 +701,6 @@ export type Database = {
           presentation_path?: string | null
           season_id: string
           sort_order?: number
-          tags?: string[]
           title: string
           updated_at?: string
         }
@@ -645,7 +717,6 @@ export type Database = {
           presentation_path?: string | null
           season_id?: string
           sort_order?: number
-          tags?: string[]
           title?: string
           updated_at?: string
         }
@@ -665,21 +736,45 @@ export type Database = {
           id: string
           name: string
           sort_order: number
+          term: string
           updated_at: string
+          year: number
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           sort_order?: number
+          term: string
           updated_at?: string
+          year: number
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           sort_order?: number
+          term?: string
           updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -691,6 +786,14 @@ export type Database = {
       generation_number: { Args: { p_name: string }; Returns: number }
       reorder_items: {
         Args: { p_ids: string[]; p_scope?: string; p_table: string }
+        Returns: undefined
+      }
+      set_aikuthon_tags: {
+        Args: { p_aikuthon_id: string; p_names: string[] }
+        Returns: undefined
+      }
+      set_project_tags: {
+        Args: { p_names: string[]; p_project_id: string }
         Returns: undefined
       }
     }

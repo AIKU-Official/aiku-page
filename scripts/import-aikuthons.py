@@ -31,6 +31,16 @@ def call(method, path, body=None, prefer=None):
 
 
 events = json.load(open("data/aikuthon/aikuthons.json"))
+seasons = {s["name"]: s["id"] for s in call("GET", "/rest/v1/seasons?select=id,name")}
+
+
+def season_name(starts_on):
+    """The season an event was held in: Jan–Feb winter, Mar–Jun 1st semester,
+    Jul–Aug summer, Sep–Dec 2nd semester. Named like "26-여름"."""
+    year, month = int(starts_on[:4]), int(starts_on[5:7])
+    term = "겨울" if month <= 2 else "1" if month <= 6 else "여름" if month <= 8 else "2"
+    return f"{year % 100:02d}-{term}"
+
 roster = {}
 for m in call("GET", "/rest/v1/members?select=id,name"):
     roster.setdefault(m["name"], []).append(m["id"])
@@ -39,7 +49,14 @@ unmatched, linked = set(), 0
 for event in events:
     row = {k: event[k] for k in ("edition", "kind", "format", "name", "starts_on", "date_precision", "ends_on", "venue",
                                  "mode", "overnight", "team_size_min", "team_size_max", "platform",
-                                 "task_title", "task_description", "metric", "tags", "competition_url")}
+                                 "task_title", "task_description", "metric", "competition_url")}
+    season = season_name(event["starts_on"])
+    if season not in seasons:
+        # Early seasons had no projects; the event still needs its season.
+        seasons[season] = (call("POST", "/rest/v1/seasons", {"name": season}, "return=representation")[0]["id"]
+                           if apply else None)
+        print(f"  new season {season}")
+    row["season_id"] = seasons[season]
     partners = [{"name": p["name"], "role": p["role"], "sort_order": i} for i, p in enumerate(event["partners"])]
     tracks = [{"name": name, "sort_order": i} for i, name in enumerate(event["tracks"])]
     row["source_key"] = event["key"]
@@ -58,6 +75,7 @@ for event in events:
     if apply:
         saved = call("POST", "/rest/v1/aikuthons?on_conflict=source_key", row,
                      "resolution=merge-duplicates,return=representation")[0]
+        call("POST", "/rest/v1/rpc/set_aikuthon_tags", {"p_aikuthon_id": saved["id"], "p_names": event["tags"]})
         for table, children in (("aikuthon_partners", partners), ("aikuthon_tracks", tracks)):
             call("DELETE", f"/rest/v1/{table}?aikuthon_id=eq.{saved['id']}")
             if children:

@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useEffect, useRef, useState, useTransition, type FormEvent, type RefObject } from "react";
 
 import { deleteProject, reorderProjects, saveProject } from "@/actions/projects";
-import { addSeason, deleteSeason, reorderSeasons } from "@/actions/seasons";
+import { addSeason, deleteSeason } from "@/actions/seasons";
 import { Button } from "@/components/ui/Button";
 import { displayFileName } from "@/lib/admin/files";
 import { formatTags } from "@/lib/projects/tags";
@@ -189,8 +189,8 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
     <div className="grid gap-4 border-b border-soft-line pb-7">
       <ListHead
         flush
-        title="분기 추가 및 순서 관리"
-        description="프로젝트가 공개될 분기를 추가하고, 분기 카드를 드래그해서 공개 페이지의 순서를 조정합니다."
+        title="분기 추가"
+        description="프로젝트가 공개될 분기를 추가합니다. 분기는 연도와 학기에 따라 최신순으로 자동 정렬됩니다."
       />
       <form
         key={`season-form-${formKey}`}
@@ -209,41 +209,35 @@ function SeasonManager({ seasons, projects }: { seasons: Season[]; projects: Pro
         <StatusMessage status={status} className="col-span-full" />
       </form>
       {seasons.length ? (
-        <SortableList
-          className="grid"
-          items={seasons}
-          getId={(season) => season.id}
-          onReorder={async (ids) => {
-            setStatus(info("분기 순서를 저장하는 중입니다."));
-            setStatus(fromResult(await reorderSeasons(ids)));
-          }}
-          getLabel={(season) => season.name}
-          renderItem={(season, index, handle) => {
+        <ul className="grid">
+          {seasons.map((season, index) => {
             const count = countOf(season);
             return (
-              <AdminItem
-                compact
-                handle={handle}
-                label={index + 1}
-                title={season.name}
-                details={[`프로젝트 ${count}개`]}
-                actions={
-                  <ItemButton
-                    danger
-                    disabled={count > 0 || pending}
-                    title={count > 0 ? "프로젝트가 있는 분기은 삭제할 수 없습니다." : undefined}
-                    onClick={() => remove(season)}
-                  >
-                    분기 삭제
-                  </ItemButton>
-                }
-              />
+              <li key={season.id}>
+                <AdminItem
+                  compact
+                  handle={null}
+                  label={index + 1}
+                  title={season.name}
+                  details={[`프로젝트 ${count}개`]}
+                  actions={
+                    <ItemButton
+                      danger
+                      disabled={count > 0 || pending}
+                      title={count > 0 ? "프로젝트가 있는 분기는 삭제할 수 없습니다." : undefined}
+                      onClick={() => remove(season)}
+                    >
+                      분기 삭제
+                    </ItemButton>
+                  }
+                />
+              </li>
             );
-          }}
-        />
+          })}
+        </ul>
       ) : (
         <EmptyAdminText>
-          등록된 분기이 없습니다. 프로젝트를 올리려면 분기를 먼저 추가하세요.
+          등록된 분기가 없습니다. 프로젝트를 올리려면 분기를 먼저 추가하세요.
         </EmptyAdminText>
       )}
     </div>

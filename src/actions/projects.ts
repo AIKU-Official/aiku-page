@@ -56,7 +56,6 @@ export async function saveProject(input: unknown): Promise<ActionResult> {
       const row = {
         season_id: data.seasonId,
         title: data.title,
-        tags: data.tags,
         one_line: data.oneLine,
         award_rank: data.awardRank,
         markdown: data.markdown,
@@ -74,6 +73,7 @@ export async function saveProject(input: unknown): Promise<ActionResult> {
       } else {
         unwrap(await db.from("projects").update(row).eq("id", id), seasonMessages);
       }
+      unwrap(await db.rpc("set_project_tags", { p_project_id: id, p_names: data.tags }));
 
       await removeObjects(db, obsolete.filter(inFolder));
       return { message: "프로젝트를 저장했습니다." };

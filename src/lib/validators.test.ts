@@ -8,15 +8,17 @@ const firstMessage = (result: { success: boolean; error?: { issues: { message: s
   result.error?.issues[0]?.message;
 
 describe("seasonNameSchema", () => {
-  it("uses the legacy messages", () => {
-    expect(seasonNameSchema.parse("  26-summer ")).toBe("26-summer");
-    expect(firstMessage(seasonNameSchema.safeParse(" "))).toBe("시즌 이름을 입력하세요.");
-    expect(firstMessage(seasonNameSchema.safeParse("a".repeat(41)))).toBe(
-      "시즌 이름은 40자 이하로 입력하세요.",
-    );
-    expect(firstMessage(seasonNameSchema.safeParse("26/1"))).toBe(
-      "시즌 이름에는 /, \\, <, > 문자를 사용할 수 없습니다.",
-    );
+  it("accepts year-term names and trims them", () => {
+    expect(seasonNameSchema.parse("  26-여름 ")).toBe("26-여름");
+    expect(seasonNameSchema.parse("25-2")).toBe("25-2");
+  });
+
+  it("refuses other shapes with one message", () => {
+    for (const name of [" ", "26-summer", "2026-1", "26/1"]) {
+      expect(firstMessage(seasonNameSchema.safeParse(name))).toBe(
+        "분기 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요.",
+      );
+    }
   });
 });
 

@@ -7,6 +7,8 @@ import { parseTags } from "@/lib/projects/tags";
 import { UPLOAD_SCOPES } from "@/lib/storage/keys";
 import { MEMBER_GRADES } from "@/lib/types";
 
+import { parseSeasonName } from "@/lib/seasons/name";
+
 // Input schemas for the admin Server Actions. Messages reuse the legacy
 // server's Korean wording. Empty optional fields arrive as "" and become null.
 
@@ -62,7 +64,13 @@ export const newsSchema = z.object({
 
 // Seasons & projects -------------------------------------------------------
 
-export const seasonNameSchema = groupName("시즌");
+export const seasonNameSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => parseSeasonName(value) !== null,
+    "분기 이름은 26-1, 26-여름, 26-2, 26-겨울처럼 입력하세요.",
+  );
 
 /** Uploaded file reference: Storage key plus the original file name. */
 const uploadedFile = z.object({ path: z.string().min(1), name: text(255) });

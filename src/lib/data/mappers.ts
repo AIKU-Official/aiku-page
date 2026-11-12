@@ -47,16 +47,24 @@ export function mapPersonMember(member: PersonMemberRow | null): ProjectPersonMe
 const toGrade = (value: string): MemberGrade =>
   MEMBER_GRADES.includes(value as MemberGrade) ? (value as MemberGrade) : "ob";
 
-/** `project_members` is present only when the query joined it. */
+type TagLinkRow = { sort_order: number; tags: { name: string } | null };
+
+/** Tag names of a project or event, in their stored order. */
+const tagNames = (links: TagLinkRow[] = []): string[] =>
+  [...links]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .flatMap((link) => (link.tags ? [link.tags.name] : []));
+
+/** `project_members` and `project_tags` are present only when the query joined them. */
 export const mapProject = (
-  row: Tables<"projects"> & { project_members?: ProjectPersonRow[] },
+  row: Tables<"projects"> & { project_members?: ProjectPersonRow[]; project_tags?: TagLinkRow[] },
   period: string,
 ): Project => ({
   id: row.id,
   seasonId: row.season_id,
   period,
   title: row.title,
-  tags: row.tags,
+  tags: tagNames(row.project_tags),
   markdown: row.markdown,
   githubUrl: row.github_url,
   presentationPath: row.presentation_path,
@@ -113,6 +121,7 @@ export const mapMember = (
 };
 
 type AikuthonRow = Tables<"aikuthons"> & {
+  aikuthon_tags: TagLinkRow[];
   aikuthon_partners: Pick<Tables<"aikuthon_partners">, "name" | "role" | "sort_order">[];
   aikuthon_tracks: Pick<Tables<"aikuthon_tracks">, "name" | "sort_order">[];
   aikuthon_awards: (Pick<Tables<"aikuthon_awards">, "rank" | "team_name"> & {
@@ -149,7 +158,7 @@ export const mapAikuthon = (row: AikuthonRow): Aikuthon => ({
   taskTitle: row.task_title,
   taskDescription: row.task_description,
   metric: row.metric,
-  tags: row.tags,
+  tags: tagNames(row.aikuthon_tags),
   competitionUrl: row.competition_url,
   awards: [...row.aikuthon_awards]
     .filter((award) => award.rank === 1 || award.rank === 2 || award.rank === 3)

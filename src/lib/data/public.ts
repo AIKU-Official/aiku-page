@@ -32,7 +32,7 @@ export type ProjectArchive = {
 };
 
 const PROJECT_SELECT =
-  `*, seasons(name), project_members(name, role, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT}))` as const;
+  `*, seasons(name), project_tags(sort_order, tags(name)), project_members(name, role, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT}))` as const;
 
 /** One project with its season name, or null when there is none with this id. */
 export async function getProject(id: string): Promise<Project | null> {
@@ -100,7 +100,7 @@ export async function getAikuthons(): Promise<Aikuthon[]> {
   const { data, error } = await createPublicClient()
     .from("aikuthons")
     .select(
-      `*, aikuthon_partners(name, role, sort_order), aikuthon_tracks(name, sort_order), aikuthon_awards(rank, team_name, aikuthon_award_members(name, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT})))`,
+      `*, aikuthon_tags(sort_order, tags(name)), aikuthon_partners(name, role, sort_order), aikuthon_tracks(name, sort_order), aikuthon_awards(rank, team_name, aikuthon_award_members(name, sort_order, members(id, name, department, grade, generations(name), member_profiles(is_public, avatar_path), ${POSITION_SELECT})))`,
     )
     .order("starts_on", { ascending: false });
   if (error) fail("AIKUTHON", error.message);
