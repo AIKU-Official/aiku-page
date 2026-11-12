@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
+import { CurriculumSections } from "@/components/curriculum/CurriculumSections";
 import { PageHero } from "@/components/layout/PageHero";
 import { Section } from "@/components/layout/Section";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 
 export const metadata: Metadata = {
   title: "소개",
-  description: "AIKU 소개와 활동 흐름을 확인하세요.",
+  description: "AIKU 소개와 주니어·시니어 커리큘럼을 확인하세요.",
 };
 
 export default function AboutPage() {
@@ -43,6 +44,8 @@ export default function AboutPage() {
           </div>
         </div>
       </Section>
+
+      <CurriculumSections />
     </>
   );
 }

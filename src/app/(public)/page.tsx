@@ -17,7 +17,7 @@ const homeLinks = [
     description: "배운 것을 공유하고 실제 결과물로 연결합니다.",
   },
   {
-    href: "/curriculum",
+    href: "/about#curriculum",
     label: "Curriculum",
     title: "주니어와 시니어 트랙",
     description: "방학과 학기 중 활동 흐름을 한눈에 확인합니다.",
@@ -25,7 +25,7 @@ const homeLinks = [
   {
     href: "/projects",
     label: "Projects",
-    title: "분기별 우수 프로젝트",
+    title: "분기별 프로젝트",
     description: "문제의식, 접근 방식, 발표자료, GitHub 링크를 함께 살펴봅니다.",
   },
   {

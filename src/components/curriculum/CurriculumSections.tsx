@@ -1,5 +1,3 @@
-import type { Metadata } from "next";
-
 import { TrackDiagram } from "@/components/curriculum/TrackDiagram";
 import {
   CalendarLane,
@@ -8,13 +6,7 @@ import {
   TrackCard,
   type Pill,
 } from "@/components/curriculum/CurriculumParts";
-import { PageHero } from "@/components/layout/PageHero";
 import { Section, SectionHead } from "@/components/layout/Section";
-
-export const metadata: Metadata = {
-  title: "커리큘럼",
-  description: "AIKU의 주니어와 시니어 커리큘럼을 확인하세요.",
-};
 
 const activity = (id: string) => `/activities#activity-${id}`;
 
@@ -34,26 +26,11 @@ const seniorPills: Pill[] = [
   { label: "AIKUTHON", href: activity("aikuthon") },
 ];
 
-export default function CurriculumPage() {
+/** How a year in AIKU is organised: the two tracks, what each includes, and the weekly sessions. */
+export function CurriculumSections() {
   return (
     <>
-      <PageHero
-        eyebrow="Curriculum"
-        title={
-          <>
-            주니어와 시니어로 이어지는 <br /> AIKU 커리큘럼
-          </>
-        }
-        lead={
-          <>
-            AIKU의 활동은 주니어 한 학기와 시니어 한 학기로 이어지는 트랙,{" "}
-            <br className="max-sm:hidden" />
-            또는 시니어 1년 트랙으로 구성됩니다.
-          </>
-        }
-      />
-
-      <Section>
+      <Section id="curriculum" className="scroll-mt-(--header-height)">
         <div className="site-container">
           <SectionHead eyebrow="2-Track System" title="2-Track으로 AIKU 활동을 이어갑니다." />
           <div className="grid gap-5 max-sm:gap-3">

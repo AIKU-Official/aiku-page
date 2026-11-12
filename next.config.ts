@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 // Old static-site URLs keep working; browsers carry the #hash across redirects,
 // so deep links like /activities.html#activity-seminar land on the same anchor.
-const legacyPages = ["about", "activities", "curriculum", "projects", "contact", "login", "admin"];
+const legacyPages = ["about", "activities", "projects", "contact", "login", "admin"];
 
 // Uploaded images (project images, member photos) are served from Supabase Storage.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -57,6 +57,9 @@ const nextConfig: NextConfig = {
         destination: `/${page}`,
         permanent: true,
       })),
+      // The curriculum is now part of About.
+      { source: "/curriculum", destination: "/about#curriculum", permanent: true },
+      { source: "/curriculum.html", destination: "/about#curriculum", permanent: true },
       { source: "/alumni.html", destination: "/members", permanent: true },
       { source: "/alumni", destination: "/members", permanent: true },
     ];

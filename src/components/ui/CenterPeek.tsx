@@ -107,16 +107,33 @@ export function CenterPeek({
   // Parts marked data-peek-panel-only are the reverse: absent while the panel
   // still looks like its origin, faded in as it opens.
   const fadeOriginOnly = (to: 0 | 1, duration: number) => {
-    const fade = (selector: string, target: number) =>
+    const run = (selector: string, keyframes: Keyframe[]) =>
       panel.current?.querySelectorAll<HTMLElement>(selector).forEach((element) => {
-        element.animate([{ opacity: 1 - target }, { opacity: target }], {
-          duration,
-          easing: "ease-in-out",
-          fill: "forwards",
-        });
+        element.animate(keyframes, { duration, easing: "ease-out", fill: "forwards" });
       });
-    fade("[data-peek-origin-only]", to);
-    fade("[data-peek-panel-only]", 1 - to);
+    // Staggered, never both at once: on opening the card's look fades out in
+    // the first part while the panel is still small, and the panel's content
+    // rises in once there is room for it; closing runs the other way round.
+    if (to === 0) {
+      run("[data-peek-origin-only]", [
+        { opacity: 1 },
+        { opacity: 0, offset: 0.28 },
+        { opacity: 0 },
+      ]);
+      run("[data-peek-panel-only]", [
+        { opacity: 0, transform: "translateY(10px)" },
+        { opacity: 0, transform: "translateY(10px)", offset: 0.22 },
+        { opacity: 1, transform: "none", offset: 0.75 },
+        { opacity: 1, transform: "none" },
+      ]);
+    } else {
+      run("[data-peek-panel-only]", [{ opacity: 1 }, { opacity: 0, offset: 0.35 }, { opacity: 0 }]);
+      run("[data-peek-origin-only]", [
+        { opacity: 0 },
+        { opacity: 0, offset: 0.45 },
+        { opacity: 1 },
+      ]);
+    }
   };
 
   useLayoutEffect(() => {

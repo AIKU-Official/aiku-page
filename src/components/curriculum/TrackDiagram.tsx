@@ -44,8 +44,7 @@ export function TrackDiagram() {
       {/* The notch that points from Junior on to Senior. */}
       <path d="M516 70 L536 80 L516 90 Z" fill="#21c98c" />
       <rect x="536" y="28" width="394" height="104" rx="6" fill="url(#track-senior)" />
-      {/* Dark text here: white does not read on the light mint. */}
-      <text x="323" y="80" {...caption} fill="#0b4a35">
+      <text x="323" y="80" {...caption}>
         JUNIOR (0.5년)
       </text>
       <text x="733" y="80" {...caption}>
