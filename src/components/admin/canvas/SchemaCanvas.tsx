@@ -32,15 +32,16 @@ import {
   type Change,
   type ChangeHistory,
 } from "@/lib/admin/changes";
-import { metroPoints, roundedPath } from "@/lib/admin/edge-path";
-import { bounds, columnY, initialLayout, NODE_WIDTH, type Point } from "@/lib/admin/layout";
+import { routeEdges } from "@/lib/admin/edge-path";
+import { bounds, initialLayout, type Point } from "@/lib/admin/layout";
 import type { Row, Schema } from "@/lib/admin/schema-types";
 
 import { TableNode } from "./TableNode";
 import { TablePeek } from "./TablePeek";
 import { useCanvasView } from "./useCanvasView";
 
-const LAYOUT_KEY = "aiku-admin-layout-v2";
+// v3: wider gaps between columns, for the lines that run through them.
+const LAYOUT_KEY = "aiku-admin-layout-v3";
 const CLICK_SLOP = 4;
 
 /**
@@ -258,37 +259,7 @@ export function SchemaCanvas({ schema }: { schema: Schema }) {
     setNotice(null);
   };
 
-  const edges = useMemo(() => {
-    const list: { id: string; d: string; source: string; target: string }[] = [];
-    for (const table of schema) {
-      const from = positions[table.name];
-      if (!from) continue;
-      const lines = table.columns.flatMap((column) => {
-        const ref = column.references;
-        const target = ref && byName.get(ref.table);
-        const to = ref && positions[ref.table];
-        return ref && target && to ? [{ column, ref, target, to }] : [];
-      });
-      lines.forEach(({ column, ref, target, to }, index) => {
-        const sy = from.y + columnY(table, column.name);
-        const ty = to.y + columnY(target, ref.column);
-        // Tables in one column: loop out on the right. Otherwise leave on the side facing the target.
-        const sameColumn = Math.abs(from.x - to.x) < NODE_WIDTH;
-        const direction = sameColumn ? 0 : from.x > to.x ? -1 : 1;
-        const sx = direction === -1 ? from.x : from.x + NODE_WIDTH;
-        const tx = direction === 1 ? to.x : to.x + NODE_WIDTH;
-        // Lines from one table run side by side, 6 apart, instead of on top of each other.
-        const lane = (index - (lines.length - 1) / 2) * 6;
-        list.push({
-          id: `${table.name}.${column.name}`,
-          d: roundedPath(metroPoints({ x: sx, y: sy }, { x: tx, y: ty }, direction, lane)),
-          source: table.name,
-          target: ref.table,
-        });
-      });
-    }
-    return list;
-  }, [schema, positions, byName]);
+  const edges = useMemo(() => routeEdges(schema, positions), [schema, positions]);
 
   const openTableSchema = open ? byName.get(open) : undefined;
 

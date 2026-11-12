@@ -12,18 +12,23 @@ import { TABLE_GROUPS, tableGroup } from "./table-policy";
 export const NODE_WIDTH = 264;
 export const HEADER_HEIGHT = 58;
 export const ROW_HEIGHT = 26;
-const COLUMN_GAP = 72;
+// Room for several lines side by side, PAD apart (edge-path.ts).
+const COLUMN_GAP = 128;
 const ROW_GAP = 40;
 const GROUP_GAP = 140;
 const BAND_WIDTH = 2200;
 
 export type Point = { x: number; y: number };
 
-export const nodeHeight = (table: SchemaTable) => HEADER_HEIGHT + table.columns.length * ROW_HEIGHT + 12;
+export const nodeHeight = (table: SchemaTable) =>
+  HEADER_HEIGHT + table.columns.length * ROW_HEIGHT + 12;
 
 /** Vertical centre of a column's row inside its node, for drawing edges. */
 export const columnY = (table: SchemaTable, column: string) => {
-  const index = Math.max(0, table.columns.findIndex((c) => c.name === column));
+  const index = Math.max(
+    0,
+    table.columns.findIndex((c) => c.name === column),
+  );
   return HEADER_HEIGHT + index * ROW_HEIGHT + ROW_HEIGHT / 2;
 };
 
@@ -48,8 +53,12 @@ export function initialLayout(tables: SchemaTable[]): Record<string, Point> {
       seen.add(name);
       const targets = (byName.get(name)?.columns ?? [])
         .map((column) => column.references?.table)
-        .filter((target): target is string => Boolean(target && target !== name && names.has(target)));
-      const value = targets.length ? 1 + Math.max(...targets.map((target) => depthOf(target, seen))) : 0;
+        .filter((target): target is string =>
+          Boolean(target && target !== name && names.has(target)),
+        );
+      const value = targets.length
+        ? 1 + Math.max(...targets.map((target) => depthOf(target, seen)))
+        : 0;
       depth.set(name, value);
       return value;
     };
