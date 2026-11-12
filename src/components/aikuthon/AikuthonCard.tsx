@@ -63,7 +63,7 @@ export function AikuthonCard({ event }: { event: Aikuthon }) {
   const replaces = event.kind === "joint" && event.edition !== null;
 
   return (
-    <article id={`aikuthon-${event.edition ?? event.id}`} className="card p-8 max-sm:p-5">
+    <article id={`aikuthon-${event.edition ?? event.id}`} className="card scroll-mt-28 p-8 max-sm:p-5">
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">

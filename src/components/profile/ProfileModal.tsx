@@ -66,6 +66,7 @@ export function ProfileModal({
             subject={state.page.subject}
             profile={state.page.profile}
             projects={state.page.projects}
+            awards={state.page.awards}
           />
         ) : (
           <p role="status" className="py-16 text-center text-muted">

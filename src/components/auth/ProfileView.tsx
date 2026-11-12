@@ -72,10 +72,10 @@ export function ProfileView() {
     );
   }
 
-  const { subject, profile, projects } = state.page;
+  const { subject, profile, projects, awards } = state.page;
   return (
     <div className="grid gap-10 max-sm:gap-8">
-      <ProfileContent subject={subject} profile={profile} projects={projects} />
+      <ProfileContent subject={subject} profile={profile} projects={projects} awards={awards} />
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-soft-line pt-5">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">

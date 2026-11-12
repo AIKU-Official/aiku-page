@@ -43,6 +43,17 @@ export type ProfileProject = {
   awardRank: 1 | 2 | 3 | null;
 };
 
+/** A 1st to 3rd place the member won at an AIKUTHON; comes from the award records. */
+export type ProfileAward = {
+  /** Fragment of the event's card on /aikuthon, e.g. "aikuthon-13". */
+  anchor: string;
+  event: string;
+  /** "2026.08". */
+  month: string;
+  rank: 1 | 2 | 3;
+  teamName: string;
+};
+
 export const emptyProfile: MemberProfile = {
   isPublic: false,
   headline: "",

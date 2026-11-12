@@ -12,6 +12,7 @@ import {
   mapProfile,
   MAX_AVATAR_BYTES,
   type MemberProfile,
+  type ProfileAward,
   type ProfileProject,
   type ProfileSubject,
 } from "@/lib/members/profile";
@@ -34,6 +35,8 @@ export type ProfilePage = {
   profile: MemberProfile;
   /** Filled from the project records, newest season first. */
   projects: ProfileProject[];
+  /** Filled from the AIKUTHON award records, newest first. */
+  awards: ProfileAward[];
 };
 
 type Db = ReturnType<typeof createAdminClient>;
@@ -89,8 +92,29 @@ async function loadPage(db: Db, memberId: string): Promise<ProfilePage | null> {
       };
     });
 
+  const won = unwrap(
+    await db
+      .from("aikuthon_award_members")
+      .select("aikuthon_awards(rank, team_name, aikuthons(id, edition, name, starts_on))")
+      .eq("member_id", memberId),
+  );
+  const awards = (won ?? [])
+    .map((entry) => entry.aikuthon_awards)
+    .filter((award) => award.rank === 1 || award.rank === 2 || award.rank === 3)
+    .sort((a, b) => b.aikuthons.starts_on.localeCompare(a.aikuthons.starts_on))
+    .map(
+      (award): ProfileAward => ({
+        anchor: `aikuthon-${award.aikuthons.edition ?? award.aikuthons.id}`,
+        event: award.aikuthons.name,
+        month: award.aikuthons.starts_on.slice(0, 7).replace("-", "."),
+        rank: award.rank as 1 | 2 | 3,
+        teamName: award.team_name,
+      }),
+    );
+
   return {
     projects,
+    awards,
     subject: {
       id: row.id,
       name: row.name,

@@ -11,7 +11,12 @@ import {
   LinkedInIcon,
   MailIcon,
 } from "@/components/ui/icons";
-import type { MemberProfile, ProfileProject, ProfileSubject } from "@/lib/members/profile";
+import type {
+  MemberProfile,
+  ProfileAward,
+  ProfileProject,
+  ProfileSubject,
+} from "@/lib/members/profile";
 import { storagePublicUrl } from "@/lib/storage/public-url";
 import { MEMBER_GRADE_LABELS } from "@/lib/types";
 
@@ -68,11 +73,14 @@ export function ProfileContent({
   subject,
   profile,
   projects = [],
+  awards = [],
 }: {
   subject: ProfileSubject;
   profile: MemberProfile;
   /** Projects the member took part in, from the project records. */
   projects?: ProfileProject[];
+  /** AIKUTHON placings, from the award records. */
+  awards?: ProfileAward[];
 }) {
   const links = [
     { href: profile.githubUrl, label: "GitHub", Icon: GitHubIcon },
@@ -205,7 +213,7 @@ export function ProfileContent({
                     href={`/projects/${project.id}`}
                     className="group flex flex-wrap items-center gap-x-3 gap-y-1 py-4"
                   >
-                    <span className="w-14 shrink-0 text-small text-muted tabular-nums">
+                    <span className="w-16 shrink-0 text-small text-muted tabular-nums">
                       {project.season}
                     </span>
                     <span className="min-w-0 flex-1 font-semibold text-ink underline-offset-4 group-hover:underline">
@@ -219,6 +227,31 @@ export function ProfileContent({
                     {project.role === "leader" ? (
                       <span className={clsx(pillClassName, "bg-surface-soft text-body")}>팀장</span>
                     ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </MainSection>
+        ) : null}
+
+        {awards.length ? (
+          <MainSection title="AIKUTHON">
+            <ul className="divide-y divide-soft-line border-y border-soft-line">
+              {awards.map((award) => (
+                <li key={award.anchor}>
+                  <Link
+                    href={`/aikuthon#${award.anchor}`}
+                    className="group flex flex-wrap items-center gap-x-3 gap-y-1 py-4"
+                  >
+                    <span className="w-16 shrink-0 text-small text-muted tabular-nums">
+                      {award.month}
+                    </span>
+                    <span className="min-w-0 flex-1 font-semibold text-ink underline-offset-4 group-hover:underline">
+                      {award.event}
+                    </span>
+                    <span className={clsx(pillClassName, AWARD_TONES[award.rank])}>
+                      {award.rank}등
+                    </span>
                   </Link>
                 </li>
               ))}

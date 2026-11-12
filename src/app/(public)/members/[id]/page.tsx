@@ -26,14 +26,14 @@ export async function generateMetadata({ params }: PageProps<"/members/[id]">): 
 export default async function MemberProfilePage({ params }: PageProps<"/members/[id]">) {
   const result = await getPublicProfile((await params).id);
   if (!result.ok) notFound();
-  const { subject, profile, projects } = result.data;
+  const { subject, profile, projects, awards } = result.data;
 
   return (
     <Section className="pt-8 max-lg:pt-8 max-sm:pt-5">
       <div className="site-container">
         <BackLink fallback={{ href: "/members", label: "Members" }} />
         <div className="mt-6 max-sm:mt-5">
-          <ProfileContent subject={subject} profile={profile} projects={projects} />
+          <ProfileContent subject={subject} profile={profile} projects={projects} awards={awards} />
         </div>
       </div>
     </Section>
