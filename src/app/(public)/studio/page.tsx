@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { PageHero } from "@/components/layout/PageHero";
 import { Section } from "@/components/layout/Section";
+import { StudioHero } from "@/components/studio/StudioHero";
 import { StudioHome } from "@/components/studio/StudioHome";
 
 export const metadata: Metadata = {
@@ -15,11 +15,7 @@ export const metadata: Metadata = {
 export default function StudioPage() {
   return (
     <>
-      <PageHero
-        eyebrow="Studio"
-        title="AIKU Studio"
-        lead="학회원을 위한 활동 공간입니다. 이번 학기 일정과 활동을 한곳에서 봅니다."
-      />
+      <StudioHero />
       <Section>
         <div className="site-container">
           <StudioHome />
